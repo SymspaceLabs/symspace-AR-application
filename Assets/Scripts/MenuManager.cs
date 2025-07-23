@@ -7,9 +7,10 @@ public class MenuManager : MonoBehaviour
     [Header("Panels")]
     public GameObject signUpInPanel;
     public GameObject signUpPanel;
-    public GameObject otpVerifyPanel;
+    public GameObject signUpOTPVerifyPanel;
     public GameObject signInPanel;
     public GameObject forgotPasswordPanel;
+    public GameObject forgotOTPVerifyPanel;
     public GameObject resetPasswordPanel;
     public GameObject passwordResetSuccessPanel;
     public GameObject contactUsPanel;
@@ -35,9 +36,10 @@ public class MenuManager : MonoBehaviour
         // Disable all panels
         signUpInPanel.SetActive(false);
         signUpPanel.SetActive(false);
-        otpVerifyPanel.SetActive(false);
+        signUpOTPVerifyPanel.SetActive(false);
         signInPanel.SetActive(false);
         forgotPasswordPanel.SetActive(false);
+        forgotOTPVerifyPanel.SetActive(false);
         resetPasswordPanel.SetActive(false);
         passwordResetSuccessPanel.SetActive(false);
         contactUsPanel.SetActive(false);
@@ -52,9 +54,10 @@ public class MenuManager : MonoBehaviour
     {
         if (signUpInPanel.activeSelf) return signUpInPanel;
         if (signUpPanel.activeSelf) return signUpPanel;
-        if (otpVerifyPanel.activeSelf) return otpVerifyPanel;
+        if (signUpOTPVerifyPanel.activeSelf) return signUpOTPVerifyPanel;
         if (signInPanel.activeSelf) return signInPanel;
         if (forgotPasswordPanel.activeSelf) return forgotPasswordPanel;
+        if (forgotOTPVerifyPanel.activeSelf) return forgotOTPVerifyPanel;
         if (resetPasswordPanel.activeSelf) return resetPasswordPanel;
         if (passwordResetSuccessPanel.activeSelf) return passwordResetSuccessPanel;
         if (contactUsPanel.activeSelf) return contactUsPanel;

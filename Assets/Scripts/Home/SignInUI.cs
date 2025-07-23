@@ -10,7 +10,7 @@ public class SignInUI : MonoBehaviour
     public TMP_InputField emailInput;
     public TMP_InputField passwordInput;
     public Button signInButton;
-    public string signInUrl = "login";
+    private string signInUrl = AuthAPI.api + "login";
 
     [Space(5)]
     public Sprite normalSprite;
@@ -72,9 +72,20 @@ public class SignInUI : MonoBehaviour
             },
             (error) => 
             {
-                Debug.LogError("Sign In Failed: " + error); 
+                Debug.LogError("Sign In Failed: " + error);
 
-                MenuManager.Instance.loadingPanel.SetActive(false);
+                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+
+                if (errorResponse.message.Contains("Invalid password"))
+                {
+                    ShowError("Invalid Password or Email", passwordInput);
+                }
+                else if(errorResponse.message.Contains("No account found"))
+                {
+                    ShowError(errorResponse.message, emailInput);
+                    passwordInput.text = "";
+                }
+                    MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
 
@@ -113,8 +124,8 @@ public class SignInUI : MonoBehaviour
     {
         errorMessage.gameObject.SetActive(true);
         errorMessage.text = message;
-        field.Select();
-        field.ActivateInputField();
+        //field.Select();
+        //field.ActivateInputField();
         field.GetComponent<Image>().sprite = errorInputFieldSprite;
         //signInButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
@@ -181,6 +192,13 @@ public class SignInUI : MonoBehaviour
         public string role;
         public bool isOnboardingFormFilled;
         public string company;
+    }
+
+    private class ErrorResponse
+    {
+        public string message;
+        //public string error { get; set; }
+        //public string statusCode { get; set; }
     }
     #endregion
 }

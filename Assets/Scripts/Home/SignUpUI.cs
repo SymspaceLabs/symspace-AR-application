@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Text.RegularExpressions;
+using System;
 
 public class SignUpUI : MonoBehaviour
 {
@@ -14,7 +15,7 @@ public class SignUpUI : MonoBehaviour
 
     [Space(5)]
     public Button signUpButton;
-    public string signUpUrl = "signup";
+    private string signUpUrl = AuthAPI.api + "signup";
 
     [Space(5)]
     public Sprite normalSprite;
@@ -67,13 +68,29 @@ public class SignUpUI : MonoBehaviour
                 Debug.Log("token: " + responseData.token);
                 PlayerPrefs.SetString("Email", emailInput.text);
 
-                MenuManager.Instance.otpVerifyPanel.GetComponent<OTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
-                MenuManager.Instance.EnablePanel(MenuManager.Instance.otpVerifyPanel);
+                //MenuManager.Instance.signUpOTPVerifyPanel.GetComponent<SignUpOTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
+                MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             },
             (error) =>
             {
                 Debug.LogError("Sign Up Failed: " + error);
+
+                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+
+                if(errorResponse.message.Contains("Email already exists"))
+                {
+                    //MenuManager.Instance.signUpOTPVerifyPanel.GetComponent<SignUpOTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
+                    PlayerPrefs.SetString("Email", emailInput.text);
+                    MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
+                }
+
+                //if (errorResponse.message.Contains("Email already exists"))
+                //{
+                //    MenuManager.Instance.otpVerifyPanel.GetComponent<OTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
+                //    MenuManager.Instance.EnablePanel(MenuManager.Instance.otpVerifyPanel);
+                //}
+
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
         
@@ -117,15 +134,31 @@ public class SignUpUI : MonoBehaviour
             return false;
         }
 
-        if (passwordInput.text.Length < 8)
+        if (!IsValidPassword(passwordInput.text))
         {
-            ShowError("Password must be at least 8 characters", passwordInput);
+            ShowError("Invalid Password", passwordInput);
             return false;
         }
 
         // All inputs are valid
         MenuManager.Instance.loadingPanel.SetActive(true);
         return true;
+    }
+
+    public static bool IsValidPassword(string password)
+    {
+        if (string.IsNullOrEmpty(password))
+            return false;
+
+        if (password.Length < 8)
+            return false;
+
+        bool hasUpper = Regex.IsMatch(password, "[A-Z]");
+        bool hasLower = Regex.IsMatch(password, "[a-z]");
+        bool hasDigit = Regex.IsMatch(password, "[0-9]");
+        bool hasSpecial = Regex.IsMatch(password, "[^a-zA-Z0-9]"); // Checks for any non-alphanumeric character
+
+        return hasUpper && hasLower && hasDigit && hasSpecial;
     }
 
     public void TogglePasswordVisibility(bool visible)
@@ -155,8 +188,8 @@ public class SignUpUI : MonoBehaviour
     {
         errorMessage.gameObject.SetActive(true);
         errorMessage.text = message;
-        field.Select();
-        field.ActivateInputField();
+        //field.Select();
+        //field.ActivateInputField();
         field.GetComponent<Image>().sprite = errorInputFieldSprite;
         //signUpButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
@@ -191,6 +224,13 @@ public class SignUpUI : MonoBehaviour
     {
         public string message;
         public string token;
+    }
+
+    private class ErrorResponse
+    {
+        public string message;
+        public string error;
+        public string statusCode;
     }
     #endregion
 }

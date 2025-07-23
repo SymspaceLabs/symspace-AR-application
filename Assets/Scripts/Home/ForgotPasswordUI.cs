@@ -8,7 +8,7 @@ public class ForgotPasswordUI : MonoBehaviour
     #region Parameters
     public TMP_InputField emailInput;
     public Button sendButton;
-    public string forgotPasswordURL = "forgot-password";
+    private string forgotPasswordURL = AuthAPI.api + "forgot-password";
 
     [Space(5)]
     public Sprite normalSprite;
@@ -48,14 +48,27 @@ public class ForgotPasswordUI : MonoBehaviour
                 Debug.Log("Reset link sent");
                 Debug.Log("Message: " + responseData.message);
 
-                MenuManager.Instance.otpVerifyPanel.GetComponent<OTPVerifyUI>().nextPanel = MenuManager.Instance.resetPasswordPanel;
-                MenuManager.Instance.EnablePanel(MenuManager.Instance.otpVerifyPanel);
+                //MenuManager.Instance.signUpOTPVerifyPanel.GetComponent<SignUpOTPVerifyUI>().nextPanel = MenuManager.Instance.resetPasswordPanel;
+                MenuManager.Instance.EnablePanel(MenuManager.Instance.forgotOTPVerifyPanel);
                 PlayerPrefs.SetString("Email", emailInput.text);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             },
             (error) =>
             {
-                Debug.LogError("Reset request failed: " + error);
+                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+
+                Debug.LogError("Reset request failed: " + errorResponse.message);
+
+                if (errorResponse.message.Contains("No account found"))
+                {
+                    errorMessage.text = "No account found with this email. Please verify your email and try again";
+                }
+                else
+                {
+                    errorMessage.text = "Unknown Error";
+                }
+
+                errorMessage.gameObject.SetActive(true);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
@@ -88,8 +101,8 @@ public class ForgotPasswordUI : MonoBehaviour
     {
         errorMessage.gameObject.SetActive(true);
         errorMessage.text = message;
-        field.Select();
-        field.ActivateInputField();
+        //field.Select();
+        //field.ActivateInputField();
         field.GetComponent<Image>().sprite = errorInputFieldSprite;
         //sendButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
@@ -117,6 +130,13 @@ public class ForgotPasswordUI : MonoBehaviour
     private class ResponseData
     {
         public string message;
+    }
+
+    private class ErrorResponse
+    {
+        public string message;
+        public string error;
+        public string statusCode;
     }
     #endregion
 }

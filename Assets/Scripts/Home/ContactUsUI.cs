@@ -14,12 +14,13 @@ public class ContactUsUI : MonoBehaviour
 
     [Space(5)]
     public Button sendButton;
-    public string contactUsURL = "contact-us";
+    private string contactUsURL = "/contact-us";
 
     [Space(5)]
     public Sprite normalSprite;
     public Sprite errorInputFieldSprite;
     public TextMeshProUGUI errorMessage;
+    public GameObject successMessage;
 
     //[Space(5)]
     //public Sprite[] confirmBtnIcons;
@@ -28,6 +29,7 @@ public class ContactUsUI : MonoBehaviour
     private void OnEnable()
     {
         errorMessage.gameObject.SetActive(false);
+        successMessage.SetActive(false);
     }
 
     private void Start()
@@ -38,6 +40,7 @@ public class ContactUsUI : MonoBehaviour
     #region API Call
     private void SendMessage()
     {
+        successMessage.SetActive(false);
         if (!CheckInputData())
             return;
 
@@ -45,7 +48,7 @@ public class ContactUsUI : MonoBehaviour
 
         JsonDataStructure jsonData = new JsonDataStructure();
 
-        jsonData.firstName = firstNameInput.text;
+        jsonData.fullName = firstNameInput.text;
         jsonData.email = emailInput.text;
         jsonData.topic = topicDropdown.options[topicDropdown.value].text;
         jsonData.message = messageInput.text;
@@ -64,6 +67,7 @@ public class ContactUsUI : MonoBehaviour
                 emailInput.text = "";
                 messageInput.text = "";
                 topicDropdown.value = 0;
+                successMessage.SetActive(true);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             },
             (error) =>
@@ -86,15 +90,15 @@ public class ContactUsUI : MonoBehaviour
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(firstNameInput.text))
-        {
-            ShowError("First Name is empty", firstNameInput);
-            return false;
-        }
-
         if (!IsValidEmail(emailInput.text))
         {
             ShowError("Email format is incorrect", emailInput);
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(firstNameInput.text))
+        {
+            ShowError("First Name is empty", firstNameInput);
             return false;
         }
 
@@ -104,11 +108,11 @@ public class ContactUsUI : MonoBehaviour
             return false;
         }
 
-        //if (string.IsNullOrEmpty(messageInput.text))
-        //{
-        //    ShowError("Password is empty");
-        //    return false;
-        //}
+        if (string.IsNullOrEmpty(messageInput.text))
+        {
+            ShowError("Message is empty, Please enter your feedback");
+            return false;
+        }
 
         // All inputs are valid
         MenuManager.Instance.loadingPanel.SetActive(true);
@@ -121,14 +125,13 @@ public class ContactUsUI : MonoBehaviour
         errorMessage.text = message;
         if (field != null)
         {
-            field.Select();
-            field.ActivateInputField();
+            //field.Select();
+            //field.ActivateInputField();
             field.GetComponent<Image>().sprite = errorInputFieldSprite;
         }
         else if(dropDown != null)
         {
             dropDown.Select();
-            dropDown.GetComponent<Image>().sprite = errorInputFieldSprite;
         }
         //sendButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
@@ -151,7 +154,7 @@ public class ContactUsUI : MonoBehaviour
     #region Structure Classes
     private class JsonDataStructure
     {
-        public string firstName;
+        public string fullName;
         public string email;
         public string topic;
         public string message;
