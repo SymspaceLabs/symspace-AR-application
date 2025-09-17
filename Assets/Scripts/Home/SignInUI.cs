@@ -3,6 +3,7 @@ using UnityEngine;
 using TMPro;
 using System;
 using System.Text.RegularExpressions;
+using UnityEngine.SceneManagement;
 
 public class SignInUI : MonoBehaviour
 {
@@ -16,6 +17,9 @@ public class SignInUI : MonoBehaviour
     public Sprite normalSprite;
     public TextMeshProUGUI errorMessage;
     public Sprite errorInputFieldSprite;
+
+
+    public SignUpOTPVerifyUI signUpOTPVerifyUI;
 
     //[Space(5)]
     //public Sprite[] confirmBtnIcons;
@@ -44,6 +48,7 @@ public class SignInUI : MonoBehaviour
         JsonDataStructure jsonData = new JsonDataStructure();
         jsonData.email = emailInput.text;
         jsonData.password = passwordInput.text;
+        PlayerPrefs.SetString("Email", emailInput.text);
 
         string json = JsonUtility.ToJson(jsonData);
 
@@ -66,8 +71,10 @@ public class SignInUI : MonoBehaviour
                 Debug.Log("isOnboardingFormFilled : " + responseData.user.isOnboardingFormFilled);
 
                 PlayerPrefs.SetString("id", responseData.user.id);
+                PlayerPrefs.SetInt("RememberMe", 1);
+                SceneManager.LoadScene("Blogs");
 
-                MenuManager.Instance.EnablePanel(MenuManager.Instance.homePanel);
+                //MenuManager.Instance.EnablePanel(MenuManager.Instance.homePanel);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             },
             (error) => 
@@ -80,11 +87,17 @@ public class SignInUI : MonoBehaviour
                 {
                     ShowError("Invalid Password or Email", passwordInput);
                 }
-                else if(errorResponse.message.Contains("No account found"))
+                else if (errorResponse.message.Contains("No account found"))
                 {
                     ShowError(errorResponse.message, emailInput);
                     passwordInput.text = "";
                 }
+                else if(errorResponse.message.Contains("not verified"))
+                {
+                    signUpOTPVerifyUI.ShowError(errorResponse.message);
+                    //PlayerPrefs.SetString("Email", emailInput.text);
+                    MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
+                }    
                     MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
@@ -120,13 +133,14 @@ public class SignInUI : MonoBehaviour
         return true;
     }
 
-    private void ShowError(string message, TMP_InputField field)
+    private void ShowError(string message, TMP_InputField field = null)
     {
         errorMessage.gameObject.SetActive(true);
         errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
-        field.GetComponent<Image>().sprite = errorInputFieldSprite;
+        if(field != null)
+            field.GetComponent<Image>().sprite = errorInputFieldSprite;
         //signInButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 

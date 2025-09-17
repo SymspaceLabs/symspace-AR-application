@@ -22,6 +22,8 @@ public class SignUpUI : MonoBehaviour
     public Sprite errorInputFieldSprite;
     public TextMeshProUGUI errorMessage;
 
+    public SignUpOTPVerifyUI signUpOTPVerifyUI;
+
     //[Space(5)]
     //public Sprite[] confirmBtnIcons;
     #endregion
@@ -80,9 +82,11 @@ public class SignUpUI : MonoBehaviour
 
                 if(errorResponse.message.Contains("Email already exists"))
                 {
+                    ShowError("Email already exists. Please use a different email");
+                    signUpOTPVerifyUI.errorMessage.gameObject.SetActive(false);
                     //MenuManager.Instance.signUpOTPVerifyPanel.GetComponent<SignUpOTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
-                    PlayerPrefs.SetString("Email", emailInput.text);
-                    MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
+                    //PlayerPrefs.SetString("Email", emailInput.text);
+                    //MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
                 }
 
                 //if (errorResponse.message.Contains("Email already exists"))
@@ -184,13 +188,14 @@ public class SignUpUI : MonoBehaviour
         passwordInput.selectionFocusPosition = textLength;
     }
 
-    private void ShowError(string message, TMP_InputField field)
+    private void ShowError(string message, TMP_InputField field = null)
     {
         errorMessage.gameObject.SetActive(true);
         errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
-        field.GetComponent<Image>().sprite = errorInputFieldSprite;
+        if(field != null)
+           field.GetComponent<Image>().sprite = errorInputFieldSprite;
         //signUpButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 

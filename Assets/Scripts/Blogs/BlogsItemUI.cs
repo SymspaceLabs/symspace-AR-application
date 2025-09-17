@@ -8,6 +8,7 @@ public class BlogsItemUI : MonoBehaviour
 {
     [Header("UI Elements")]
     public TextMeshProUGUI blogNickName;
+    public RectTransform maskParent;
     public Image blogImage;
     public Button blogBtn;
 
@@ -43,6 +44,9 @@ public class BlogsItemUI : MonoBehaviour
             Vector2 pivot = new Vector2(0.5f, 0.5f);
             Sprite sprite = Sprite.Create(texture, rect, pivot);
 
+            Debug.Log("width : " + sprite.rect.width + ", Height: " + sprite.rect.height);
+
+            //maskParent.sizeDelta = new Vector2(maskParent.sizeDelta.x, sprite.rect.height);
             if (blogImage != null)
                 blogImage.sprite = sprite;
         }

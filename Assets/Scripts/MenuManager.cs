@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
 {
@@ -26,6 +27,12 @@ public class MenuManager : MonoBehaviour
     {
         if(Instance == null)
             Instance = this;
+
+        if(PlayerPrefs.GetInt("RememberMe", 0) == 1)
+        {
+            loadingPanel.SetActive(true);
+            SceneManager.LoadSceneAsync("Blogs");
+        }
     }
 
     public void EnablePanel(GameObject activePanel)

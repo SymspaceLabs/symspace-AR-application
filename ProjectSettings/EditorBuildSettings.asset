@@ -11,5 +11,17 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Home.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
-  m_configObjects: {}
+  - enabled: 1
+    path: Assets/Scenes/Blogs.unity
+    guid: 3e590172579cbc24499df15b9e299af7
+  - enabled: 1
+    path: Assets/Scenes/AR Scene.unity
+    guid: d77813106f125294e80de9f7a0ea50c1
+  - enabled: 1
+    path: Assets/Scenes/AR Face.unity
+    guid: 5c17fa3f928b85b4c8a93ac4f1fcd2b0
+  m_configObjects:
+    UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 28e8c22ebcbef97489d16e2ec7f63b49, type: 2}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 4152637a518cfc34fadc085c14f32510, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 956a41cd2eefb78458c8cfbc8d82bafb, type: 2}
   m_UseUCBPForAssetBundles: 0

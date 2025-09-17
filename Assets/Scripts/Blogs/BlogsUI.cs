@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Collections;
 using UnityEngine.Networking;
+using System.Globalization;
+using System;
 
 public class BlogsUI : MonoBehaviour
 {
@@ -99,12 +101,14 @@ public class BlogsUI : MonoBehaviour
             {
                 itemUI.Initialize(blog.nickname, blog.image);
 
+                Debug.Log("Before button Add click " + itemUI.blogBtn.name);
                 itemUI.blogBtn.onClick.AddListener(() =>
                 {
+                    Debug.Log("Button Pressed");
                     blogPage.SetActive(true);
                     titleText.text = blog.title;
                     authorText.text = blog.author;
-                    dateText.text = blog.createdAt;
+                    dateText.text = ConvertToReadableDate(blog.createdAt);
                     contentText.text = blog.content;
                     StartCoroutine(LoadImageFromURL(blog.image, blogImg));
                 });
@@ -123,6 +127,7 @@ public class BlogsUI : MonoBehaviour
 
     private IEnumerator LoadImageFromURL(string url, Image img)
     {
+        loadingPanel.SetActive(true);
         UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
         yield return request.SendWebRequest();
 
@@ -140,6 +145,7 @@ public class BlogsUI : MonoBehaviour
             Sprite sprite = Sprite.Create(texture, rect, pivot);
             img.sprite = sprite;
         }
+        loadingPanel.SetActive(false);
     }
 
     private void ClearBlogs()
@@ -155,6 +161,16 @@ public class BlogsUI : MonoBehaviour
         statusText.gameObject.SetActive(true);
         statusText.text = message;
         statusText.color = isError ? Color.red : Color.white;
+    }
+
+    public static string ConvertToReadableDate(string isoDate)
+    {
+        // Parse the ISO 8601 date string
+        DateTime date = DateTime.Parse(isoDate, null, DateTimeStyles.RoundtripKind);
+
+        // Format it as "22 July 2025"
+        string formattedDate = date.ToString("dd MMMM yyyy", CultureInfo.InvariantCulture);
+        return formattedDate;
     }
     #endregion
 

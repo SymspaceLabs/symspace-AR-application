@@ -2,6 +2,7 @@ using UnityEngine.UI;
 using UnityEngine;
 using TMPro;
 using System;
+using UnityEngine.SceneManagement;
 
 public class SignUpOTPVerifyUI : MonoBehaviour
 {
@@ -29,7 +30,7 @@ public class SignUpOTPVerifyUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessage.gameObject.SetActive(false);
+        //errorMessage.gameObject.SetActive(false);
         successMessage.SetActive(false);
         userMailText.text = $"Enter the 6-digit code we sent to {PlayerPrefs.GetString("Email")} to continue";
     }
@@ -66,7 +67,9 @@ public class SignUpOTPVerifyUI : MonoBehaviour
                 //if (nextPanel != null)
                 //    MenuManager.Instance.EnablePanel(nextPanel);
 
-                MenuManager.Instance.EnablePanel(MenuManager.Instance.homePanel);
+                //MenuManager.Instance.EnablePanel(MenuManager.Instance.homePanel);
+                PlayerPrefs.SetInt("RememberMe", 1);
+                SceneManager.LoadScene("Blogs");
 
                 PlayerPrefs.SetString("OTP", otpInput.text);
                 MenuManager.Instance.loadingPanel.SetActive(false);
@@ -75,7 +78,7 @@ public class SignUpOTPVerifyUI : MonoBehaviour
             {
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
                 Debug.LogError("OTP Verification Failed: " + errorResponse.message);
-                errorMessage.text = "Incorrect Code";
+                errorMessage.text = "Invalid or expired OTP";
                 errorMessage.gameObject.SetActive(true);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
@@ -100,10 +103,19 @@ public class SignUpOTPVerifyUI : MonoBehaviour
             (error) =>
             {
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-                Debug.LogError("OTP Verification Failed: " + errorResponse.message);
-                errorMessage.text = "Incorrect Code";
-                errorMessage.gameObject.SetActive(true);
-                MenuManager.Instance.loadingPanel.SetActive(false);
+                if (errorResponse.message.Contains("User is already verified"))
+                {
+                    Debug.LogError("OTP Verification Failed: " + errorResponse.message);
+                    errorMessage.text = "User is already verified. Please sign in";
+                    errorMessage.gameObject.SetActive(true);
+                }
+                else
+                {
+                    Debug.LogError("OTP Verification Failed: " + errorResponse.message);
+                    errorMessage.text = "OTP sent failed";
+                    errorMessage.gameObject.SetActive(true);
+                    MenuManager.Instance.loadingPanel.SetActive(false);
+                }
             }));
 
         MenuManager.Instance.loadingPanel.SetActive(false);
@@ -119,7 +131,7 @@ public class SignUpOTPVerifyUI : MonoBehaviour
 
         if (string.IsNullOrWhiteSpace(otpInput.text))
         {
-            ShowError("Email is empty", otpInput);
+            ShowError("Input field is empty", otpInput);
             return false;
         }
 
@@ -128,13 +140,14 @@ public class SignUpOTPVerifyUI : MonoBehaviour
         return true;
     }
 
-    private void ShowError(string message, TMP_InputField field)
+    public void ShowError(string message, TMP_InputField field = null)
     {
         errorMessage.gameObject.SetActive(true);
         errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
-        field.GetComponent<Image>().sprite = errorInputFieldSprite;
+        if(field != null)
+            field.GetComponent<Image>().sprite = errorInputFieldSprite;
         //verifyButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 
