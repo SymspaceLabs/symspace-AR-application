@@ -285,6 +285,7 @@ GameObject:
   - component: {fileID: 7370389777463330621}
   - component: {fileID: 7579137820606625908}
   - component: {fileID: 4397302015479710928}
+  - component: {fileID: 3801249758552312148}
   m_Layer: 0
   m_Name: Chair2 Horizontal
   m_TagString: Untagged
@@ -484,6 +485,20 @@ MonoBehaviour:
   m_Elasticity: 0.15
   m_EnableElasticBreakLimit: 1
   m_ElasticBreakLimit: 0.5
+--- !u!114 &3801249758552312148
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8016761676881757586}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db0b5c02a7bc48a4f8f2bd927a6bb1f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  orientation: 0
+  editorRotationSpeed: 90
 --- !u!1001 &1876639151068560338
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -26,9 +26,11 @@ public class ShopUIManager : MonoBehaviour
     public Button addToCartButton;
     public Text descriptionText;
 
+    string getProductsByCategoryURL = "/products?subcategoryItem=";
+
     private void Start()
     {
-        //OnCategoryButtonClicked("shirts");
+        OnCategoryButtonClicked("shirts");
     }
 
     public void OnCategoryButtonClicked(string categoryName)
@@ -38,14 +40,14 @@ public class ShopUIManager : MonoBehaviour
 
     IEnumerator FetchCategoryItems(string categoryName)
     {
-        string endpoint = $"/shop/items?category={categoryName}"; // Adjust your endpoint path here
+        string endpoint = getProductsByCategoryURL + categoryName;
 
         yield return AuthAPI.PostRequest(
             url: endpoint,
             jsonData: "",
             onSuccess: (response) =>
             {
-                List<ItemData> items = JsonUtility.FromJson<List<ItemData>>(response);
+                CategoryManager.ProductResponse items = JsonUtility.FromJson<CategoryManager.ProductResponse>(response);
                 DisplayItems(items);
             },
             onError: (error) =>
@@ -55,22 +57,22 @@ public class ShopUIManager : MonoBehaviour
         );
     }
 
-    void DisplayItems(List<ItemData> items)
+    void DisplayItems(CategoryManager.ProductResponse items)
     {
         foreach (Transform child in itemListContainer)
             Destroy(child.gameObject);
 
-        foreach (ItemData item in items)
+        foreach (var item in items.products)
         {
             GameObject btn = Instantiate(itemButtonPrefab, itemListContainer);
-            StartCoroutine(LoadImage(item.imageUrl, btn.transform.Find("ItemImage").GetComponent<Image>()));
-            btn.transform.Find("ItemName").GetComponent<Text>().text = item.itemName;
-            btn.transform.Find("CompanyName").GetComponent<Text>().text = item.companyName;
-            btn.transform.Find("Price").GetComponent<Text>().text = $"${item.price}";
+            StartCoroutine(LoadImage(item.images[1].url, btn.transform.Find("ItemImage").GetComponent<Image>()));
+            btn.transform.Find("ItemName").GetComponent<Text>().text = item.name;
+            btn.transform.Find("CompanyName").GetComponent<Text>().text = item.company.legalName;
+            btn.transform.Find("Price").GetComponent<Text>().text = $"${item.displayPrice.price}";
 
             Text discountText = btn.transform.Find("DiscountedPrice").GetComponent<Text>();
-            if (item.discountedPrice < item.price)
-                discountText.text = $"${item.discountedPrice}";
+            if (item.displayPrice.salePrice < item.displayPrice.price)
+                discountText.text = $"${item.displayPrice.salePrice}";
             else
                 discountText.gameObject.SetActive(false);
 
@@ -78,33 +80,35 @@ public class ShopUIManager : MonoBehaviour
         }
     }
 
-    void ShowItemDetails(ItemData item)
+    void ShowItemDetails(CategoryManager.Products item)
     {
         itemDetailPanel.SetActive(true);
-        StartCoroutine(LoadImage(item.imageUrl, bigImage));
-        nameText.text = item.itemName;
-        companyText.text = item.companyName;
-        priceText.text = $"${item.price}";
-        discountedPriceText.text = item.discountedPrice < item.price ? $"${item.discountedPrice}" : "";
+        StartCoroutine(LoadImage(item.images[1].url, bigImage));
+        nameText.text = item.name;
+        companyText.text = item.company.legalName;
+        priceText.text = $"${item.displayPrice.price}";
+        discountedPriceText.text = item.displayPrice.salePrice < item.displayPrice.price ? $"${item.displayPrice.salePrice}" : "";
         descriptionText.text = item.description;
 
         foreach (Transform c in colorOptionsContainer) Destroy(c.gameObject);
         foreach (Transform s in sizeOptionsContainer) Destroy(s.gameObject);
 
-        foreach (string color in item.availableColors)
+        foreach (var color in item.colors)
         {
             GameObject btn = Instantiate(colorButtonPrefab, colorOptionsContainer);
-            btn.GetComponentInChildren<Text>().text = color;
+            Color newColor;
+            if(ColorUtility.TryParseHtmlString(color.code, out newColor))
+                btn.transform.Find("Color Img").GetComponent<Image>().color = newColor;
         }
 
-        foreach (string size in item.availableSizes)
-        {
-            GameObject btn = Instantiate(sizeButtonPrefab, sizeOptionsContainer);
-            btn.GetComponentInChildren<Text>().text = size;
-        }
+        //foreach (string size in item.availableSizes)
+        //{
+        //    GameObject btn = Instantiate(sizeButtonPrefab, sizeOptionsContainer);
+        //    btn.GetComponentInChildren<Text>().text = size;
+        //}
 
         addToCartButton.onClick.RemoveAllListeners();
-        addToCartButton.onClick.AddListener(() => AddToCart(item));
+        //addToCartButton.onClick.AddListener(() => AddToCart(item));
     }
 
     void AddToCart(ItemData item)

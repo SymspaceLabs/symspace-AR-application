@@ -11,19 +11,24 @@ public enum PlaneType
 // This static class holds the selected product info between scenes
 public static class ProductSelection
 {
-    public static string ProductName { get; private set; }
+    public static CategoryManager.Products productData { get; private set; }
     public static bool IsForFace { get; private set; }
-    public static CategoryType SelectedObjectType { get; private set; }
+    public static CategoryType SelectedObjectType { get; set; }
     public static bool isHorizontalPlane = false;
+
+    public static string modelURL;
+
+    public static Sprite fetchedSprite;
     //public static PlaneType SelectedPlaneType { get; private set; }
 
     // Call this method when the user selects a product
-    public static void SetSelection(string productName, bool isForFace, string objectType = null, bool isHorizontal = false)
+    public static void SetSelection(CategoryManager.Products productName, bool isForFace, string objectType = "", bool isHorizontal = false, string url = "")
     {
-        ProductName = productName;
+        modelURL = url;
+        productData = productName;
         IsForFace = isForFace;
-
-        TryParseObjectType(objectType, out CategoryType SelectedObjectType);
+        if(objectType.Length > 0)
+            TryParseObjectType(objectType, out CategoryType SelectedObjectType);
 
         isHorizontalPlane = isHorizontal;
 
@@ -32,7 +37,7 @@ public static class ProductSelection
 
     public static void ClearSelection()
     {
-        ProductName = null;
+        productData = null;
         IsForFace = false;
         SelectedObjectType = default;
         //SelectedPlaneType = PlaneType.None;
@@ -40,7 +45,21 @@ public static class ProductSelection
 
     public static bool TryParseObjectType(string value, out CategoryType objectType)
     {
-        return Enum.TryParse(value, ignoreCase: true, out objectType) && Enum.IsDefined(typeof(CategoryType), objectType);
+        objectType = default;
+
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        foreach (CategoryType type in Enum.GetValues(typeof(CategoryType)))
+        {
+            if (value.IndexOf(type.ToString(), StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                objectType = type;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static bool TryParsePlaneType(string value, out PlaneType planeType)

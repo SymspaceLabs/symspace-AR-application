@@ -168,8 +168,8 @@ using static UnityEngine.XR.Interaction.Toolkit.Transformers.ARTransformer;
                     return;
 
                 // Don't spawn the object if the tap was over screen space UI.
-                var isPointerOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(-1);
-                if (!isPointerOverUI && m_ARInteractor.TryGetCurrentARRaycastHit(out var arRaycastHit))
+                //var isPointerOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject(-1);
+                if (/*!isPointerOverUI*/!IsPointerOverUI() && m_ARInteractor.TryGetCurrentARRaycastHit(out var arRaycastHit))
                 {
                     if (!(arRaycastHit.trackable is ARPlane arPlane))
                         return;
@@ -248,6 +248,36 @@ using static UnityEngine.XR.Interaction.Toolkit.Transformers.ARTransformer;
             return true;
 #endif
         }
+
+    bool IsPointerOverUI()
+{
+    if (EventSystem.current == null)
+        return false;
+
+#if UNITY_ANDROID || UNITY_IOS
+    if (Input.touchCount > 0)
+    {
+        foreach (Touch touch in Input.touches)
+        {
+            // Only consider touches that just began
+            if (touch.phase == TouchPhase.Began)
+            {
+                if (EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+                    return true;
+            }
+        }
+        return false;
+    }
+    else
+    {
+        // No touches, fallback to mouse pointer check (for editor or other platforms)
+        return EventSystem.current.IsPointerOverGameObject(-1);
+    }
+#else
+    // For standalone builds or editor - check mouse pointer
+    return EventSystem.current.IsPointerOverGameObject(-1);
+#endif
+}
 
     }
 

@@ -419,7 +419,7 @@ namespace IngameDebugConsole
 		internal StringBuilder sharedStringBuilder;
 
         /// <summary>
-        /// Used for <see cref="TMP_Text.SetText(char[])"/>.
+        /// Used for <see cref="TextMeshProUGUI.SetText(char[])"/>.
         /// </summary>
         [System.NonSerialized]
         internal char[] textBuffer = new char[4096];

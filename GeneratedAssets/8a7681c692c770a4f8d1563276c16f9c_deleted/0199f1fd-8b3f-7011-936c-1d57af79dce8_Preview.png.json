@@ -1,0 +1,11 @@
+{
+    "asset": "8a7681c692c770a4f8d1563276c16f9c",
+    "fileName": "0199f1fd-8b3f-7011-936c-1d57af79dce8_Preview.png",
+    "prompt": "Futuristic, box, blue light, shiny light",
+    "negativePrompt": "",
+    "model": "575ecf67-4425-4939-97b9-5e138b8ee234",
+    "modelName": "Unity Texture2D",
+    "customSeed": 1839406534,
+    "w3CTraceId": "ec8b484baf2e432f80bba291e9f8bc10",
+    "refinementMode": "Generation"
+}

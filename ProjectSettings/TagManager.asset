@@ -14,9 +14,9 @@ TagManager:
   - ARPlane_Vertical
   - ARPlane_Horizontal
   - ModelView
-  - 
-  - 
-  - 
+  - background
+  - blur
+  - top
   - 
   - 
   - 
@@ -40,6 +40,12 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Blur UI
+    uniqueID: 2885201835
+    locked: 0
+  - name: Main Canvas Element
+    uniqueID: 1832552701
     locked: 0
   m_RenderingLayers:
   - Default

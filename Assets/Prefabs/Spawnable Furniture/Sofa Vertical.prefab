@@ -121,6 +121,7 @@ GameObject:
   - component: {fileID: 4589604006475313384}
   - component: {fileID: 8680259658450625815}
   - component: {fileID: 8069333079526528585}
+  - component: {fileID: -1372552020070245975}
   m_Layer: 0
   m_Name: Sofa Vertical
   m_TagString: Untagged
@@ -319,6 +320,20 @@ MonoBehaviour:
   m_Elasticity: 0.15
   m_EnableElasticBreakLimit: 1
   m_ElasticBreakLimit: 0.5
+--- !u!114 &-1372552020070245975
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3111154595941533671}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db0b5c02a7bc48a4f8f2bd927a6bb1f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  orientation: 0
+  editorRotationSpeed: 90
 --- !u!1 &5025567024101785421
 GameObject:
   m_ObjectHideFlags: 0

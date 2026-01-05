@@ -1,0 +1,13 @@
+{
+    "asset": "9f1c2f9f6f20129459ed8c09ff3f2451",
+    "fileName": "0199f201-2e0d-7327-97af-b9fc0a4ee998.wav",
+    "prompt": "background, raining, smooth, relaxing, random thunders, real",
+    "negativePrompt": "",
+    "model": "0ee39b33-2893-4e0f-8c46-0e0bdd4eda85",
+    "modelName": "Text to Sound",
+    "customSeed": -1,
+    "w3CTraceId": "d3edbdce9a165c3d713d21a4858506c4",
+    "duration": 10.0,
+    "autoTrim": false,
+    "hasReference": false
+}

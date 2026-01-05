@@ -45,7 +45,6 @@ public class SlideUpPanel : MonoBehaviour, IDragHandler, IBeginDragHandler, IEnd
         StartCoroutine(SlideTo(shownPos));
         isPanelUp = true;
         UIManagerAR.instance.crossBtn.SetActive(true);
-        
     }
 
     // Slide down

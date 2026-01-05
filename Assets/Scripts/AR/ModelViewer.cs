@@ -7,23 +7,47 @@ public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
     public Transform targetModel;
     public float rotationSpeed = 0.2f;
 
+    [Header("Auto Rotation")]
+    public float autoRotationSpeed = 10f;           // Degrees per second
+    public float interactionPauseDuration = 2f;     // Time in seconds to pause auto rotation after interaction
+
     [Header("Zoom")]
-    public Camera modelCamera;          // The camera rendering the model to RenderTexture
+    public Camera modelCamera;
     public float zoomSpeed = 2f;
     public float minZoom = 5f;
     public float maxZoom = 20f;
 
     private Vector2 lastPointerPosition;
 
+    private bool isUserInteracting = false;
+    private float interactionTimer = 0f;
+
     void Update()
     {
-        HandleMouseScrollZoom();
-        HandlePinchZoom();
+        //HandleMouseScrollZoom();
+        //HandlePinchZoom();
+
+        // Resume auto-rotation if enough time has passed
+        if (isUserInteracting)
+        {
+            interactionTimer -= Time.deltaTime;
+            if (interactionTimer <= 0f)
+            {
+                isUserInteracting = false;
+            }
+        }
+
+        if (!isUserInteracting)
+        {
+            AutoRotateModel();
+        }
+        modelCamera.transform.LookAt(targetModel.transform);
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         lastPointerPosition = eventData.position;
+        PauseAutoRotation();
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -38,6 +62,7 @@ public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
         }
 
         lastPointerPosition = currentPointerPosition;
+        PauseAutoRotation();
     }
 
     private void HandleMouseScrollZoom()
@@ -49,12 +74,13 @@ public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
         if (Mathf.Abs(scrollDelta) > 0.01f)
         {
             float newDistance = modelCamera.transform.localPosition.z + scrollDelta * zoomSpeed * -1f;
-            newDistance = Mathf.Clamp(newDistance, -maxZoom, -minZoom); // Negative z-axis
+            newDistance = Mathf.Clamp(newDistance, -maxZoom, -minZoom);
             modelCamera.transform.localPosition = new Vector3(
                 modelCamera.transform.localPosition.x,
                 modelCamera.transform.localPosition.y,
                 newDistance
             );
+            PauseAutoRotation();
         }
     }
 
@@ -76,12 +102,28 @@ public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
             float delta = currentDistance - prevDistance;
 
             float newDistance = modelCamera.transform.localPosition.z - delta * Time.deltaTime * zoomSpeed;
-            newDistance = Mathf.Clamp(newDistance, -maxZoom, -minZoom); // Negative z-axis
+            newDistance = Mathf.Clamp(newDistance, -maxZoom, -minZoom);
             modelCamera.transform.localPosition = new Vector3(
                 modelCamera.transform.localPosition.x,
                 modelCamera.transform.localPosition.y,
                 newDistance
             );
+
+            PauseAutoRotation();
         }
+    }
+
+    private void AutoRotateModel()
+    {
+        if (targetModel != null)
+        {
+            targetModel.Rotate(Vector3.up, autoRotationSpeed * Time.deltaTime, Space.World);
+        }
+    }
+
+    private void PauseAutoRotation()
+    {
+        isUserInteracting = true;
+        interactionTimer = interactionPauseDuration;
     }
 }

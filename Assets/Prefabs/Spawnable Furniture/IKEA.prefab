@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 3349272405207072252}
   - component: {fileID: 4881617480224688831}
   - component: {fileID: 621545075513031238}
+  - component: {fileID: 8121856737343306630}
   m_Layer: 0
   m_Name: IKEA
   m_TagString: Untagged
@@ -210,6 +211,20 @@ MonoBehaviour:
   m_Elasticity: 0.15
   m_EnableElasticBreakLimit: 1
   m_ElasticBreakLimit: 0.5
+--- !u!114 &8121856737343306630
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 805841464060907228}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db0b5c02a7bc48a4f8f2bd927a6bb1f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  orientation: 0
+  editorRotationSpeed: 90
 --- !u!1 &3194687748377527547
 GameObject:
   m_ObjectHideFlags: 0

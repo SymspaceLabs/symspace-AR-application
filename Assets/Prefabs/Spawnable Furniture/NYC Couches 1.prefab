@@ -121,6 +121,7 @@ GameObject:
   - component: {fileID: 1519733225352271036}
   - component: {fileID: 5502377908845919940}
   - component: {fileID: 641308465723754994}
+  - component: {fileID: -3658845683457823032}
   m_Layer: 0
   m_Name: NYC Couches 1
   m_TagString: Untagged
@@ -320,6 +321,20 @@ MonoBehaviour:
   m_Elasticity: 0.15
   m_EnableElasticBreakLimit: 1
   m_ElasticBreakLimit: 0.5
+--- !u!114 &-3658845683457823032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 857056807526817943}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db0b5c02a7bc48a4f8f2bd927a6bb1f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  orientation: 0
+  editorRotationSpeed: 90
 --- !u!1 &3904748748383542035
 GameObject:
   m_ObjectHideFlags: 0

@@ -232,9 +232,9 @@ namespace IngameDebugConsole
 			}
 		}
 
-		/// Here, we're using <see cref="TMP_Text.GetRenderedValues(bool)"/> instead of <see cref="TMP_Text.preferredHeight"/> because the latter doesn't take
-		/// <see cref="TMP_Text.maxVisibleCharacters"/> into account. However, for <see cref="TMP_Text.GetRenderedValues(bool)"/> to work, we need to give it
-		/// enough space (increase log item's height) and let it regenerate its mesh <see cref="TMP_Text.ForceMeshUpdate"/>.
+		/// Here, we're using <see cref="TextMeshProUGUI.GetRenderedValues(bool)"/> instead of <see cref="TextMeshProUGUI.preferredHeight"/> because the latter doesn't take
+		/// <see cref="TextMeshProUGUI.maxVisibleCharacters"/> into account. However, for <see cref="TextMeshProUGUI.GetRenderedValues(bool)"/> to work, we need to give it
+		/// enough space (increase log item's height) and let it regenerate its mesh <see cref="TextMeshProUGUI.ForceMeshUpdate"/>.
 		public float CalculateExpandedHeight( DebugLogEntry logEntry, DebugLogEntryTimestamp? logEntryTimestamp )
 		{
 			string text = logText.text;

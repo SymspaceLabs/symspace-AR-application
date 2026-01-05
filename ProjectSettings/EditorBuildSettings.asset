@@ -20,6 +20,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/AR Face.unity
     guid: 5c17fa3f928b85b4c8a93ac4f1fcd2b0
+  - enabled: 1
+    path: Assets/Scenes/Hand Tracking.unity
+    guid: 0f28c04c65ed3fa4c928fc39f44cf198
+  - enabled: 1
+    path: Assets/Scenes/AR Body Tracking.unity
+    guid: 7380a5ddf19f550499d7c8b240dea0f7
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 28e8c22ebcbef97489d16e2ec7f63b49, type: 2}
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 4152637a518cfc34fadc085c14f32510, type: 2}

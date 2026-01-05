@@ -11,7 +11,7 @@ public class BlogsItemUI : MonoBehaviour
     public RectTransform maskParent;
     public Image blogImage;
     public Button blogBtn;
-
+    public GameObject loadingIcon;
     /// <summary>
     /// Initialize the blog UI with nickname and image URL
     /// </summary>
@@ -28,6 +28,7 @@ public class BlogsItemUI : MonoBehaviour
 
     private IEnumerator LoadImageFromURL(string url)
     {
+        loadingIcon.SetActive(true);
         UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
         yield return request.SendWebRequest();
 
@@ -49,6 +50,32 @@ public class BlogsItemUI : MonoBehaviour
             //maskParent.sizeDelta = new Vector2(maskParent.sizeDelta.x, sprite.rect.height);
             if (blogImage != null)
                 blogImage.sprite = sprite;
+            FitImageToContainer(blogImage);
         }
+        loadingIcon.SetActive(false);
+    }
+
+    public void FitImageToContainer(Image image)
+    {
+        if (image.sprite == null) return;
+
+        Sprite newSprite = image.sprite;
+        RectTransform rectTransform = image.rectTransform;
+
+        image.preserveAspect = true;
+
+        float imgWidth = newSprite.rect.width;
+        float imgHeight = newSprite.rect.height;
+        float containerWidth = 1000f;  // Or parent.sizeDelta.x
+        float containerHeight = 1000f; // Or parent.sizeDelta.y
+
+        float scaleX = containerWidth / imgWidth;
+        float scaleY = containerHeight / imgHeight;
+        float multiplier = Mathf.Max(scaleX, scaleY);
+        //float multiplier = scaleY;
+
+        Debug.Log("image width: " + imgWidth + ", Height : " + imgHeight + ", multiplayer : " + multiplier, image.gameObject);
+        rectTransform.sizeDelta = new Vector2(imgWidth * multiplier, imgHeight * multiplier);
+        Debug.Log("rectTransform: " + rectTransform.sizeDelta.x + ", " + rectTransform.sizeDelta.y, image.gameObject);
     }
 }

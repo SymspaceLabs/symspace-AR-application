@@ -7,6 +7,7 @@ using System.Collections;
 using UnityEngine.Networking;
 using System.Globalization;
 using System;
+using UnityEngine.SceneManagement;
 
 public class BlogsUI : MonoBehaviour
 {
@@ -25,8 +26,13 @@ public class BlogsUI : MonoBehaviour
     public Image blogImg;
     public TextMeshProUGUI titleText;
     public TextMeshProUGUI authorText;
+    public Button originalPostBtn;
     public TextMeshProUGUI dateText;
     public TextMeshProUGUI contentText;
+    public GameObject detailLoadingIcon;
+    public Sprite blurImage;
+
+    public List<GameObject> bottomBtns;
 
     public GameObject loadingPanel;
     #endregion
@@ -35,6 +41,7 @@ public class BlogsUI : MonoBehaviour
     {
         currentBlogsData = new List<BlogsData>();
         statusText.gameObject.SetActive(false);
+
         LoadBlogs();
     }
 
@@ -44,6 +51,10 @@ public class BlogsUI : MonoBehaviour
         {
             refreshButton.onClick.AddListener(LoadBlogs);
         }
+
+        foreach (GameObject obj in bottomBtns)
+            obj.SetActive(true);
+        GetComponentInParent<Canvas>().renderMode = RenderMode.ScreenSpaceCamera;
     }
 
     #region API Call
@@ -97,6 +108,8 @@ public class BlogsUI : MonoBehaviour
             GameObject item = Instantiate(blogItemPrefab, contentParent);
             BlogsItemUI itemUI = item.GetComponent<BlogsItemUI>();
 
+            
+
             if (itemUI != null)
             {
                 itemUI.Initialize(blog.nickname, blog.image);
@@ -104,10 +117,20 @@ public class BlogsUI : MonoBehaviour
                 Debug.Log("Before button Add click " + itemUI.blogBtn.name);
                 itemUI.blogBtn.onClick.AddListener(() =>
                 {
+                    authorText.GetComponent<Button>().onClick.RemoveAllListeners();
+                    originalPostBtn.onClick.RemoveAllListeners();
                     Debug.Log("Button Pressed");
                     blogPage.SetActive(true);
                     titleText.text = blog.title;
                     authorText.text = blog.author;
+                    authorText.GetComponent<Button>().onClick.AddListener(() =>
+                    {
+                        Application.OpenURL(blog.author_url);
+                    });
+                    originalPostBtn.onClick.AddListener(() =>
+                    {
+                        Application.OpenURL(blog.article_source_url);
+                    });
                     dateText.text = ConvertToReadableDate(blog.createdAt);
                     contentText.text = blog.content;
                     StartCoroutine(LoadImageFromURL(blog.image, blogImg));
@@ -127,7 +150,10 @@ public class BlogsUI : MonoBehaviour
 
     private IEnumerator LoadImageFromURL(string url, Image img)
     {
-        loadingPanel.SetActive(true);
+        img.sprite = blurImage;
+        img.preserveAspect = false;
+        //loadingPanel.SetActive(true);
+        detailLoadingIcon.SetActive(true);
         UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
         yield return request.SendWebRequest();
 
@@ -144,8 +170,32 @@ public class BlogsUI : MonoBehaviour
             Vector2 pivot = new Vector2(0.5f, 0.5f);
             Sprite sprite = Sprite.Create(texture, rect, pivot);
             img.sprite = sprite;
+            FitImageToContainer(img);
         }
-        loadingPanel.SetActive(false);
+        detailLoadingIcon.SetActive(false);
+        //loadingPanel.SetActive(false);
+    }
+
+    public void FitImageToContainer(Image image)
+    {
+        if (image.sprite == null) return;
+
+        Sprite newSprite = image.sprite;
+        RectTransform rectTransform = image.rectTransform;
+
+        image.preserveAspect = true;
+
+        float imgWidth = newSprite.rect.width;
+        float imgHeight = newSprite.rect.height;
+        float containerWidth = 1000f;  // Or parent.sizeDelta.x
+        float containerHeight = 1000f; // Or parent.sizeDelta.y
+
+        float scaleX = containerWidth / imgWidth;
+        float scaleY = containerHeight / imgHeight;
+        float multiplier = Mathf.Max(scaleX, scaleY);
+        //float multiplier = scaleY;
+
+        rectTransform.sizeDelta = new Vector2(imgWidth * multiplier, imgHeight * multiplier);
     }
 
     private void ClearBlogs()
@@ -171,6 +221,14 @@ public class BlogsUI : MonoBehaviour
         // Format it as "22 July 2025"
         string formattedDate = date.ToString("dd MMMM yyyy", CultureInfo.InvariantCulture);
         return formattedDate;
+    }
+
+    public void SignOut()
+    {
+        PlayerPrefs.SetInt("RememberMe", 0);
+        PlayerPrefs.SetInt("OnBoarding", 0);
+        PlayerPrefs.DeleteKey("id");
+        SceneManager.LoadScene("Home");
     }
     #endregion
 
