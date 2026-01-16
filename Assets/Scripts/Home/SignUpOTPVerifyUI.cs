@@ -19,6 +19,7 @@ public class SignUpOTPVerifyUI : MonoBehaviour
     public Sprite normalSprite;
     public Sprite errorInputFieldSprite;
     public TextMeshProUGUI errorMessage;
+    public GameObject errorMessageParent;
     public GameObject successMessage;
 
     //[Space(5)]
@@ -44,11 +45,11 @@ public class SignUpOTPVerifyUI : MonoBehaviour
     #region API Call
     void OnVerifyClicked()
     {
-        if (!CheckInputData())
-            return;
+        //if (!CheckInputData())
+        //    return;
 
         MenuManager.Instance.loadingPanel.SetActive(true);
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
 
         JsonDataStructure jsonData = new JsonDataStructure();
         jsonData.email = PlayerPrefs.GetString("Email");
@@ -78,8 +79,10 @@ public class SignUpOTPVerifyUI : MonoBehaviour
             {
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
                 Debug.LogError("OTP Verification Failed: " + errorResponse.message);
-                errorMessage.text = "Invalid or expired OTP";
-                errorMessage.gameObject.SetActive(true);
+                //errorMessage.text = "Invalid or expired OTP";
+
+                MenuManager.Instance.ShowError(errorResponse.message);
+
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
@@ -103,19 +106,9 @@ public class SignUpOTPVerifyUI : MonoBehaviour
             (error) =>
             {
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-                if (errorResponse.message.Contains("User is already verified"))
-                {
-                    Debug.LogError("OTP Verification Failed: " + errorResponse.message);
-                    errorMessage.text = "User is already verified. Please sign in";
-                    errorMessage.gameObject.SetActive(true);
-                }
-                else
-                {
-                    Debug.LogError("OTP Verification Failed: " + errorResponse.message);
-                    errorMessage.text = "OTP sent failed";
-                    errorMessage.gameObject.SetActive(true);
-                    MenuManager.Instance.loadingPanel.SetActive(false);
-                }
+                Debug.LogError("OTP Verification Failed: " + errorResponse.message);
+                
+                MenuManager.Instance.ShowError(errorResponse.message);
             }));
 
         MenuManager.Instance.loadingPanel.SetActive(false);
@@ -126,7 +119,7 @@ public class SignUpOTPVerifyUI : MonoBehaviour
     #region Data Validation
     public bool CheckInputData()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(otpInput.text))
@@ -142,7 +135,8 @@ public class SignUpOTPVerifyUI : MonoBehaviour
 
     public void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessage.gameObject.SetActive(true);
+        errorMessageParent.SetActive(false);
+        errorMessageParent.SetActive(true);
         errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();

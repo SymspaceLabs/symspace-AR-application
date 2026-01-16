@@ -93,7 +93,9 @@ public class BlogsUI : MonoBehaviour
             },
             (error) =>
             {
+                ErrorResponse response = JsonUtility.FromJson<ErrorResponse>(error);
                 Debug.LogError("Failed to load categories: " + error);
+                Debug.LogError("Message: " + response.message);
                 ShowStatus("Failed to load categories", true);
                 loadingPanel.SetActive(false);
             }, "GET"));
@@ -159,7 +161,8 @@ public class BlogsUI : MonoBehaviour
 
         if (request.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("Failed to load image: " + request.error);
+            Debug.LogError("Failed to load image: " + request.error + ", Bytes");
+            Debug.LogError("Message: " + request.downloadHandler.text);
         }
         else
         {
@@ -257,6 +260,14 @@ public class BlogsUI : MonoBehaviour
         public string tag;
         public string createdAt;
         public string updatedAt;
+    }
+
+    [Serializable]
+    private class ErrorResponse
+    {
+        public string message;
+        public string error;
+        public string statusCode;
     }
     #endregion
 }

@@ -21,6 +21,7 @@ public class SignUpUI : MonoBehaviour
     public Sprite normalSprite;
     public Sprite errorInputFieldSprite;
     public TextMeshProUGUI errorMessage;
+    public GameObject errorMessageParent;
 
     public SignUpOTPVerifyUI signUpOTPVerifyUI;
 
@@ -30,7 +31,7 @@ public class SignUpUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
     }
 
     void Start()
@@ -41,8 +42,8 @@ public class SignUpUI : MonoBehaviour
     #region API Call
     void OnSignUpClicked()
     {
-        if (!CheckInputData())
-            return;
+        //if (!CheckInputData())
+        //    return;
         
         //WWWForm form = new WWWForm();
         //form.AddField("firstName", firstName.text);
@@ -80,14 +81,15 @@ public class SignUpUI : MonoBehaviour
 
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
 
-                if(errorResponse.message.Contains("Email already exists"))
-                {
-                    ShowError("Email already exists. Please use a different email");
-                    signUpOTPVerifyUI.errorMessage.gameObject.SetActive(false);
+                //if(errorResponse.message.Contains("Email already exists"))
+                //{
+                    //ShowError("An account with this email already exists. Please try signing in or use a different email");
+                    MenuManager.Instance.ShowError(errorResponse.message);
+                    //errorMessageParent.SetActive(false);
                     //MenuManager.Instance.signUpOTPVerifyPanel.GetComponent<SignUpOTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
                     //PlayerPrefs.SetString("Email", emailInput.text);
                     //MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
-                }
+                //}
 
                 //if (errorResponse.message.Contains("Email already exists"))
                 //{
@@ -104,7 +106,7 @@ public class SignUpUI : MonoBehaviour
     #region Data Validation
     public bool CheckInputData()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
 
@@ -180,7 +182,7 @@ public class SignUpUI : MonoBehaviour
         passwordInput.ForceLabelUpdate();
 
         // Re-activate the input field
-        passwordInput.ActivateInputField();
+        //passwordInput.ActivateInputField();
 
         // Set caret position to the end
         passwordInput.caretPosition = textLength;
@@ -190,7 +192,8 @@ public class SignUpUI : MonoBehaviour
 
     private void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessage.gameObject.SetActive(true);
+        errorMessageParent.SetActive(false);
+        errorMessageParent.SetActive(true);
         errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();

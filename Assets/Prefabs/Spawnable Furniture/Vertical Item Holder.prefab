@@ -492,7 +492,7 @@ MonoBehaviour:
   axisOffset: {x: 0.1, y: 0.02, z: 0.1}
   dashMat: {fileID: 2100000, guid: 1c00b28c9545e884e9828d90cd661927, type: 2}
   textPrefab: {fileID: 5319846597146570981, guid: faabc34c1027cbe45bbe43cf36f34177, type: 3}
-  textWidth: 0
+  textLength: 0
   textHeight: 0
   textDepth: 0
   textOffset: 0.05

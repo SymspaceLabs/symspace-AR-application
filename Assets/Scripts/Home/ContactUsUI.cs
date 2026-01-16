@@ -20,6 +20,7 @@ public class ContactUsUI : MonoBehaviour
     public Sprite normalSprite;
     public Sprite errorInputFieldSprite;
     public TextMeshProUGUI errorMessage;
+    public GameObject errorMessageParent;
     public GameObject successMessage;
 
     //[Space(5)]
@@ -28,7 +29,7 @@ public class ContactUsUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
         successMessage.SetActive(false);
     }
 
@@ -72,7 +73,9 @@ public class ContactUsUI : MonoBehaviour
             },
             (error) =>
             {
-                Debug.LogError("Contact message failed: " + error);
+                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+                Debug.LogError("Contact message failed: " + errorResponse.message);
+                MenuManager.Instance.ShowError(errorResponse.message);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
@@ -81,7 +84,7 @@ public class ContactUsUI : MonoBehaviour
     #region Data Validation
     public bool CheckInputData()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(emailInput.text))
@@ -121,7 +124,8 @@ public class ContactUsUI : MonoBehaviour
 
     private void ShowError(string message, TMP_InputField field = null, TMP_Dropdown dropDown = null)
     {
-        errorMessage.gameObject.SetActive(true);
+        errorMessageParent.SetActive(false);
+        errorMessageParent.SetActive(true);
         errorMessage.text = message;
         if (field != null)
         {
@@ -164,6 +168,12 @@ public class ContactUsUI : MonoBehaviour
     {
         public string status;
         public string message;
+    }
+    private class ErrorResponse
+    {
+        public string message;
+        public string error;
+        public string statusCode;
     }
     #endregion
 }

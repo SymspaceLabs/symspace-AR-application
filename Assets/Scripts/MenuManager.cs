@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -21,7 +22,11 @@ public class MenuManager : MonoBehaviour
     public GameObject loadingPanel;
 
     [Space(20)]
-    public GameObject lastActivePanel;    
+    public GameObject lastActivePanel;
+
+    [Space(20)]
+    public TextMeshProUGUI errorMessage;
+    public GameObject errorMessageParent;
 
     private void Awake()
     {
@@ -81,5 +86,12 @@ public class MenuManager : MonoBehaviour
         {
             Debug.LogWarning("No previous panel stored.");
         }
+    }
+
+    public void ShowError(string message)
+    {
+        errorMessageParent.SetActive(false);
+        errorMessageParent.SetActive(true);
+        errorMessage.text = message;
     }
 }

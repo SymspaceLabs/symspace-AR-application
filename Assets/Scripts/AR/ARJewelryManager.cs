@@ -50,6 +50,7 @@ public class ARJewelryManager : MonoBehaviour
     public int currentItemSelected;
 
     public GameObject jewelryHolder;
+    public GameObject necklaceHolder;
 
     private string localPath;
 
@@ -141,7 +142,10 @@ public class ARJewelryManager : MonoBehaviour
             if (item.instance != null)
             {
                 if (currentFace != null)
+                {
                     item.instance.transform.parent = currentFace.transform;
+                    item.instance.transform.localRotation = Quaternion.identity;
+                }
                 else
                     return;
 
@@ -219,7 +223,11 @@ public class ARJewelryManager : MonoBehaviour
         CategoryType category;
         ProductSelection.TryParseObjectType(categoryName, out category);
 
-        GameObject newObject = Instantiate(jewelryHolder);
+        GameObject newObject;
+        if (category == CategoryType.Necklaces)
+            newObject = Instantiate(necklaceHolder);
+        else
+            newObject = Instantiate(jewelryHolder);
 
         StartCoroutine(DownloadAndAssign(url, newObject, p));
     }
@@ -262,33 +270,12 @@ public class ARJewelryManager : MonoBehaviour
                          : loadedGLB.transform;
                 actualObject.localScale = Vector3.one;
 
-                //GameObject jewelryRoot = new GameObject(loadedGLB.name + "_Root");
-                //jewelryRoot.transform.parent = targetPrefab.transform;
-                //jewelryRoot.transform.localPosition = Vector3.zero;
-                //jewelryRoot.transform.localRotation = Quaternion.identity;
-
                 loadedGLB.transform.parent = targetPrefab.transform;
                 loadedGLB.transform.localPosition = Vector3.zero;
                 loadedGLB.transform.localRotation = Quaternion.identity;
 
-                //float targetSize = 0.05f; // default target size in meters
-
-                
-
                 CategoryType cat;
                 ProductSelection.TryParseObjectType(p.category.name, out cat);
-
-                //switch (cat)
-                //{
-                //    case CategoryType.Necklace: targetSize = 0.1f; break;
-                //    case CategoryType.Ring: targetSize = 0.02f; break;
-                //    case CategoryType.LeftEarring:
-                //    case CategoryType.RightEarring: targetSize = 0.03f; break;
-                //    case CategoryType.NosePin: targetSize = 0.015f; break;
-                //    case CategoryType.Glasses: targetSize = 0.12f; break;
-                //}
-
-                //NormalizeJewelryScale(targetPrefab, targetSize);
 
                 var newJewelry = new Jewelries
                 {
@@ -305,58 +292,97 @@ public class ARJewelryManager : MonoBehaviour
                 if (newJewelry.category == CategoryType.Earrings)
                 {
                     newRightEaring = Instantiate(newJewelry.instance);
-                    Quaternion tempRotation = newRightEaring.transform.rotation;
+                    Quaternion tempRotation = newRightEaring.transform.GetChild(0).transform.rotation;
                     tempRotation.y = 180f;
-                    newRightEaring.transform.rotation = tempRotation;
+                    newRightEaring.transform.GetChild(0).transform.rotation = tempRotation;
                 }
 
 
-                Vector3 camPos = Camera.main.transform.position;
-                camPos.y = newJewelry.instance.transform.position.y;
-                newJewelry.instance.transform.LookAt(camPos);
+                //Vector3 camPos = Camera.main.transform.position;
+                //camPos.y = newJewelry.instance.transform.position.y;
+                //newJewelry.instance.transform.LookAt(camPos);
 
                 for (int i = 0; i < jewelries.Count; i++)
                 {
-                    if (newJewelry.category == CategoryType.Earrings)
+                    switch (newJewelry.category)
                     {
-                        if (jewelries[i].category == CategoryType.LeftEarring)
-                        {
-                            jewelries[i].instance = newJewelry.instance;
-                            currentItemSelected = i;
-                            jewelries[i].allowScale = true;
-                        }
-                        else if (jewelries[i].category == CategoryType.RightEarring)
-                        {
-                            jewelries[i].instance = newRightEaring;
-                            currentItemSelected = i;
-                            jewelries[i].allowScale = true;
-                        }
-                    }
-                    else if (jewelries[i].category == newJewelry.category)
-                    {
-                        Quaternion tempRotation = newJewelry.instance.transform.rotation;
-                        tempRotation.x = 20f;
-                        newJewelry.instance.transform.rotation = tempRotation;
-                        jewelries[i].instance = newJewelry.instance;
-                        currentItemSelected = i;
-                        jewelries[i].allowScale = true;
+                        case CategoryType.Earrings:
+                            {
+                                // Earrings map to TWO slots
+                                if (jewelries[i].category != CategoryType.LeftEarring &&
+                                    jewelries[i].category != CategoryType.RightEarring)
+                                    break;
+
+                                // Remove old instance
+                                if (jewelries[i].instance != null)
+                                {
+                                    Destroy(jewelries[i].instance);
+                                    jewelries[i].instance = null;
+                                }
+
+                                // Assign new instance
+                                if (jewelries[i].category == CategoryType.LeftEarring)
+                                    jewelries[i].instance = newJewelry.instance;
+                                else // RightEarring
+                                    jewelries[i].instance = newRightEaring;
+
+                                currentItemSelected = i;
+                                break;
+                            }
+
+                        default:
+                            {
+                                // All other jewelry = 1:1 category mapping
+                                if (jewelries[i].category != newJewelry.category)
+                                    break;
+
+                                // Remove old instance
+                                if (jewelries[i].instance != null)
+                                {
+                                    Destroy(jewelries[i].instance);
+                                    jewelries[i].instance = null;
+                                }
+
+                                // Apply offset & assign
+                                //Vector3 tempRotation = newJewelry.instance.transform.localEulerAngles;
+                                //tempRotation.x = -20f;
+                                //newJewelry.instance.transform.localEulerAngles = tempRotation;
+
+                                jewelries[i].instance = newJewelry.instance;
+                                currentItemSelected = i;
+
+                                if (jewelries[i].category == CategoryType.Necklaces)
+                                {
+                                    Vector3 tempRot = jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles;
+                                    tempRot.x = -20f;
+                                    tempRot.y = 180;
+                                    jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles = tempRot;
+                                }
+                                else if (jewelries[i].category == CategoryType.Glasses)
+                                {
+                                    Vector3 tempRot = jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles;
+                                    tempRot.y = 180;
+                                    jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles = tempRot;
+                                }
+
+                                    break;
+                            }
                     }
                 }
 
-
-                //foreach(var item in jewelries)
-                //{
-                //    if (newJewelry.category == CategoryType.Earrings)
-                //    {
-                //        if (item.category == CategoryType.LeftEarring)
-                //            item.instance = newLeftEaring;
-                //        else if (item.category == CategoryType.RightEarring)
-                //            item.instance = newJewelry.instance;
-                //    }
-                //    else if (item.category == newJewelry.category)
-                //        item.instance = newJewelry.instance;
-                //}
-
+                foreach (var jewelry in jewelries)
+                {
+                    if (jewelry.instance != null)
+                    {
+                        jewelry.instance.transform.localScale = Vector3.one;
+                        if (jewelry.category == CategoryType.LeftEarring || jewelry.category == CategoryType.RightEarring)
+                            jewelry.instance.transform.localScale *= 2.5f;
+                        else if (jewelry.category == CategoryType.Glasses)
+                            jewelry.instance.transform.localScale *= 1.2f;
+                        else
+                            jewelry.instance.transform.localScale *= 1.3f;
+                    }
+                }
 
                 Debug.Log("✅ GLB model downloaded, instantiated, and scaled successfully.");
             }

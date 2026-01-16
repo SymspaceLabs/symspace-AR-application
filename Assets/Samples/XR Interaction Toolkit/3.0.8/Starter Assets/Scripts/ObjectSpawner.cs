@@ -1,9 +1,10 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.XR.Interaction.Toolkit.Utilities;
-using UnityEngine.XR.Interaction.Toolkit.Interactors;
-using UnityEngine.UI;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.XR.Interaction.Toolkit.Interactors;
+using UnityEngine.XR.Interaction.Toolkit.Utilities;
 
 //namespace UnityEngine.XR.Interaction.Toolkit.Samples.StarterAssets
 //{
@@ -169,7 +170,7 @@ public class ObjectSpawner : MonoBehaviour
 
     public SizeInInches[] objectsSize; // Array storing sizes for each object prefab
 
-    public Color[] objectColors; // Colors corresponding to objects
+    public List<Color> objectColors; // Colors corresponding to objects
 
     public List<GameObject> objectsSpawned; // List of currently spawned objects
     public int spawnObjectCount = 0; // Counter for spawned objects
@@ -276,7 +277,7 @@ public class ObjectSpawner : MonoBehaviour
         spawnObjectCount = 0;
         objectIndex = -1;
     }
-
+    public Material mat;
     /// <summary>
     /// Select the color of a spawned object by index.
     /// </summary>
@@ -286,7 +287,8 @@ public class ObjectSpawner : MonoBehaviour
         //objectIndex = index; // commented out to preserve original logic
         if (object1Spawned)
         {
-            Material mat = objectsSpawned[0].GetComponentInChildren<MeshRenderer>().material;
+            /*Material*/ mat = objectsSpawned[0].GetComponentInChildren<MeshRenderer>().material;
+            Debug.Log("index : " + index);
             mat.color = objectColors[index];
             objectsSpawned[0].GetComponentInChildren<MeshRenderer>().material = mat;
             objectsSpawned[0].GetComponentInChildren<MeshRenderer>().UpdateGIMaterials();
@@ -349,13 +351,14 @@ public class ObjectSpawner : MonoBehaviour
         // Check if the spawn surface is vertical (less than 0.5 Y normal)
         bool isVerticalSurface = Mathf.Abs(spawnNormal.y) < 0.5f;
 
-        // Update the object's scale based on stored dimensions
-        UpdateObjectScale(newObject, isVerticalSurface);
-
         // Set the ARDimensionVisualizer's dimension texts
-        aRDimension.textWidth = objectsSize[objectIndex].length;
+        aRDimension.textLength = objectsSize[objectIndex].length;
         aRDimension.textHeight = objectsSize[objectIndex].height;
         aRDimension.textDepth = objectsSize[objectIndex].width;
+
+        // Update the object's scale based on stored dimensions
+        //UpdateObjectScale(newObject, isVerticalSurface);
+
 
         newObject.transform.position = spawnPoint; // Position the spawned object
 
@@ -408,6 +411,20 @@ public class ObjectSpawner : MonoBehaviour
             visualizationTrans.rotation = newObject.transform.rotation;
         }
 
+        Transform plusBtnCanvas = newObject.GetComponentInChildren<Canvas>().transform;
+
+        StartCoroutine(FixCanvasNextFrame(plusBtnCanvas, newObject.transform, plusBtnCanvas.localScale));
+
+        IEnumerator FixCanvasNextFrame(Transform canvas, Transform parent, Vector3 scale)
+        {
+            canvas.SetParent(null, true);
+            canvas.localScale = scale;
+
+            yield return null; // wait one frame
+
+            canvas.SetParent(parent, true);
+        }
+
         //StartCoroutine(UIManagerAR.instance.ChangeMovementControllers(newObject)); // Change UI movement controllers
 
         objectSpawned?.Invoke(newObject); // Trigger event
@@ -432,36 +449,36 @@ public class ObjectSpawner : MonoBehaviour
     /// <param name="isVertical">If true, indicates object is on vertical surface.</param>
     public void UpdateObjectScale(GameObject newObject, bool isVertical = false)
     {
-        if (newObject != null)
+        Vector3 modelOriginalHeight;
+
+        // Get original bounds size of the mesh renderer
+        modelOriginalHeight = newObject.GetComponentInChildren<MeshRenderer>().bounds.size;
+
+        // Calculate scale ratios for each axis according to desired size
+
+        if(isVertical)
         {
-            Vector3 modelOriginalHeight;
-
-            // Get original bounds size of the mesh renderer
-            modelOriginalHeight = newObject.GetComponentInChildren<MeshRenderer>().bounds.size;
-
-            // Calculate scale ratios for each axis according to desired size
-            float scaleX = ConvertToUnityScale(objectsSize[objectIndex].length, unit) / modelOriginalHeight.x;
-            float scaleY = ConvertToUnityScale(objectsSize[objectIndex].height, unit) / modelOriginalHeight.y;
-            float scaleZ = ConvertToUnityScale(objectsSize[objectIndex].width, unit) / modelOriginalHeight.z;
-
-            //float[] scales = { scaleX, scaleY, scaleZ };
-            //System.Array.Sort(scales);
-            //float uniformScale = scales[1]; // middle value after sorting
-
-            //Debug.Log($"Scales : {scaleX}, {scaleY}, {scaleZ}");
-
-            // Use the smallest scale factor for uniform scaling to fit inside bounds
-            float uniformScale = Mathf.Min(scaleX, Mathf.Min(scaleY, scaleZ));
-            Debug.Log("Uniform Scale : " + uniformScale);
-            newObject.transform.localScale = Vector3.one * uniformScale;
-
-            // Commented out alternative scaling code
-            //newObject.transform.localScale = InchesToScale(
-            //    objectsSize[objectIndex].width,
-            //    objectsSize[objectIndex].height,
-            //    objectsSize[objectIndex].depth
-            //);
+            float temp = objectsSize[objectIndex].length;
+            objectsSize[objectIndex].length = objectsSize[objectIndex].height;
+            objectsSize[objectIndex].height = objectsSize[objectIndex].width;
+            objectsSize[objectIndex].width = temp;
         }
+
+        Vector3 finalScale = new Vector3(ConvertToUnityScale(objectsSize[objectIndex].length, unit) / modelOriginalHeight.x,
+            ConvertToUnityScale(objectsSize[objectIndex].height, unit) / modelOriginalHeight.y,
+            ConvertToUnityScale(objectsSize[objectIndex].width, unit) / modelOriginalHeight.z
+            );
+
+        //float scaleX = ConvertToUnityScale(objectsSize[objectIndex].length, unit) / modelOriginalHeight.x;
+        //float scaleY = ConvertToUnityScale(objectsSize[objectIndex].height, unit) / modelOriginalHeight.y;
+        //float scaleZ = ConvertToUnityScale(objectsSize[objectIndex].width, unit) / modelOriginalHeight.z;
+
+
+        //// Use the smallest scale factor for uniform scaling to fit inside bounds
+        //float uniformScale = Mathf.Min(scaleX, Mathf.Min(scaleY, scaleZ));
+        //Debug.Log("Uniform Scale : " + uniformScale);
+        //newObject.transform.localScale = Vector3.one * uniformScale;
+        newObject.transform.localScale = finalScale;
     }
 
     /// <summary>

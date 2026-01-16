@@ -16,6 +16,8 @@ public class SignInUI : MonoBehaviour
     [Space(5)]
     public Sprite normalSprite;
     public TextMeshProUGUI errorMessage;
+    public GameObject errorMessageParent;
+
     public Sprite errorInputFieldSprite;
 
 
@@ -27,7 +29,7 @@ public class SignInUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
     }
 
     void Start()
@@ -38,8 +40,8 @@ public class SignInUI : MonoBehaviour
     #region API Call
     void OnSignInClicked()
     {
-        if (!CheckInputData())
-            return;
+        //if (!CheckInputData())
+        //    return;
 
         //WWWForm form = new WWWForm();
         //form.AddField("email", emailInput.text);
@@ -83,22 +85,16 @@ public class SignInUI : MonoBehaviour
 
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
 
-                if (errorResponse.message.Contains("Invalid password"))
+                if(errorResponse.message.Contains("not verified"))
                 {
-                    ShowError("Invalid Password or Email", passwordInput);
-                }
-                else if (errorResponse.message.Contains("No account found"))
-                {
-                    ShowError(errorResponse.message, emailInput);
-                    passwordInput.text = "";
-                }
-                else if(errorResponse.message.Contains("not verified"))
-                {
-                    signUpOTPVerifyUI.ShowError(errorResponse.message);
+                    MenuManager.Instance.ShowError(errorResponse.message);
                     //PlayerPrefs.SetString("Email", emailInput.text);
                     MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
-                }    
-                    MenuManager.Instance.loadingPanel.SetActive(false);
+                }
+                else
+                    MenuManager.Instance.ShowError(errorResponse.message);
+
+                MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
 
@@ -107,7 +103,7 @@ public class SignInUI : MonoBehaviour
     #region Data Validation
     public bool CheckInputData()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(emailInput.text))
@@ -135,7 +131,8 @@ public class SignInUI : MonoBehaviour
 
     private void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessage.gameObject.SetActive(true);
+        errorMessageParent.SetActive(false);
+        errorMessageParent.SetActive(true);
         errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
@@ -166,7 +163,7 @@ public class SignInUI : MonoBehaviour
         passwordInput.ForceLabelUpdate();
 
         // Re-activate the input field
-        passwordInput.ActivateInputField();
+        //passwordInput.ActivateInputField();
 
         // Set caret position to the end
         passwordInput.caretPosition = textLength;

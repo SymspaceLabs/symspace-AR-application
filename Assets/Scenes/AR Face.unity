@@ -9246,7 +9246,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 170406083}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.9270386
+  m_Size: 0.86212844
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -10286,7 +10286,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 535339334}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.52235144
+  m_Size: 0.5223514
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -13478,25 +13478,25 @@ MonoBehaviour:
   jewelries:
   - category: 0
     instance: {fileID: 0}
-    localOffset: {x: 0, y: -0.05, z: 0.1}
+    localOffset: {x: 0, y: 0.02, z: 0.1}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
   - category: 3
     instance: {fileID: 0}
-    localOffset: {x: 0.014, y: -0.02, z: 0.05}
+    localOffset: {x: 0.014, y: 0, z: 0.05}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
   - category: 2
     instance: {fileID: 0}
-    localOffset: {x: -0.014, y: -0.02, z: 0.05}
+    localOffset: {x: -0.014, y: 0, z: 0.05}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
   - category: 6
     instance: {fileID: 0}
-    localOffset: {x: 0, y: -0.005, z: 0.025}
+    localOffset: {x: 0, y: -0.005, z: 0.035}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
@@ -13512,6 +13512,7 @@ MonoBehaviour:
   leftEaringZ: {fileID: 0}
   currentItemSelected: 0
   jewelryHolder: {fileID: 6615057711458450658, guid: ef424c623ce13be45a393ad5eae8dcee, type: 3}
+  necklaceHolder: {fileID: 6615057711458450658, guid: cdb5812a9ccb12349a1e40750e4397c2, type: 3}
 --- !u!114 &500942742
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20045,7 +20046,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 320259733}
   m_HandleRect: {fileID: 320259732}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -40966,7 +40967,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1790368323}
   m_HandleRect: {fileID: 1790368322}
   m_Direction: 0
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:

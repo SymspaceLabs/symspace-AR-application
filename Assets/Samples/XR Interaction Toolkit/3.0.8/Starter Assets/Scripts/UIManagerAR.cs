@@ -80,6 +80,10 @@ public class UIManagerAR : MonoBehaviour
     public TextMeshProUGUI SD_Price;
     public TextMeshProUGUI SD_SalePrice;
 
+    public Transform colorParent_SD;
+    public Transform colorParent_LD;
+    public GameObject colorPrefab;
+
     public Image SD_Color1;
     public Image SD_Color2;
     public Image SD_Color3;
@@ -89,6 +93,7 @@ public class UIManagerAR : MonoBehaviour
     public TextMeshProUGUI LD_ProductName;
     public TextMeshProUGUI LD_Price;
     public TextMeshProUGUI LD_SalePrice;
+    public TMP_Dropdown sizes;
 
     public Image LD_Color1;
     public Image LD_Color2;
@@ -116,8 +121,28 @@ public class UIManagerAR : MonoBehaviour
             crossBtn.SetActive(false);
         }
 
+#if !UNITY_IOS
+        DisableOcclusion();
+#endif
     }
 
+    void DisableOcclusion()
+    {
+        //Camera.main.depthTextureMode = DepthTextureMode.None;
+        List<XROcclusionSubsystem> subsystems = new List<XROcclusionSubsystem>();
+        SubsystemManager.GetSubsystems(subsystems);
+        if (subsystems.Count < 1)
+            Debug.Log("no subsytem found");
+
+        foreach (var subsystem in subsystems)
+        {
+            if (subsystem != null && subsystem.running)
+            {
+                Debug.Log("Stopping XROcclusionSubsystem in this scene");
+                subsystem.Stop();
+            }
+        }
+    }
     private void Update()
     {
         if (arCamera == null)
@@ -304,46 +329,75 @@ public class UIManagerAR : MonoBehaviour
                 LD_CompanyName.text = product.company.entityName;
                 LD_ProductName.text = product.name;
                 LD_Price.text = "$" + product.displayPrice.price.ToString();
+
+                sizes.ClearOptions();
+                foreach (var option in product.sizes)
+                {
+                    sizes.options.Add(new TMP_Dropdown.OptionData(option.size));
+                }
+
                 if (product.displayPrice.salePrice < product.displayPrice.price)
                 {
                     SD_SalePrice.text = "$" + product.displayPrice.salePrice.ToString();
                     LD_SalePrice.text = "$" + product.displayPrice.salePrice.ToString();
                 }
 
-                Color newColor;
-                if (product.threeDModels.Count > 0 && ColorUtility.TryParseHtmlString(product.colors[0].code, out newColor))
-                {
-                    SD_Color1.color = newColor;
-                    SD_Color1.gameObject.SetActive(true);
+                foreach (Transform obj in colorParent_SD)
+                    Destroy(obj.gameObject);
 
-                    LD_Color1.color = newColor;
-                    LD_Color1.gameObject.SetActive(true);
-                    LD_Color1.transform.parent.gameObject.SetActive(true);
-                }
-                else
+                for (int i = 0; i < product.threeDModels.Count; i++)
                 {
-                    SD_Color1.gameObject.SetActive(false);
-
-                    LD_Color1.gameObject.SetActive(false);
-                    LD_Color1.transform.parent.gameObject.SetActive(false);
+                    Color newColor1;
+                    ColorUtility.TryParseHtmlString(product.threeDModels[i].colorCode, out newColor1);
+                    ModelVariant mv = Instantiate(colorPrefab, colorParent_SD).GetComponent<ModelVariant>();
+                    mv.img.color = newColor1;
                 }
 
-                if (product.threeDModels.Count > 1 && ColorUtility.TryParseHtmlString(product.colors[1].code, out newColor))
-                {
-                    SD_Color2.color = newColor;
-                    SD_Color2.gameObject.SetActive(true);
+                foreach (Transform obj in colorParent_LD)
+                    Destroy(obj.gameObject);
 
-                    LD_Color2.color = newColor;
-                    LD_Color2.gameObject.SetActive(true);
-                    LD_Color2.transform.parent.gameObject.SetActive(true);
-                }
-                else
+                for (int i = 0; i < product.threeDModels.Count; i++)
                 {
-                    SD_Color2.gameObject.SetActive(false);
-
-                    LD_Color2.gameObject.SetActive(false);
-                    LD_Color2.transform.parent.gameObject.SetActive(false);
+                    Color newColor1;
+                    ColorUtility.TryParseHtmlString(product.threeDModels[i].colorCode, out newColor1);
+                    ModelVariant mv = Instantiate(colorPrefab, colorParent_LD).GetComponent<ModelVariant>();
+                    mv.img.color = newColor1;
                 }
+
+                //Color newColor;
+                //if (product.threeDModels.Count > 0 && ColorUtility.TryParseHtmlString(product.colors[0].code, out newColor))
+                //{
+                //    SD_Color1.color = newColor;
+                //    SD_Color1.gameObject.SetActive(true);
+
+                //    LD_Color1.color = newColor;
+                //    LD_Color1.gameObject.SetActive(true);
+                //    LD_Color1.transform.parent.gameObject.SetActive(true);
+                //}
+                //else
+                //{
+                //    SD_Color1.gameObject.SetActive(false);
+
+                //    LD_Color1.gameObject.SetActive(false);
+                //    LD_Color1.transform.parent.gameObject.SetActive(false);
+                //}
+
+                //if (product.threeDModels.Count > 1 && ColorUtility.TryParseHtmlString(product.colors[1].code, out newColor))
+                //{
+                //    SD_Color2.color = newColor;
+                //    SD_Color2.gameObject.SetActive(true);
+
+                //    LD_Color2.color = newColor;
+                //    LD_Color2.gameObject.SetActive(true);
+                //    LD_Color2.transform.parent.gameObject.SetActive(true);
+                //}
+                //else
+                //{
+                //    SD_Color2.gameObject.SetActive(false);
+
+                //    LD_Color2.gameObject.SetActive(false);
+                //    LD_Color2.transform.parent.gameObject.SetActive(false);
+                //}
 
                 //if (product.threeDModels.Count > 2 && ColorUtility.TryParseHtmlString(product.threeDModels[2].colorCode, out newColor))
                 //{
@@ -371,9 +425,9 @@ public class UIManagerAR : MonoBehaviour
     {
         currentImage += index;
         if(currentImage < 0)
-            currentImage = 0;
-        if (currentImage >= selectedModelDetails.sprites.Count)
             currentImage = selectedModelDetails.sprites.Count - 1;
+        if (currentImage >= selectedModelDetails.sprites.Count)
+            currentImage = 0;
 
         if(currentImage == 0)
         {

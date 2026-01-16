@@ -1,18 +1,35 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
 {
+    [Header("Camera Orbit")]
+    public Camera modelCamera;
+    public float rotationSpeed = 0.3f;
+    public float autoRotateSpeed = 20f;
+    public float minPitch = -30f;
+    public float maxPitch = 70f;
+
+    float yaw;
+    float pitch = 15f;
+    float distance;
+
+    Vector3 focusPoint;
+    bool isDragging;
+
+    float idleTimer;
+    public float autoRotateDelay = 3f;
+
+    float defaultPitch = 15f;
+
     [Header("Rotation")]
     public Transform targetModel;
-    public float rotationSpeed = 0.2f;
 
     [Header("Auto Rotation")]
     public float autoRotationSpeed = 10f;           // Degrees per second
     public float interactionPauseDuration = 2f;     // Time in seconds to pause auto rotation after interaction
 
     [Header("Zoom")]
-    public Camera modelCamera;
     public float zoomSpeed = 2f;
     public float minZoom = 5f;
     public float maxZoom = 20f;
@@ -28,41 +45,112 @@ public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
         //HandlePinchZoom();
 
         // Resume auto-rotation if enough time has passed
-        if (isUserInteracting)
-        {
-            interactionTimer -= Time.deltaTime;
-            if (interactionTimer <= 0f)
-            {
-                isUserInteracting = false;
-            }
-        }
+        if (isDragging)
+            return;
 
-        if (!isUserInteracting)
-        {
-            AutoRotateModel();
-        }
-        modelCamera.transform.LookAt(targetModel.transform);
+        idleTimer += Time.deltaTime;
+
+        if (idleTimer < autoRotateDelay)
+            return;
+
+        // Smoothly reset pitch to default
+        pitch = Mathf.Lerp(pitch, defaultPitch, Time.deltaTime * 2f);
+
+        // Rotate only on Y axis
+        yaw += -autoRotateSpeed * Time.deltaTime;
+
+        UpdateCamera();
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         lastPointerPosition = eventData.position;
-        PauseAutoRotation();
+        idleTimer = 0f;
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        isDragging = true;
+        idleTimer = 0f;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        Vector2 currentPointerPosition = eventData.position;
-        Vector2 delta = currentPointerPosition - lastPointerPosition;
+        Vector2 delta = eventData.delta;
 
-        if (targetModel != null)
-        {
-            float rotationY = -delta.x * rotationSpeed;
-            targetModel.Rotate(Vector3.up, rotationY, Space.World);
-        }
+        yaw += delta.x * rotationSpeed;
+        pitch -= delta.y * rotationSpeed;
+        pitch = Mathf.Clamp(pitch, -89f, 89f);
 
-        lastPointerPosition = currentPointerPosition;
-        PauseAutoRotation();
+        UpdateCamera();
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        isDragging = false;
+        idleTimer = 0f;
+    }
+
+    Bounds GetObjectBounds(GameObject obj)
+    {
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+
+        if (renderers.Length == 0)
+            return new Bounds(obj.transform.position, Vector3.one * 0.01f);
+
+        Bounds bounds = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+            bounds.Encapsulate(renderers[i].bounds);
+
+        return bounds;
+    }
+
+    Vector3 CalculateFocusPoint(GameObject obj)
+    {
+        Bounds bounds = GetObjectBounds(obj);
+
+        // True visual center of geometry
+        return bounds.center;
+    }
+
+    void UpdateCamera()
+    {
+        Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);
+        Vector3 dir = rot * Vector3.forward;
+
+        modelCamera.transform.position = focusPoint - dir * distance;
+        modelCamera.transform.LookAt(focusPoint);
+    }
+
+
+
+    public void FrameObject(GameObject obj)
+    {
+        Bounds bounds = GetObjectBounds(obj);
+
+        focusPoint = bounds.center;   // 🔒 LOCKED
+
+        float height = bounds.size.y;
+        float width = Mathf.Max(bounds.size.x, bounds.size.z);
+
+        float fovRad = modelCamera.fieldOfView * Mathf.Deg2Rad;
+        float aspect = modelCamera.aspect;
+
+        float distH = (height * 0.5f) / Mathf.Tan(fovRad * 0.5f);
+        float hFov = 2f * Mathf.Atan(Mathf.Tan(fovRad * 0.5f) * aspect);
+        float distW = (width * 0.5f) / Mathf.Tan(hFov * 0.5f);
+
+        distance = Mathf.Max(distH, distW) * 1.6f;
+
+        // ✅ correct safety for ALL sizes
+        distance += bounds.extents.magnitude * 0.5f;
+
+        modelCamera.nearClipPlane = Mathf.Max(0.01f, distance * 0.03f);
+
+        yaw = 0f;
+        pitch = 15f;
+
+        UpdateCamera();
     }
 
     private void HandleMouseScrollZoom()
@@ -125,5 +213,11 @@ public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
     {
         isUserInteracting = true;
         interactionTimer = interactionPauseDuration;
+    }
+
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawSphere(focusPoint, 0.02f);
     }
 }

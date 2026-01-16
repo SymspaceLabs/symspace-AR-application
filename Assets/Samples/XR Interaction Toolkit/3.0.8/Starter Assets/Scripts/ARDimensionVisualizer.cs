@@ -17,7 +17,7 @@ public class ARDimensionVisualizer : MonoBehaviour
     [Header("Text Settings")]
     public GameObject textPrefab; // Assign a prefab with TextMesh or TextMeshPro
 
-    public float textWidth;
+    public float textLength;
     public float textHeight;
     public float textDepth;
 
@@ -101,6 +101,7 @@ public class ARDimensionVisualizer : MonoBehaviour
             lineRenderers[i] = lr;
 
             AdjustDashes(lineRenderers[i], dashLength: 0.8f);
+            lineObj.layer = LayerMask.NameToLayer("top");
         }
     }
 
@@ -152,19 +153,19 @@ public class ARDimensionVisualizer : MonoBehaviour
             switch (i)
             {
                 case 0: // Width (front)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textWidth + " Inch";
+                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textLength + " Inch";
                     break;
                 case 2: // Width (back)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textWidth + " Inch";
+                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textLength + " Inch";
                     break;
                 case 1: // Depth (right)
                     lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textHeight + " Inch";
                     break;
                 case 3: // Depth (left)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textHeight + " Inch";
+                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textDepth + " Inch";
                     break;
                 case 4: // Height (front-left)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textDepth + " Inch";
+                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textHeight + " Inch";
                     break;
                 case 5: // Height (back-right)
                     lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textDepth + " Inch";

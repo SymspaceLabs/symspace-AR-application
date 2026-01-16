@@ -17,7 +17,10 @@ public class ForgotOTPVerifyUI : MonoBehaviour
     [Space(5)]
     public Sprite normalSprite;
     public Sprite errorInputFieldSprite;
+
     public TextMeshProUGUI errorMessage;
+    public GameObject errorMessageParent;
+
     public GameObject successMessage;
 
     //[Space(5)]
@@ -29,7 +32,7 @@ public class ForgotOTPVerifyUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
         successMessage.SetActive(false);
         userMailText.text = $"Enter the 6-digit code we sent to {PlayerPrefs.GetString("Email")} to continue";
     }
@@ -43,11 +46,11 @@ public class ForgotOTPVerifyUI : MonoBehaviour
     #region API Call
     void OnVerifyClicked()
     {
-        if (!CheckInputData())
-            return;
+        //if (!CheckInputData())
+        //    return;
 
         MenuManager.Instance.loadingPanel.SetActive(true);
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
 
         JsonDataStructure jsonData = new JsonDataStructure();
         jsonData.email = PlayerPrefs.GetString("Email");
@@ -75,8 +78,7 @@ public class ForgotOTPVerifyUI : MonoBehaviour
             {
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
                 Debug.LogError("OTP Verification Failed: " + errorResponse.message);
-                errorMessage.text = "Incorrect Code";
-                errorMessage.gameObject.SetActive(true);
+                MenuManager.Instance.ShowError(errorResponse.message);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
@@ -100,9 +102,23 @@ public class ForgotOTPVerifyUI : MonoBehaviour
             (error) =>
             {
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+                //if (errorResponse.statusCode.Contains("431"))
+                //{
+                //    ShowError("Incorrect Code. Please check your code and try again");
+                //}
+                //else if (errorResponse.statusCode.Contains("432"))
+                //{
+                //    ShowError("Your code has expired. Please request a new code");
+                //}
+                //else if (errorResponse.statusCode.Contains("433"))
+                //{
+                //    ShowError("Unable to send the verification code. Please try again later");
+                //}
+
+                MenuManager.Instance.ShowError(errorResponse.message);
                 Debug.LogError("OTP Verification Failed: " + errorResponse.message);
-                errorMessage.text = "Incorrect Code";
-                errorMessage.gameObject.SetActive(true);
+                //errorMessage.text = "Incorrect Code. Please check your code and try again";
+                //errorMessage.gameObject.SetActive(true);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
 
@@ -114,7 +130,7 @@ public class ForgotOTPVerifyUI : MonoBehaviour
     #region Data Validation
     public bool CheckInputData()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(otpInput.text))
@@ -128,13 +144,15 @@ public class ForgotOTPVerifyUI : MonoBehaviour
         return true;
     }
 
-    private void ShowError(string message, TMP_InputField field)
+    private void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessage.gameObject.SetActive(true);
+        errorMessageParent.SetActive(false);
+        errorMessageParent.SetActive(true);
         errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
-        field.GetComponent<Image>().sprite = errorInputFieldSprite;
+        if(field != null)
+            field.GetComponent<Image>().sprite = errorInputFieldSprite;
         //verifyButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 

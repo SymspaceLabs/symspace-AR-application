@@ -51,6 +51,11 @@ public class CategoryManager : MonoBehaviour
     public ProductResponse allProductsData;
     #endregion
 
+    public GameObject modelVariantPrefab;
+    public Transform modelVariantParent;
+
+    public ModelViewer mv;
+
     #region Private Variables
     private string localPath;
     #endregion
@@ -117,7 +122,7 @@ public class CategoryManager : MonoBehaviour
     #endregion
 
     #region Image Download Methods
-    public IEnumerator DownloadImage(string url, UnityEngine.UI.Image imageComponent = null)
+    public IEnumerator DownloadImage(string url, UnityEngine.UI.Image imageComponent = null, GameObject loadingIcon = null)
     {
         UnityWebRequest request = UnityWebRequest.Get(url);
         yield return request.SendWebRequest();
@@ -143,6 +148,9 @@ public class CategoryManager : MonoBehaviour
                     imageComponent.sprite = sprite;
 
                 ProductSelection.fetchedSprite = sprite;
+     
+                if(imageComponent != null)
+                    imageComponent.enabled = true;
             }
             else
             {
@@ -153,6 +161,9 @@ public class CategoryManager : MonoBehaviour
         {
             Debug.LogError($"Failed to download image: {request.error}");
         }
+
+        if(loadingIcon != null)
+            loadingIcon.SetActive(false);
     }
 
     public IEnumerator DownloadSpriteCoroutine(string url, Action<Sprite> callback)
@@ -230,27 +241,41 @@ public class CategoryManager : MonoBehaviour
                 spawner.unit = p.sizes[0].dimensions.unit;
                 UIManagerAR.instance.itemsToPlaceParent.SetActive(true);
 
-                UnityEngine.Color newColor;
-                if (p.threeDModels.Count > 0 && ColorUtility.TryParseHtmlString(p.threeDModels[0].colorCode, out newColor))
+                spawner.objectColors.Clear();
+                foreach (Transform obj in modelVariantParent)
+                    Destroy(obj.gameObject);
+
+                for(int i = 0; i < p.threeDModels.Count; i++)
                 {
-                    spawner.objectColors[0] = newColor;
-                    UIManagerAR.instance.item1.color = newColor;
-                    UIManagerAR.instance.item1.sprite = sprite;
+                    UnityEngine.Color newColor1;
+                    ColorUtility.TryParseHtmlString(p.threeDModels[i].colorCode, out newColor1);
+                    spawner.objectColors.Add(newColor1);
+                    ModelVariant mv = Instantiate(modelVariantPrefab, modelVariantParent).GetComponent<ModelVariant>();
+                    mv.index = i;
+                    StartCoroutine(DownloadImage(p.images[i].url, mv.img));
                 }
 
-                if (p.threeDModels.Count > 1 && ColorUtility.TryParseHtmlString(p.threeDModels[1].colorCode, out newColor))
-                {
-                    spawner.objectColors[1] = newColor;
-                    UIManagerAR.instance.item2.color = newColor;
-                    UIManagerAR.instance.item2.sprite = sprite;
-                }
+                //UnityEngine.Color newColor;
+                //if (p.threeDModels.Count > 0 && ColorUtility.TryParseHtmlString(p.threeDModels[0].colorCode, out newColor))
+                //{
+                //    spawner.objectColors[0] = newColor;
+                //    //UIManagerAR.instance.item1.sprite = sprite;
+                //    StartCoroutine(DownloadImage(p.images[0].url, UIManagerAR.instance.item1));
+                //}
 
-                if (p.threeDModels.Count > 2 && ColorUtility.TryParseHtmlString(p.threeDModels[2].colorCode, out newColor))
-                {
-                    spawner.objectColors[2] = newColor;
-                    UIManagerAR.instance.item3.color = newColor;
-                    UIManagerAR.instance.item3.sprite = sprite;
-                }
+                //if (p.threeDModels.Count > 1 && ColorUtility.TryParseHtmlString(p.threeDModels[1].colorCode, out newColor))
+                //{
+                //    spawner.objectColors[1] = newColor;
+                //    //UIManagerAR.instance.item2.sprite = sprite;
+                //    StartCoroutine(DownloadImage(p.images[1].url, UIManagerAR.instance.item2));
+                //}
+
+                //if (p.threeDModels.Count > 2 && ColorUtility.TryParseHtmlString(p.threeDModels[2].colorCode, out newColor))
+                //{
+                //    spawner.objectColors[2] = newColor;
+                //    //UIManagerAR.instance.item3.sprite = sprite;
+                //    StartCoroutine(DownloadImage(p.images[2].url, UIManagerAR.instance.item3));
+                //}
 
                 if (type.Equals("horizontal-plane detection"))
                 {
@@ -270,6 +295,46 @@ public class CategoryManager : MonoBehaviour
             GetComponent<SlideUpPanel>().HidePanel();
         }
         yield return null;
+    }
+
+    public void UpdateObjectScale(Products p, GameObject newObject, bool isVertical = false)
+    {
+        Vector3 modelOriginalHeight;
+
+        // Get original bounds size of the mesh renderer
+        modelOriginalHeight = newObject.GetComponentInChildren<MeshRenderer>().bounds.size;
+
+        // Calculate scale ratios for each axis according to desired size
+
+        if (isVertical)
+        {
+            float temp = p.sizes[0].dimensions.length;
+            p.sizes[0].dimensions.length = p.sizes[0].dimensions.height;
+            p.sizes[0].dimensions.height = p.sizes[0].dimensions.width;
+            p.sizes[0].dimensions.width = temp;
+        }
+
+        Vector3 finalScale = new Vector3(ConvertToUnityScale(p.sizes[0].dimensions.length, p.sizes[0].dimensions.unit) / modelOriginalHeight.x,
+            ConvertToUnityScale(p.sizes[0].dimensions.height, p.sizes[0].dimensions.unit) / modelOriginalHeight.y,
+            ConvertToUnityScale(p.sizes[0].dimensions.width, p.sizes[0].dimensions.unit) / modelOriginalHeight.z
+            );
+
+        newObject.transform.localScale = finalScale;
+    }
+    float ConvertToUnityScale(float inputSize, string unit)
+    {
+        switch (unit.ToLower())
+        {
+            case "cm":
+                return inputSize / 100f;  // 100 cm = 1 m
+            case "in":
+                return inputSize * 0.0254f; // 1 inch = 0.0254 m
+            case "m":
+                return inputSize; // already in meters
+            default:
+                Debug.LogWarning("Unknown unit, defaulting to meters");
+                return inputSize;
+        }
     }
 
     bool CheckObjectScene(Products p)
@@ -385,15 +450,49 @@ public class CategoryManager : MonoBehaviour
             targetMF.mesh = Instantiate(srcMF.sharedMesh);
             targetMR.materials = srcMR.materials.Clone() as Material[];
 
-            Material[] newMaterials = new Material[srcMR.materials.Length];
-            for (int i = 0; i < srcMR.materials.Length; i++)
+            //Material[] newMaterials = new Material[srcMR.materials.Length];
+            for (int matIdx = 0; matIdx < targetMR.materials.Length; matIdx++)
             {
-                newMaterials[i] = new Material(srcMR.materials[i]);
+                Material mat = targetMR.materials[matIdx];
+                Material srcMat = srcMR.materials[matIdx];
+
+                foreach (string prop in srcMat.GetTexturePropertyNames())
+                {
+                    Texture tex = srcMat.GetTexture(prop);
+                    if (tex == null) continue;
+
+                    if (tex is Texture2D srcTex)
+                    {
+                        Texture2D copy = new Texture2D(srcTex.width, srcTex.height, srcTex.format, srcTex.mipmapCount > 1);
+                        Graphics.CopyTexture(srcTex, copy);     // fast GPU copy
+
+                        // or slower but more compatible:
+                        // copy.LoadImage(srcTex.EncodeToPNG());
+
+                        copy.wrapMode = srcTex.wrapMode;
+                        copy.filterMode = srcTex.filterMode;
+                        copy.anisoLevel = srcTex.anisoLevel;
+                        copy.Apply();
+
+                        mat.SetTexture(prop, copy);
+                    }
+                }
             }
-            targetMR.materials = newMaterials;
+            //targetMR.materials = newMaterials;
             targetMC.sharedMesh = targetMF.mesh;
 
             targetMF.GetComponent<ARDimensionVisualizer>().enabled = true;
+
+            p.sizes.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
+
+            if (p.ar_type.Equals("horizontal-plane detection"))
+            {
+                UpdateObjectScale(p, targetObject, false);
+            }
+            else
+            {
+                UpdateObjectScale(p, targetObject, true);
+            }
 
             GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
             modelToView.transform.parent = UIManagerAR.instance.UI_3D_Models_Parent.transform;
@@ -410,6 +509,13 @@ public class CategoryManager : MonoBehaviour
             modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = targetMF.mesh;
             modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = targetMR.materials;
             modelToView.name = targetObject.name;
+
+            Transform modelVisual = targetObject.transform.Find("Visual").transform;
+            modelVisual.parent = null;
+            modelToView.transform.localScale = modelVisual.localScale;
+            modelVisual.parent = targetObject.transform;
+
+            mv.FrameObject(targetObject);
 
             Debug.Log("✅ Mesh and materials assigned (instantiated copies)!");
             Destroy(loadedRoot);
@@ -570,27 +676,31 @@ public class CategoryManager : MonoBehaviour
         foreach (var p in response.products)
         {
             GameObject card = Instantiate(productCardPrefab, productContainer);
-            card.transform.Find("Border/ItemName").GetComponent<TextMeshProUGUI>().text = p.company.entityName;
-            card.transform.Find("Border/ItemType").GetComponent<TextMeshProUGUI>().text = p.name;
+            ProductItemData pid = card.GetComponent<ProductItemData>();
+            pid.name.text = p.company.entityName;
+            pid.type.text = p.name;
 
             if (p.displayPrice.salePrice < p.displayPrice.price)
             {
-                card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().text = "<s>$" + p.displayPrice.price + "</s>";
-                card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().color = new UnityEngine.Color(0.7f, 0.7f, 0.7f);
+                pid.price.text = "<s>$" + p.displayPrice.price + "</s>";
+                pid.price.color = new UnityEngine.Color(0.7f, 0.7f, 0.7f);
 
-                card.transform.Find("Border/DiscountPrice").GetComponent<TextMeshProUGUI>().enabled = true;
+                pid.salePrice.enabled = true;
             }
             else
             {
-                card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().text = "$" + p.displayPrice.price;
-                card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().color = new UnityEngine.Color(1, 1, 1);
+                pid.price.text = "$" + p.displayPrice.price;
+                pid.price.color = new UnityEngine.Color(1, 1, 1);
 
-                card.transform.Find("Border/DiscountPrice").GetComponent<TextMeshProUGUI>().enabled = false;
+                pid.salePrice.enabled = false;
             }
 
-            card.transform.Find("Border/DiscountPrice").GetComponent<TextMeshProUGUI>().text = "$" + p.displayPrice.salePrice;
-            if(p.images.Count > 0)
-                StartCoroutine(DownloadImage(p.images[0].url, card.transform.Find("Border/ProductImage").GetComponent<UnityEngine.UI.Image>()));
+            pid.salePrice.text = "$" + p.displayPrice.salePrice;
+            if (p.images.Count > 0)
+            {
+
+                StartCoroutine(DownloadImage(p.images[0].url, pid.productImage, pid.loadingIcon));
+            }
             card.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(ProductSelectedFunction(p, p.threeDModels[0].url, p.ar_type, card.transform.Find("Border/ProductImage").GetComponent<UnityEngine.UI.Image>().sprite)));
         }
 

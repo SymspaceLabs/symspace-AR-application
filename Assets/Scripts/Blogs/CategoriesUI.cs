@@ -59,6 +59,9 @@ public class CategoriesUI : MonoBehaviour
     public GameObject UI_3D_Models_Parent;
     private string localPath;
 
+    public Transform colorsParent;
+    public GameObject colorPrefab;
+
     public GameObject colorVariant1Parent;
     public GameObject colorVariant2Parent;
     public GameObject colorVariant3Parent;
@@ -66,6 +69,10 @@ public class CategoriesUI : MonoBehaviour
     public Image colorVariant1;
     public Image colorVariant2;
     public Image colorVariant3;
+
+    public ModelViewer mv;
+
+    public float cameraOffset = 1.2f;
 
     private void OnEnable()
     {
@@ -166,7 +173,7 @@ public class CategoriesUI : MonoBehaviour
             }, "GET"));
     }
 
-    IEnumerator DownloadAndAssign(string url, GameObject targetObject)
+    IEnumerator DownloadAndAssign(string url, GameObject targetObject, CategoryManager.Products p)
     {
         yield return null;
         using (UnityWebRequest www = UnityWebRequest.Get(url))
@@ -229,8 +236,60 @@ public class CategoriesUI : MonoBehaviour
 
             targetObject.SetActive(true);
 
+            //if (p.ar_type.Equals("horizontal-plane detection"))
+            //{
+            //    UpdateObjectScale(p, targetObject, false);
+            //}
+            //else
+            //{
+            //    UpdateObjectScale(p, targetObject, true);
+            //}
+
+            mv.FrameObject(targetObject/*, cameraOffset*/);
+
             // Optional cleanup
             Destroy(loadedRoot);
+        }
+    }
+
+
+    public void UpdateObjectScale(CategoryManager.Products p, GameObject newObject, bool isVertical = false)
+    {
+        Vector3 modelOriginalHeight;
+
+        // Get original bounds size of the mesh renderer
+        modelOriginalHeight = newObject.GetComponentInChildren<MeshRenderer>().bounds.size;
+
+        // Calculate scale ratios for each axis according to desired size
+
+        if (isVertical)
+        {
+            float temp = p.sizes[0].dimensions.length;
+            p.sizes[0].dimensions.length = p.sizes[0].dimensions.height;
+            p.sizes[0].dimensions.height = p.sizes[0].dimensions.width;
+            p.sizes[0].dimensions.width = temp;
+        }
+
+        Vector3 finalScale = new Vector3(ConvertToUnityScale(p.sizes[0].dimensions.length, p.sizes[0].dimensions.unit) / modelOriginalHeight.x,
+            ConvertToUnityScale(p.sizes[0].dimensions.height, p.sizes[0].dimensions.unit) / modelOriginalHeight.y,
+            ConvertToUnityScale(p.sizes[0].dimensions.width, p.sizes[0].dimensions.unit) / modelOriginalHeight.z
+            );
+
+        newObject.transform.localScale = finalScale;
+    }
+    float ConvertToUnityScale(float inputSize, string unit)
+    {
+        switch (unit.ToLower())
+        {
+            case "cm":
+                return inputSize / 100f;  // 100 cm = 1 m
+            case "in":
+                return inputSize * 0.0254f; // 1 inch = 0.0254 m
+            case "m":
+                return inputSize; // already in meters
+            default:
+                Debug.LogWarning("Unknown unit, defaulting to meters");
+                return inputSize;
         }
     }
 
@@ -249,10 +308,13 @@ public class CategoriesUI : MonoBehaviour
             newItem.transform.Find("Item Type").GetComponent<TextMeshProUGUI>().text = product.name;
             newItem.transform.Find("Item Type").GetComponent<TextMeshProUGUI>().enabled = true;
 
-            if (product.displayPrice.salePrice < product.displayPrice.price)
+            if (product.displayPrice.hasSale)
             {
-                newItem.transform.Find("Original Price").GetComponent<TextMeshProUGUI>().text = "<s>$" + product.displayPrice.price + "</s>";
-                newItem.transform.Find("Original Price").GetComponent<TextMeshProUGUI>().color = new Color(0.7f, 0.7f, 0.7f);
+                if (product.displayPrice.salePrice < product.displayPrice.price)
+                {
+                    newItem.transform.Find("Original Price").GetComponent<TextMeshProUGUI>().text = "<s>$" + product.displayPrice.price + "</s>";
+                    newItem.transform.Find("Original Price").GetComponent<TextMeshProUGUI>().color = new Color(0.7f, 0.7f, 0.7f);
+                }
             }
             else
             {
@@ -333,38 +395,53 @@ public class CategoriesUI : MonoBehaviour
         targetModel.transform.localPosition = Vector3.zero;
         targetModel.SetActive(false);
 
-        colorVariant1Parent.SetActive(false);
-        colorVariant2Parent.SetActive(false);
-        colorVariant3Parent.SetActive(false);
+        foreach (Transform obj in colorsParent)
+            Destroy(obj.gameObject);
 
-        Color newColor;
-
-        if (product.threeDModels.Count > 0 && ColorUtility.TryParseHtmlString(product.threeDModels[0].colorCode, out newColor))
+        for (int i = 0; i < product.threeDModels.Count; i++)
         {
-            colorVariant1.color = newColor;
-            colorVariant1Parent.SetActive(true);
+            Color newColor1;
+            ColorUtility.TryParseHtmlString(product.threeDModels[i].colorCode, out newColor1);
+            ModelVariant mv = Instantiate(colorPrefab, colorsParent).GetComponent<ModelVariant>();
+            mv.img.color = newColor1;
         }
+        
+        //colorVariant1Parent.SetActive(false);
+        //colorVariant2Parent.SetActive(false);
+        //colorVariant3Parent.SetActive(false);
 
-        if (product.threeDModels.Count > 1 && ColorUtility.TryParseHtmlString(product.threeDModels[1].colorCode, out newColor))
-        {
-            colorVariant2.color = newColor;
-            colorVariant2Parent.SetActive(true);
-        }
+        //Color newColor;
 
-        if (product.threeDModels.Count > 2 && ColorUtility.TryParseHtmlString(product.threeDModels[2].colorCode, out newColor))
-        {
-            colorVariant3.color = newColor;
-            colorVariant3Parent.SetActive(true);
-        }
+        //if (product.threeDModels.Count > 0 && ColorUtility.TryParseHtmlString(product.threeDModels[0].colorCode, out newColor))
+        //{
+        //    colorVariant1.color = newColor;
+        //    colorVariant1Parent.SetActive(true);
+        //}
+
+        //if (product.threeDModels.Count > 1 && ColorUtility.TryParseHtmlString(product.threeDModels[1].colorCode, out newColor))
+        //{
+        //    colorVariant2.color = newColor;
+        //    colorVariant2Parent.SetActive(true);
+        //}
+
+        //if (product.threeDModels.Count > 2 && ColorUtility.TryParseHtmlString(product.threeDModels[2].colorCode, out newColor))
+        //{
+        //    colorVariant3.color = newColor;
+        //    colorVariant3Parent.SetActive(true);
+        //}
 
 
-        StartCoroutine(DownloadAndAssign(product.threeDModels[0].url, targetModel));
+        StartCoroutine(DownloadAndAssign(product.threeDModels[0].url, targetModel, product));
         itemName.text = product.name;
         itemType.text = product.company.entityName;
-        if (product.displayPrice.salePrice < product.displayPrice.price)
+
+        if (product.displayPrice.hasSale)
         {
-           itemPrice.text = "$" + "<s>" + product.displayPrice.price + "</s>";
-           itemPrice.color = new Color(0.7f, 0.7f, 0.7f);
+            if (product.displayPrice.salePrice < product.displayPrice.price)
+            {
+               itemPrice.text = "$" + "<s>" + product.displayPrice.price + "</s>";
+               itemPrice.color = new Color(0.7f, 0.7f, 0.7f);
+            }
         }
         else
         {
@@ -372,8 +449,9 @@ public class CategoriesUI : MonoBehaviour
             itemPrice.color = new Color(0, 0, 0);
         }
 
-        if(product.displayPrice.salePrice < product.displayPrice.price)
-            itemDiscountPrice.text = "$" + product.displayPrice.salePrice;
+        if (product.displayPrice.hasSale)
+            if (product.displayPrice.salePrice > 0)
+                itemDiscountPrice.text = "$" + product.displayPrice.salePrice;
 
         itemDiscription.text = product.description;
         companyDiscription.text = product.company.description;

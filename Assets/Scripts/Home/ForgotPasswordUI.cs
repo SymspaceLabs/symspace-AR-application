@@ -14,6 +14,7 @@ public class ForgotPasswordUI : MonoBehaviour
     public Sprite normalSprite;
     public Sprite errorInputFieldSprite;
     public TextMeshProUGUI errorMessage;
+    public GameObject errorMessageParent;
 
     //[Space(5)]
     //public Sprite[] confirmBtnIcons;
@@ -21,7 +22,7 @@ public class ForgotPasswordUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
     }
 
     private void Start()
@@ -32,8 +33,8 @@ public class ForgotPasswordUI : MonoBehaviour
     #region API Call
     private void SendResetLink()
     {
-        if (!CheckInputData())
-            return;
+        //if (!CheckInputData())
+        //    return;
 
         JsonDataStructure jsonData = new JsonDataStructure();
         jsonData.email = emailInput.text;
@@ -59,16 +60,17 @@ public class ForgotPasswordUI : MonoBehaviour
 
                 Debug.LogError("Reset request failed: " + errorResponse.message);
 
-                if (errorResponse.message.Contains("No account found"))
-                {
-                    errorMessage.text = "No account found with this email. Please verify your email and try again";
-                }
-                else
-                {
-                    errorMessage.text = "Unknown Error";
-                }
+                //if (errorResponse.message.Contains("No account found"))
+                //{
+                //    errorMessage.text = "No account found with this email. Please verify your email and try again";
+                //}
+                //else
+                //{
+                //    errorMessage.text = "Unknown Error";
+                //}
 
-                errorMessage.gameObject.SetActive(true);
+                MenuManager.Instance.ShowError(errorResponse.message);
+
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
@@ -77,7 +79,7 @@ public class ForgotPasswordUI : MonoBehaviour
     #region Data Validation
     public bool CheckInputData()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(emailInput.text))
@@ -97,13 +99,15 @@ public class ForgotPasswordUI : MonoBehaviour
         return true;
     }
 
-    private void ShowError(string message, TMP_InputField field)
+    private void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessage.gameObject.SetActive(true);
+        errorMessageParent.SetActive(false);
+        errorMessageParent.SetActive(true);
         errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
-        field.GetComponent<Image>().sprite = errorInputFieldSprite;
+        if(field != null)
+            field.GetComponent<Image>().sprite = errorInputFieldSprite;
         //sendButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 

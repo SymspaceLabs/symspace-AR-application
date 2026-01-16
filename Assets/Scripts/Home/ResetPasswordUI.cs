@@ -15,6 +15,7 @@ public class ResetPasswordUI : MonoBehaviour
     public Sprite normalSprite;
     public Sprite errorInputFieldSprite;
     public TextMeshProUGUI errorMessage;
+    public GameObject errorMessageParent;
 
     //[Space(5)]
     //public Sprite[] confirmBtnIcons;
@@ -22,7 +23,7 @@ public class ResetPasswordUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
     }
 
     private void Start()
@@ -32,8 +33,8 @@ public class ResetPasswordUI : MonoBehaviour
     #region API Call
     private void HandleReset()
     {
-        if (!CheckInputData())
-            return;
+        //if (!CheckInputData())
+        //    return;
 
         JsonDataStructure jsonData = new JsonDataStructure();
         jsonData.email = PlayerPrefs.GetString("Email");
@@ -52,7 +53,9 @@ public class ResetPasswordUI : MonoBehaviour
             },
             (error) => 
             {
-                Debug.LogError("Password reset failed: " + error);
+                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+                Debug.LogError("Password reset failed: " + errorResponse.message);
+                MenuManager.Instance.ShowError(errorResponse.message);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
@@ -61,7 +64,7 @@ public class ResetPasswordUI : MonoBehaviour
     #region Data Validation
     public bool CheckInputData()
     {
-        errorMessage.gameObject.SetActive(false);
+        errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(newPasswordInput.text))
@@ -78,7 +81,7 @@ public class ResetPasswordUI : MonoBehaviour
 
         if (newPasswordInput.text != confirmNewPassword.text)
         {
-            errorMessage.gameObject.SetActive(true);
+            errorMessageParent.SetActive(true);
             errorMessage.text = "Password Don't Match";
 
             newPasswordInput.text = "";
@@ -123,13 +126,15 @@ public class ResetPasswordUI : MonoBehaviour
         return hasUpper && hasLower && hasDigit && hasSpecial;
     }
 
-    private void ShowError(string message, TMP_InputField field)
+    private void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessage.gameObject.SetActive(true);
+        errorMessageParent.SetActive(false);
+        errorMessageParent.SetActive(true);
         errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
-        field.GetComponent<Image>().sprite = errorInputFieldSprite;
+        if(field != null)
+            field.GetComponent<Image>().sprite = errorInputFieldSprite;
         //resetButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 
@@ -199,6 +204,13 @@ public class ResetPasswordUI : MonoBehaviour
     private class ResponseData
     {
         public string message;
+    }
+
+    private class ErrorResponse
+    {
+        public string message;
+        public string error;
+        public string statusCode;
     }
     #endregion
 }

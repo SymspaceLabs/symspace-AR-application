@@ -18,6 +18,10 @@ public class ARObjectManipulator : MonoBehaviour
     [Header("Editor (Simulator) Controls")]
     public float editorRotationSpeed = 90f;
 
+    private Plane dragPlane;
+    private Vector3 dragStartWorldPos;
+    private Vector3 wallNormal;
+
     void Start()
     {
         arCamera = Camera.main;
@@ -105,16 +109,25 @@ public class ARObjectManipulator : MonoBehaviour
 
         Ray ray = arCamera.ScreenPointToRay(screenPos);
 
-        Plane plane = orientation == Orientation.Horizontal
-            ? new Plane(Vector3.up, transform.position)
-            : new Plane(arCamera.transform.forward, transform.position);
+        if (orientation == Orientation.Horizontal)
+        {
+            dragPlane = new Plane(Vector3.up, transform.position);
+        }
+        else // Vertical (wall)
+        {
+            wallNormal = transform.up; // Y axis points out of wall
+            dragPlane = new Plane(-arCamera.transform.forward, transform.position);
+        }
 
-        if (plane.Raycast(ray, out float enter))
+        if (dragPlane.Raycast(ray, out float enter))
         {
             Vector3 hitPoint = ray.GetPoint(enter);
-            grabOffset = transform.position - hitPoint; // world-space offset
+            grabOffset = transform.position - hitPoint;
         }
+
+        dragStartWorldPos = transform.position;
     }
+
 
     private void HandleTwoFingerRotation(Touch t0, Touch t1)
     {
@@ -184,20 +197,40 @@ public class ARObjectManipulator : MonoBehaviour
     {
         Ray ray = arCamera.ScreenPointToRay(screenPos);
 
-        Plane plane = orientation == Orientation.Horizontal
-            ? new Plane(Vector3.up, transform.position)
-            : new Plane(arCamera.transform.forward, transform.position);
+        if (!dragPlane.Raycast(ray, out float enter))
+            return;
 
-        if (plane.Raycast(ray, out float enter))
+        Vector3 hitPoint = ray.GetPoint(enter);
+        Vector3 desiredPos = hitPoint + grabOffset;
+
+        if (orientation == Orientation.Vertical)
         {
-            Vector3 hitPoint = ray.GetPoint(enter);
-            transform.position = hitPoint + grabOffset;
+            Vector3 delta = desiredPos - dragStartWorldPos;
+
+            // Remove movement into / out of wall
+            delta -= Vector3.Dot(delta, wallNormal) * wallNormal;
+
+            transform.position = dragStartWorldPos + delta;
+        }
+        else
+        {
+            transform.position = desiredPos;
         }
     }
 
+
     private void RotateY(float deltaAngle)
     {
-        transform.Rotate(Vector3.up, deltaAngle, Space.World);
+        if (orientation == Orientation.Horizontal)
+        {
+            // Rotate on floor
+            transform.Rotate(Vector3.up, -deltaAngle, Space.World);
+        }
+        else // Vertical (wall)
+        {
+            // Rotate around wall normal (Y axis points out of wall)
+            transform.Rotate(transform.up, -deltaAngle, Space.World);
+        }
     }
 
     private void ResetTouchState()

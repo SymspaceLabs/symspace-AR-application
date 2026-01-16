@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: UniversalBlurFeature
   m_EditorClassIdentifier: 
   m_Active: 1
-  iterations: 6
+  iterations: 8
   downsample: 2
   enableMipMaps: 1
-  scale: 1
+  scale: 4
   offset: 2.81
   scaleBlurWith: 0
   scaleReferenceSize: 1080
@@ -24,6 +24,19 @@ MonoBehaviour:
   injectionPoint: 600
   _intensity: 2
   shader: {fileID: 4800000, guid: bb11bdc2e8aaf4c80b5315f3778d7ad4, type: 3}
+--- !u!114 &-6515524201689435729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01b019caa33e147829f48e2b15958f84, type: 3}
+  m_Name: ARCommandBufferSupportRendererFeature
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARCommandBufferSupportRendererFeature
+  m_Active: 1
 --- !u!114 &-6440285211881509020
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -84,7 +97,8 @@ MonoBehaviour:
   m_RendererFeatures:
   - {fileID: -7639577550019288106}
   - {fileID: -6440285211881509020}
-  m_RendererFeatureMap: d6230dc9b1c4fa9564ef99cdb8829fa6
+  - {fileID: -6515524201689435729}
+  m_RendererFeatureMap: d6230dc9b1c4fa9564ef99cdb8829fa6af31d760423594a5
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
