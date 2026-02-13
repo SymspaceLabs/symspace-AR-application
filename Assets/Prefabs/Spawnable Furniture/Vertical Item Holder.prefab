@@ -126,6 +126,7 @@ GameObject:
   - component: {fileID: 641308465723754994}
   - component: {fileID: 5768489238444802025}
   - component: {fileID: 3124167286979674446}
+  - component: {fileID: 7101169786616729430}
   m_Layer: 0
   m_Name: Vertical Item Holder
   m_TagString: Untagged
@@ -361,6 +362,80 @@ MonoBehaviour:
   rotationSpeed: 90
   tapRotationAmount: 15
   isRotating: 0
+  modelID: 
+--- !u!114 &7101169786616729430
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 857056807526817943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3eeb67fe63ec5a04997bac739d106afa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProductDetails
+  imagesUrl: []
+  texturesUrl: []
+  sprites: []
+  product:
+    id: 
+    name: 
+    slug: 
+    description: 
+    material: 
+    gender: 
+    ar_type: 
+    company:
+      id: 
+      entityName: 
+      website: 
+      location: 
+      ein: 
+      userId: 
+      slug: 
+      legalName: 
+      address1: 
+      address2: 
+      city: 
+      state: 
+      country: 
+      zip: 
+      category: 
+      businessPhone: 
+      emailSupport: 
+      phoneSupport: 
+      description: 
+      tagLine: 
+      logo: 
+      banner: 
+      web: 
+      instagram: 
+      twitter: 
+      youtube: 
+      facebook: 
+      isOnboardingFormFilled: 0
+    category:
+      id: 
+      name: 
+      slug: 
+    images: []
+    thumbnail: 
+    threeDModels: []
+    colors: []
+    sizes: []
+    displayPrice:
+      price: 0
+      salePrice: 0
+      hasSale: 0
+      range: 
+    availability: 
+    variants: []
+    status: 
+    isSorted: 0
+  selectedColorIndex: 0
+  colors: []
+  textures: []
 --- !u!1 &3904748748383542035
 GameObject:
   m_ObjectHideFlags: 0
@@ -489,7 +564,7 @@ MonoBehaviour:
   lineWidth: 0.3
   lineOffset: 0.01
   cornerOffset: 0.2
-  axisOffset: {x: 0.1, y: 0.02, z: 0.1}
+  axisOffset: {x: 0.01, y: 0.02, z: 0.1}
   dashMat: {fileID: 2100000, guid: 1c00b28c9545e884e9828d90cd661927, type: 2}
   textPrefab: {fileID: 5319846597146570981, guid: faabc34c1027cbe45bbe43cf36f34177, type: 3}
   textLength: 0
@@ -497,6 +572,29 @@ MonoBehaviour:
   textDepth: 0
   textOffset: 0.05
   verticalTextOffset: 0.01
+  lineRenderers:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  lineTexts:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  externalCorners:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
 --- !u!1 &7388102642618079983
 GameObject:
   m_ObjectHideFlags: 0

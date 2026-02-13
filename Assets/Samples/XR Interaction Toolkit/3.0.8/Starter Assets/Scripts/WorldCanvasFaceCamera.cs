@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.XR.Interaction.Toolkit.Transformers;
 
 [RequireComponent(typeof(Canvas))]
 public class WorldCanvasFaceCamera : MonoBehaviour
@@ -12,8 +11,13 @@ public class WorldCanvasFaceCamera : MonoBehaviour
     //private Vector3 boundsOffset;
     public float verticalPadding = 0.1f;    // Extra space above the object
 
-    void Start()
+    public ProductDetails pd;
+    public ObjectDetail objDetail;
+
+    void Awake()
     {
+        pd = GetComponentInParent<ProductDetails>();
+        objDetail = GetComponentInParent<ObjectDetail>();
         mainCamera = Camera.main;
         canvas = GetComponent<Canvas>();
         canvas.worldCamera = mainCamera;
@@ -64,8 +68,16 @@ public class WorldCanvasFaceCamera : MonoBehaviour
 
     public void PlusButton()
     {
-        ARTransformer aRTransformer = GetComponentInParent<ARTransformer>();
-        UIManagerAR.instance.PlusBtn(CleanName(aRTransformer.name));
+        for (int i = 0; i < UIManagerAR.instance.spawner.objectsSpawned.Count; i++)
+        {
+            if (UIManagerAR.instance.spawner.objectsSpawned[i].name == pd.gameObject.name)
+            {
+                UIManagerAR.instance.objectSelectedIndex = i;
+                break;
+            }
+        }
+
+        UIManagerAR.instance.PlusBtn(pd.product.id, pd.selectedColorIndex);
     }
 
     string CleanName(string originalName)

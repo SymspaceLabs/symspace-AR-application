@@ -54,6 +54,7 @@ public class SignInUI : MonoBehaviour
 
         string json = JsonUtility.ToJson(jsonData);
 
+        Debug.Log("Calling Sign In URL ");
 
         StartCoroutine(AuthAPI.PostRequest(signInUrl, json,
             (response) =>

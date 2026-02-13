@@ -1,10 +1,10 @@
-﻿using System;
+﻿using GLTF.Schema;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -13,14 +13,17 @@ using UnityGLTF;
 
 public class CategoryManager : MonoBehaviour
 {
+    public static CategoryManager Instance;
+
     #region API URLs
     private string getAllProductsURL = "/products";
     private string getAllCategoriesURL = "/categories/mobile";
+    private string getProductBySlug = "/products/slug/";
     #endregion
 
     #region Inspector Variables - Main Categories
     [Header("Main Categories System (Legacy)")]
-    public List<MainCategory> mainCategories;
+    //public List<MainCategory> mainCategories;
     public List<UnityEngine.UI.Image> mainCategoriesImages;
     public Transform subcategoryButtonContainer;
     public Button subcategoryButtonPrefab;
@@ -29,7 +32,7 @@ public class CategoryManager : MonoBehaviour
     public GameObject productCardPrefab;
     public UnityEngine.Color selectedBgColor;
     public UnityEngine.Color unselectedBgColor;
-    private MainCategory currentCategory;
+    //private MainCategory currentCategory;
     #endregion
 
     #region AR References
@@ -56,11 +59,23 @@ public class CategoryManager : MonoBehaviour
 
     public ModelViewer mv;
 
+    public List<GameObject> downloadedModels;
+    public List<GameObject> tempModels;
+
+    public Vector3 finalScale;
+    public bool firstTime = false;
+
     #region Private Variables
     private string localPath;
     #endregion
 
     #region Unity Lifecycle Methods
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     private void Start()
     {
         localPath = Path.Combine(Application.persistentDataPath, "tempModel.glb");
@@ -76,7 +91,7 @@ public class CategoryManager : MonoBehaviour
         if (ProductSelection.productData != null)
         {
             if (SceneManager.GetActiveScene().name == "AR Scene")
-                yield return StartCoroutine(DownloadImage(ProductSelection.productData.images[1].url));
+                yield return StartCoroutine(DownloadImage(ProductSelection.productData.images[0].url));
             StartCoroutine(ProductSelectedFunction(ProductSelection.productData,
                 ProductSelection.productData.threeDModels[0].url,
                 ProductSelection.productData.ar_type,
@@ -166,7 +181,7 @@ public class CategoryManager : MonoBehaviour
             loadingIcon.SetActive(false);
     }
 
-    public IEnumerator DownloadSpriteCoroutine(string url, Action<Sprite> callback)
+    public IEnumerator DownloadSpriteCoroutine(string url, List<Sprite> spritesList, int index)
     {
         UnityWebRequest req = UnityWebRequest.Get(url);
         yield return req.SendWebRequest();
@@ -174,7 +189,7 @@ public class CategoryManager : MonoBehaviour
         if (req.result != UnityWebRequest.Result.Success)
         {
             Debug.LogError(req.error);
-            callback?.Invoke(null);
+            
             yield break;
         }
 
@@ -186,18 +201,42 @@ public class CategoryManager : MonoBehaviour
             Sprite sprite = Sprite.Create(texture,
                 new Rect(0, 0, texture.width, texture.height),
                 new Vector2(0.5f, 0.5f));
-            callback?.Invoke(sprite);
+            spritesList[index] = sprite;
         }
         else
         {
             Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
-            callback?.Invoke(null);
+        }
+    }
+
+    public IEnumerator DownloadTextureCoroutine(string url, List<Texture2D> texturesList, int index)
+    {
+        UnityWebRequest req = UnityWebRequest.Get(url);
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError(req.error);
+
+            yield break;
+        }
+
+        byte[] imageData = req.downloadHandler.data;
+        Texture2D texture = new Texture2D(2, 2);
+
+        if (texture.LoadImage(imageData))
+        {
+            texturesList[index] = texture;
+        }
+        else
+        {
+            Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
         }
     }
     #endregion
 
     #region Product Selection & Scene Management
-    IEnumerator ProductSelectedFunction(Products p, string url, string arType, Sprite sprite)
+    IEnumerator ProductSelectedFunction(Products p, string url, string arType, Sprite sprite, ProductItemData pid = null)
     {
         if (CheckObjectScene(p))
         {
@@ -217,27 +256,67 @@ public class CategoryManager : MonoBehaviour
 
                 GameObject newObject;
 
-                if (type.Equals("horizontal-plane detection"))
-                    newObject = Instantiate(glbPrafabHorizontal);
-                else
-                    newObject = Instantiate(glbPrafabVertical);
+                GameObject downloadedModel = FindExistingModel(p.id);
 
+                if(downloadedModel != null)
+                    newObject = downloadedModel;
+                else
+                {
+                    if (type.Equals("horizontal-plane detection"))
+                        newObject = Instantiate(glbPrafabHorizontal);
+                    else
+                        newObject = Instantiate(glbPrafabVertical);
+
+                    var state = newObject.GetComponent<DownloadState>() ?? newObject.AddComponent<DownloadState>();
+                    state.isDownloading = false;
+                    state.isReady = false;
+
+                    newObject.GetComponent<ProductDetails>().product.id = p.id;
+                }
+
+
+                newObject.transform.localPosition = Vector3.zero;
                 newObject.SetActive(false);
                 newObject.name = GetUniqueName(p.name, spawner.objectsSpawned);
 
                 spawner.objectPrefabs.Clear();
                 spawner.objectPrefabs.Add(newObject);
 
-                UIManagerAR.instance.eventSystem.gameObject.SetActive(false);
-                yield return StartCoroutine(DownloadAndAssign(url, newObject, p));
-                UIManagerAR.instance.eventSystem.gameObject.SetActive(true);
+                //UIManagerAR.instance.eventSystem.gameObject.SetActive(false);
+                var stateCheck = newObject.GetComponent<DownloadState>();
 
-                EventSystem.current.gameObject.SetActive(true);
+
+                //p.colors.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
+                //p.images.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
+                //p.sizes.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
+                //p.threeDModels.Sort((a, b) =>
+                //{
+                //    int indexA = p.colors.FindIndex(c => c.code == a.colorCode);
+                //    int indexB = p.colors.FindIndex(c => c.code == b.colorCode);
+
+                //    return indexA.CompareTo(indexB);
+                //});
+
+                if (!stateCheck.isReady && !stateCheck.isDownloading)
+                {
+                    if (pid != null)
+                        yield return StartCoroutine(DownloadAndAssign(url, newObject, p, pid.ProductProgress, pid.DownloadFailed));
+                    else
+                        yield return StartCoroutine(DownloadAndAssign(url, newObject, p));
+                }
+                else
+                {
+                    if (!tempModels.Contains(newObject))
+                        tempModels.Add(newObject);
+                }
+                    UIManagerAR.instance.eventSystem.gameObject.SetActive(true);
+
+                //EventSystem.current.gameObject.SetActive(true);
                 spawner.object1Spawned = false;
                 spawner.objectIndex = 0;
-                spawner.objectsSize[0].length = p.sizes[0].dimensions.length;
-                spawner.objectsSize[0].width = p.sizes[0].dimensions.width;
-                spawner.objectsSize[0].height = p.sizes[0].dimensions.height;
+                //spawner.objectsSize[0].length = p.sizes[0].dimensions.length;
+                //spawner.objectsSize[0].width = p.sizes[0].dimensions.width;
+                //spawner.objectsSize[0].height = p.sizes[0].dimensions.height;
                 spawner.unit = p.sizes[0].dimensions.unit;
                 UIManagerAR.instance.itemsToPlaceParent.SetActive(true);
 
@@ -245,37 +324,38 @@ public class CategoryManager : MonoBehaviour
                 foreach (Transform obj in modelVariantParent)
                     Destroy(obj.gameObject);
 
-                for(int i = 0; i < p.threeDModels.Count; i++)
+                //if (downloadedModel == null)
+
+
+                for (int i = 0; i < p.colors.Count; i++)
                 {
                     UnityEngine.Color newColor1;
-                    ColorUtility.TryParseHtmlString(p.threeDModels[i].colorCode, out newColor1);
+                    ColorUtility.TryParseHtmlString(p.colors[i].code, out newColor1);
                     spawner.objectColors.Add(newColor1);
                     ModelVariant mv = Instantiate(modelVariantPrefab, modelVariantParent).GetComponent<ModelVariant>();
                     mv.index = i;
-                    StartCoroutine(DownloadImage(p.images[i].url, mv.img));
+                    mv.colorImg.color = newColor1;
+                    mv.colorName.text = p.colors[i].name;
                 }
 
-                //UnityEngine.Color newColor;
-                //if (p.threeDModels.Count > 0 && ColorUtility.TryParseHtmlString(p.threeDModels[0].colorCode, out newColor))
-                //{
-                //    spawner.objectColors[0] = newColor;
-                //    //UIManagerAR.instance.item1.sprite = sprite;
-                //    StartCoroutine(DownloadImage(p.images[0].url, UIManagerAR.instance.item1));
-                //}
+                
+                UIManagerAR.instance.spawner.ChangeTextureByIndex(0);
 
-                //if (p.threeDModels.Count > 1 && ColorUtility.TryParseHtmlString(p.threeDModels[1].colorCode, out newColor))
-                //{
-                //    spawner.objectColors[1] = newColor;
-                //    //UIManagerAR.instance.item2.sprite = sprite;
-                //    StartCoroutine(DownloadImage(p.images[1].url, UIManagerAR.instance.item2));
-                //}
+                if(downloadedModel != null)
+                {
+                    foreach (var obj in UIManagerAR.instance.UI_3D_Models)
+                    {
+                        if (obj.GetComponent<ProductDetails>().product.id == newObject.GetComponent<ProductDetails>().product.id)
+                        {
+                            newObject.GetComponentInChildren<MeshRenderer>().material.mainTexture = obj.GetComponent<ProductDetails>().textures[0];
+                            newObject.GetComponent<ProductDetails>().selectedColorIndex = 0;
+                        }
 
-                //if (p.threeDModels.Count > 2 && ColorUtility.TryParseHtmlString(p.threeDModels[2].colorCode, out newColor))
-                //{
-                //    spawner.objectColors[2] = newColor;
-                //    //UIManagerAR.instance.item3.sprite = sprite;
-                //    StartCoroutine(DownloadImage(p.images[2].url, UIManagerAR.instance.item3));
-                //}
+                    }
+                }
+
+                foreach (Transform obj in modelVariantParent)
+                    obj.gameObject.SetActive(false);
 
                 if (type.Equals("horizontal-plane detection"))
                 {
@@ -289,37 +369,123 @@ public class CategoryManager : MonoBehaviour
                 }
 
                 UIManagerAR.instance.TogglePlaneVisuals(true);
+
+                if(stateCheck.isReady)
+                    GetComponent<SlideUpPanel>().HidePanel();
                 #endregion
             }
-
-            GetComponent<SlideUpPanel>().HidePanel();
         }
         yield return null;
     }
 
-    public void UpdateObjectScale(Products p, GameObject newObject, bool isVertical = false)
+
+    GameObject FindExistingModel(string productId)
     {
+        // 1. Downloaded
+        var downloaded = downloadedModels.Find(m =>
+            m.GetComponent<ProductDetails>().product.id == productId);
+        GameObject go = null;
+
+        if (downloaded != null)
+        {
+            var temp1 = tempModels.Find(m =>
+            m.GetComponent<ProductDetails>().product.id == productId);
+            if (temp1 != null)
+                return temp1;
+
+            go = Instantiate(downloaded);
+            Renderer[] renderers = go.GetComponentsInChildren<Renderer>();
+
+            foreach (var r in renderers)
+            {
+                r.material = new Material(r.sharedMaterial);
+            }
+            //return go;
+        }
+
+        // 2. Temp models (downloaded but not placed)
+        var temp = tempModels.Find(m =>
+            m.GetComponent<ProductDetails>().product.id == productId);
+
+        if (temp != null)
+            return temp;
+
+        if (go != null)
+            return go;
+
+        // 3. Currently downloading (NOT in tempModels yet)
+        foreach (var obj in FindObjectsByType<DownloadState>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            var dk = obj.GetComponent<ProductDetails>();
+            if (dk != null && dk.product.id == productId && obj.isDownloading)
+                return obj.gameObject;
+        }
+
+        return null;
+    }
+
+
+    public void UpdateObjectScale(ProductDetails pd, GameObject newObject, bool isVertical = false, int dimensionIndex = 0)
+    {
+        Debug.Log("dimension Index : " + dimensionIndex);
         Vector3 modelOriginalHeight;
 
         // Get original bounds size of the mesh renderer
-        modelOriginalHeight = newObject.GetComponentInChildren<MeshRenderer>().bounds.size;
+
+        newObject.transform.localScale = Vector3.one;
+
+        modelOriginalHeight = newObject.GetComponentInChildren<MeshFilter>().sharedMesh.bounds.size;
+
+        //obj.transform.parent = realParent;
 
         // Calculate scale ratios for each axis according to desired size
+        ARDimensionVisualizer arDimension = newObject.GetComponentInChildren<ARDimensionVisualizer>();
+
+
+        float axis_L =  pd.product.sizes[dimensionIndex].dimensions.length;
+        float axis_H =  pd.product.sizes[dimensionIndex].dimensions.height;
+        float axis_W = pd.product.sizes[dimensionIndex].dimensions.width;
+
+        arDimension.textLength = axis_L;
+        arDimension.textHeight = axis_H;
+        arDimension.textDepth = axis_W;
+
+        arDimension.UpdateTexts();
 
         if (isVertical)
         {
-            float temp = p.sizes[0].dimensions.length;
-            p.sizes[0].dimensions.length = p.sizes[0].dimensions.height;
-            p.sizes[0].dimensions.height = p.sizes[0].dimensions.width;
-            p.sizes[0].dimensions.width = temp;
-        }
+            //if (!pd.product.isSorted)
+            //{
+                //float temp = axis_L;
+                //axis_L = axis_H;
+                //axis_H = axis_W;
+                ////axis_H = temp;
+                //axis_W = temp;
+            //}
 
-        Vector3 finalScale = new Vector3(ConvertToUnityScale(p.sizes[0].dimensions.length, p.sizes[0].dimensions.unit) / modelOriginalHeight.x,
-            ConvertToUnityScale(p.sizes[0].dimensions.height, p.sizes[0].dimensions.unit) / modelOriginalHeight.y,
-            ConvertToUnityScale(p.sizes[0].dimensions.width, p.sizes[0].dimensions.unit) / modelOriginalHeight.z
+            finalScale = new Vector3(ConvertToUnityScale(axis_H, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.y,
+            ConvertToUnityScale(axis_W, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.z,
+            ConvertToUnityScale(axis_L, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.x
             );
+            newObject.transform.localScale = finalScale;
+        }
+        else
+        {
+            finalScale = new Vector3(ConvertToUnityScale(axis_L, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.x,
+            ConvertToUnityScale(axis_H, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.y,
+            ConvertToUnityScale(axis_W, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.z
+            );
+            newObject.transform.localScale = finalScale;
+        }
+        //finalScale = new Vector3(ConvertToUnityScale(axis_L, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.x,
+        //    ConvertToUnityScale(axis_H, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.y,
+        //    ConvertToUnityScale(axis_W, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.z
+        //    );
+        //    newObject.transform.localScale = finalScale;
 
-        newObject.transform.localScale = finalScale;
+        Debug.Log("model Original Size : " + modelOriginalHeight);
+        Debug.Log("Length: " + axis_L + ", Width: " + axis_W + ", Height: " + axis_H);
+
     }
     float ConvertToUnityScale(float inputSize, string unit)
     {
@@ -404,19 +570,38 @@ public class CategoryManager : MonoBehaviour
     #endregion
 
     #region 3D Model Download & Assignment
-    IEnumerator DownloadAndAssign(string url, GameObject targetObject, Products p)
+    IEnumerator DownloadAndAssign(string url, GameObject targetObject, Products p, Action<float> onProgress = null, Action onFailed = null)
     {
         yield return null;
+
+        var state = targetObject.GetComponent<DownloadState>();
+        state.isDownloading = true;
+        state.isReady = false;
+
         using (UnityWebRequest www = UnityWebRequest.Get(url))
         {
+
             www.downloadHandler = new DownloadHandlerFile(localPath);
-            yield return www.SendWebRequest();
+            www.SendWebRequest();
+
+            while (!www.isDone)
+            {
+                // Progress value (0..1)
+                float progress = www.downloadProgress;
+
+                onProgress?.Invoke(progress);
+
+                yield return null; // wait one frame
+            }
 
             if (www.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError("Download failed: " + www.error);
+                onFailed?.Invoke();
                 yield break;
             }
+
+            onProgress?.Invoke(1f); // ensure 100%
         }
 
         // Load GLB with UnityGLTF
@@ -455,6 +640,7 @@ public class CategoryManager : MonoBehaviour
             {
                 Material mat = targetMR.materials[matIdx];
                 Material srcMat = srcMR.materials[matIdx];
+                mat.SetFloat("normalScale", 0);
 
                 foreach (string prop in srcMat.GetTexturePropertyNames())
                 {
@@ -483,28 +669,52 @@ public class CategoryManager : MonoBehaviour
 
             targetMF.GetComponent<ARDimensionVisualizer>().enabled = true;
 
-            p.sizes.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
+            targetObject.GetComponent<ProductDetails>().product = p;
 
-            if (p.ar_type.Equals("horizontal-plane detection"))
+            targetObject.GetComponent<ProductDetails>().colors.Clear();
+            foreach(var c in p.colors)
             {
-                UpdateObjectScale(p, targetObject, false);
+                UnityEngine.Color newColor;
+                ColorUtility.TryParseHtmlString(c.code, out newColor);
+                targetObject.GetComponent<ProductDetails>().colors.Add(newColor);
             }
-            else
-            {
-                UpdateObjectScale(p, targetObject, true);
-            }
+
+            //if (p.ar_type.Equals("horizontal-plane detection"))
+            //{
+                UpdateObjectScale(targetObject.GetComponent<ProductDetails>(), targetObject, !p.ar_type.Equals("horizontal-plane detection"));
+            //}
+            //else
+            //{
+            //    UpdateObjectScale(p, targetObject, true);
+            //}
+
+            state.isDownloading = false;
+            state.isReady = true;
+
+            if (!downloadedModels.Contains(targetObject))
+                downloadedModels.Add(targetObject);
+
+            if (!tempModels.Contains(targetObject))
+                tempModels.Add(targetObject);
 
             GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
             modelToView.transform.parent = UIManagerAR.instance.UI_3D_Models_Parent.transform;
             modelToView.transform.localPosition = Vector3.zero;
             UIManagerAR.instance.UI_3D_Models.Add(modelToView);
 
-            ProductDetails pd = modelToView.AddComponent<ProductDetails>();
+
+            ProductDetails pd = modelToView.GetComponent<ProductDetails>();
             pd.imagesUrl.Clear();
             foreach (var img in p.images)
                 pd.imagesUrl.Add(img.url);
 
+            pd.texturesUrl.Clear();
+            foreach (var model in p.threeDModels)
+                pd.texturesUrl.Add(model.texture);
+
             pd.product = p;
+
+            StartCoroutine(SetProductImages(pd));
 
             modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = targetMF.mesh;
             modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = targetMR.materials;
@@ -515,12 +725,15 @@ public class CategoryManager : MonoBehaviour
             modelToView.transform.localScale = modelVisual.localScale;
             modelVisual.parent = targetObject.transform;
 
-            mv.FrameObject(targetObject);
+            mv.FrameObject(modelToView);
+
+            GetComponent<SlideUpPanel>().HidePanel();
 
             Debug.Log("✅ Mesh and materials assigned (instantiated copies)!");
             Destroy(loadedRoot);
         }
     }
+
     #endregion
 
     #region Categories Population (New System)
@@ -545,17 +758,54 @@ public class CategoryManager : MonoBehaviour
             TextMeshProUGUI label = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
             if (label != null) label.text = category.name;
 
+            bool productsSpawned = false;
+
             Button btn = buttonObj.GetComponent<Button>();
             if (btn != null)
             {
                 btn.onClick.AddListener(() =>
                 {
-                    PopulateSubCategories(category.items);
+                    string formattedType = category.name.Replace(" ", "-");
+                    Debug.Log("corrected formate : " + formattedType);
+                    StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?subcategory=" + formattedType, "",
+                    (response) =>
+                    {
+                        ProductResponse responseData = JsonUtility.FromJson<ProductResponse>(response);
+                        productsSpawned = PopulateProducts(responseData);
+
+                        if (category.items != null && category.items.Count > 0)
+                        {
+                            PopulateSubCategories(category.items);
+                            Debug.Log("Product Spawned " + productsSpawned);
+                            if (productsSpawned)
+                                subCategoryParent.gameObject.SetActive(false);
+                            else
+                                subCategoryParent.gameObject.SetActive(true);
+                        }
+                    },
+                    (error) =>
+                    {
+                        Debug.LogError("Failed to load categories: " + error);
+                    }, "GET"));
+
+
+
+                    //PopulateSubCategories(category.items);
                     UnSelectAllImages(topLevelCategoryParent);
                     SelectedImage(buttonObj.GetComponent<UnityEngine.UI.Image>());
                 });
             }
         }
+
+        if (!firstTime)
+        {
+            if (Categories[0] != null)
+            {
+                firstTime = true;
+                topLevelCategoryParent.GetChild(0).GetComponent<Button>()?.onClick?.Invoke();
+            }
+        }
+            
     }
 
     private void PopulateSubCategories(List<Items> subCategories)
@@ -654,7 +904,7 @@ public class CategoryManager : MonoBehaviour
     {
         ClearTransform(subCategoryParent);
         ClearTransform(leafCategoryParent);
-        ClearTransform(productContainer);
+        //ClearTransform(productContainer);
     }
 
     private void ClearTransform(Transform parent)
@@ -696,16 +946,60 @@ public class CategoryManager : MonoBehaviour
             }
 
             pid.salePrice.text = "$" + p.displayPrice.salePrice;
-            if (p.images.Count > 0)
+            if (p.thumbnail.Length > 0)
             {
-
-                StartCoroutine(DownloadImage(p.images[0].url, pid.productImage, pid.loadingIcon));
+                StartCoroutine(DownloadImage(p.thumbnail, pid.productImage, pid.loadingIcon));
             }
-            card.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(ProductSelectedFunction(p, p.threeDModels[0].url, p.ar_type, card.transform.Find("Border/ProductImage").GetComponent<UnityEngine.UI.Image>().sprite)));
-        }
 
+            StartCoroutine(AuthAPI.PostRequest(getProductBySlug + p.slug, "", // Empty string for no body
+            (response) =>
+            {
+                Products product = JsonUtility.FromJson<Products>(response);
+                if (product != null)
+                {
+                    product.colors.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
+                    product.images.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
+                    product.sizes.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
+                    product.threeDModels.Sort((a, b) =>
+                    {
+                        int indexA = product.colors.FindIndex(c => c.code == a.colorCode);
+                        int indexB = product.colors.FindIndex(c => c.code == b.colorCode);
+
+                        return indexA.CompareTo(indexB);
+                    });
+
+                    product.variants.Sort((a, b) =>
+                    {
+                        int indexA = product.sizes.FindIndex(c => c.sortOrder == a.size.sortOrder);
+                        int indexB = product.sizes.FindIndex(c => c.sortOrder == b.size.sortOrder);
+
+                        return indexA.CompareTo(indexB);
+                    });
+
+                    //product.isSorted = true;
+                    card.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(ProductSelectedFunction(product, product.threeDModels[0].url, product.ar_type, card.transform.Find("Border/ProductImage").GetComponent<UnityEngine.UI.Image>().sprite, pid)));
+                }
+            },
+            (error) =>
+            {
+                //loadingIcon.SetActive(false);
+                //loadingPanel.SetActive(false);
+                //Debug.LogError("Failed to load categories: " + error);
+                //ShowStatus("Failed to load categories", true);
+                //MenuManager.Instance.loadingPanel.SetActive(false);
+            }, "GET"));
+        }
         return true;
     }
+
+    public void FilterProducts()
+    {
+        if (subCategoryParent.gameObject.activeInHierarchy)
+            leafCategoryParent.gameObject.SetActive(true);
+        else
+            subCategoryParent.gameObject.SetActive(true);
+    }
+
     #endregion
 
     #region Legacy Main Categories System (Button Callbacks)
@@ -725,135 +1019,173 @@ public class CategoryManager : MonoBehaviour
         }
     }
 
-    public void OnMainCategorySelected(string categoryName)
-    {
-        foreach (var image in mainCategoriesImages)
-        {
-            image.color = unselectedBgColor;
-        }
+    //public void OnMainCategorySelected(string categoryName)
+    //{
+    //    foreach (var image in mainCategoriesImages)
+    //    {
+    //        image.color = unselectedBgColor;
+    //    }
 
-        currentCategory = mainCategories.Find(c => c.name == categoryName);
+    //    currentCategory = mainCategories.Find(c => c.name == categoryName);
 
-        ClearTransform(subcategoryButtonContainer);
-        ClearTransform(productContainer);
+    //    ClearTransform(subcategoryButtonContainer);
+    //    ClearTransform(productContainer);
 
-        if (currentCategory == null) return;
+    //    if (currentCategory == null) return;
 
-        subCategoriesImages.Clear();
+    //    subCategoriesImages.Clear();
 
-        // Create new subcategory buttons
-        foreach (Subcategory sub in currentCategory.subcategories)
-        {
-            Button btn = Instantiate(subcategoryButtonPrefab, subcategoryButtonContainer);
-            btn.GetComponentInChildren<TextMeshProUGUI>().text = sub.name;
-            btn.onClick.AddListener(() => OnSubcategorySelected(sub));
-            btn.onClick.AddListener(() => SelectedImage(btn.GetComponent<UnityEngine.UI.Image>()));
-            subCategoriesImages.Add(btn.GetComponent<UnityEngine.UI.Image>());
-        }
+    //    // Create new subcategory buttons
+    //    foreach (Subcategory sub in currentCategory.subcategories)
+    //    {
+    //        Button btn = Instantiate(subcategoryButtonPrefab, subcategoryButtonContainer);
+    //        btn.GetComponentInChildren<TextMeshProUGUI>().text = sub.name;
+    //        btn.onClick.AddListener(() => OnSubcategorySelected(sub));
+    //        btn.onClick.AddListener(() => SelectedImage(btn.GetComponent<UnityEngine.UI.Image>()));
+    //        subCategoriesImages.Add(btn.GetComponent<UnityEngine.UI.Image>());
+    //    }
 
-        // Auto-load first subcategory
-        if (currentCategory.subcategories.Count > 0)
-        {
-            OnSubcategorySelected(currentCategory.subcategories[0]);
-            subCategoriesImages[0].color = selectedBgColor;
-        }
-    }
+    //    // Auto-load first subcategory
+    //    if (currentCategory.subcategories.Count > 0)
+    //    {
+    //        OnSubcategorySelected(currentCategory.subcategories[0]);
+    //        subCategoriesImages[0].color = selectedBgColor;
+    //    }
+    //}
 
-    public void OnSubcategorySelected(Subcategory subcategory)
-    {
-        ClearTransform(productContainer);
+    //public void OnSubcategorySelected(Subcategory subcategory)
+    //{
+    //    ClearTransform(productContainer);
 
-        foreach (var img in subCategoriesImages)
-        {
-            img.color = unselectedBgColor;
-        }
+    //    foreach (var img in subCategoriesImages)
+    //    {
+    //        img.color = unselectedBgColor;
+    //    }
 
-        // Load new products
-        foreach (Product p in subcategory.products)
-        {
-            GameObject card = Instantiate(productCardPrefab, productContainer);
-            card.transform.Find("Border/ItemName").GetComponent<TextMeshProUGUI>().text = p.itemName;
-            card.transform.Find("Border/ItemType").GetComponent<TextMeshProUGUI>().text = p.itemType;
+    //    // Load new products
+    //    foreach (Product p in subcategory.products)
+    //    {
+    //        GameObject card = Instantiate(productCardPrefab, productContainer);
+    //        card.transform.Find("Border/ItemName").GetComponent<TextMeshProUGUI>().text = p.itemName;
+    //        card.transform.Find("Border/ItemType").GetComponent<TextMeshProUGUI>().text = p.itemType;
 
-            if (p.discountPrice.Length > 0)
-            {
-                card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().text = "<s>" + p.price + "</s>";
-                card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().color = new UnityEngine.Color(0.7f, 0.7f, 0.7f);
-            }
-            else
-            {
-                card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().text = p.price;
-                card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().color = new UnityEngine.Color(1, 1, 1);
-            }
+    //        if (p.discountPrice.Length > 0)
+    //        {
+    //            card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().text = "<s>" + p.price + "</s>";
+    //            card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().color = new UnityEngine.Color(0.7f, 0.7f, 0.7f);
+    //        }
+    //        else
+    //        {
+    //            card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().text = p.price;
+    //            card.transform.Find("Border/Price").GetComponent<TextMeshProUGUI>().color = new UnityEngine.Color(1, 1, 1);
+    //        }
 
-            card.transform.Find("Border/DiscountPrice").GetComponent<TextMeshProUGUI>().text = p.discountPrice;
-            card.transform.Find("Border/ProductImage").GetComponent<UnityEngine.UI.Image>().sprite = p.image;
-        }
-    }
+    //        card.transform.Find("Border/DiscountPrice").GetComponent<TextMeshProUGUI>().text = p.discountPrice;
+    //        card.transform.Find("Border/ProductImage").GetComponent<UnityEngine.UI.Image>().sprite = p.image;
+    //    }
+    //}
     #endregion
 
     #region Helper Methods
-    public void SetProductImages(ProductDetails pd)
+    public IEnumerator SetProductImages(ProductDetails pd)
     {
-        try
+        yield return null;
+        pd.sprites.Clear();
+        for (int i = 0; i < pd.imagesUrl.Count; i++)
         {
-            pd.sprites.Clear();
-            foreach (var url in pd.imagesUrl)
-            {
-                StartCoroutine(DownloadSpriteCoroutine(url, sprite =>
-                {
-                    pd.sprites.Add(sprite);
-                }));
-            }
+            pd.sprites.Add(null);
         }
-        catch (Exception ex)
+
+        for (int i = 0; i < pd.imagesUrl.Count; i++)
         {
-            Debug.Log("Sprites Download failed: " + ex.Message);
+            yield return StartCoroutine(DownloadSpriteCoroutine(pd.imagesUrl[i], pd.sprites, i));
         }
+
+        pd.textures.Clear();
+        for (int i = 0; i < pd.texturesUrl.Count; i++)
+        {
+            pd.textures.Add(null);
+        }
+
+        for (int i = 0; i < pd.texturesUrl.Count; i++)
+        {
+            yield return StartCoroutine(DownloadTextureCoroutine(pd.texturesUrl[i], pd.textures, i));
+            Debug.Log("texture downloading");
+        }
+        Debug.Log("texture Finish");
+        
     }
+
+    //public void ChangeModelTexture(int index)
+    //{
+    //    foreach (Transform child in UIManagerAR.instance.colorParent_SD)
+    //    {
+    //        if (child.GetComponent<ModelVariant>()?.index == index)
+    //            child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+    //        else
+    //            child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+    //    }
+
+    //    if (index >= UIManagerAR.instance.selectedModelDetails.textures.Count)
+    //        return;
+
+    //    UIManagerAR.instance.selectedModelDetails.selectedColorIndex = index;
+    //    Material mat = UIManagerAR.instance.selectedModelDetails.transform.Find("Visual").GetComponent<MeshRenderer>().material;
+
+    //    //Color newColor1;
+    //    //ColorUtility.TryParseHtmlString(selectedProduct.product.colors[index].code, out newColor1);
+    //    //mat.color = newColor1;
+
+    //    mat.mainTexture = selectedProduct.textures[index];
+
+    //    targetModel.transform.Find("Visual").GetComponent<MeshRenderer>().material = mat;
+
+
+    //}
+
     #endregion
 
-    #region Data Classes - Legacy System
-    [System.Serializable]
-    public class Product
-    {
-        public string itemName;
-        public string itemType;
-        public string price;
-        public string discountPrice;
-        public Sprite image;
+    //#region Data Classes - Legacy System
+    //[System.Serializable]
+    //public class Product
+    //{
+    //    public string itemName;
+    //    public string itemType;
+    //    public string price;
+    //    public string discountPrice;
+    //    public Sprite image;
 
-        public float width;
-        public float depth;
-        public float height;
+    //    public float width;
+    //    public float depth;
+    //    public float height;
 
-        public List<Texture> texture;
+    //    public List<Texture> texture;
 
-        public string unit;
+    //    public string unit;
 
-        public bool horizontal;
-        public bool isFaceObject = false;
-        public bool isFurniture = false;
-        public bool isHandObject = false;
-        public bool isBodyObject = false;
+    //    public bool horizontal;
+    //    public bool isFaceObject = false;
+    //    public bool isFurniture = false;
+    //    public bool isHandObject = false;
+    //    public bool isBodyObject = false;
 
-        public string categoryType;
-    }
+    //    public string categoryType;
+    //}
 
-    [System.Serializable]
-    public class Subcategory
-    {
-        public string name;
-        public List<Product> products;
-    }
+    //[System.Serializable]
+    //public class Subcategory
+    //{
+    //    public string name;
+    //    public List<Product> products;
+    //}
 
-    [System.Serializable]
-    public class MainCategory
-    {
-        public string name;
-        public List<Subcategory> subcategories;
-    }
-    #endregion
+    //[System.Serializable]
+    //public class MainCategory
+    //{
+    //    public string name;
+    //    public List<Subcategory> subcategories;
+    //}
+    //#endregion
 
     #region Data Classes - API Structure
     #region Product API Structure
@@ -884,6 +1216,7 @@ public class CategoryManager : MonoBehaviour
         public Category category;
 
         public List<ImageData> images;
+        public string thumbnail;
         public List<ThreeDModel> threeDModels;
         public List<ColorData> colors;
         public List<SizeData> sizes;
@@ -891,6 +1224,22 @@ public class CategoryManager : MonoBehaviour
         public DisplayPrice displayPrice;
         public string availability;
 
+        public List<Variants> variants;
+        public string status;
+        public bool isSorted = false;
+    }
+
+    [System.Serializable]
+    public class Variants
+    {
+        public string id;
+        public string sku;
+        public int stock;
+        public float price;
+        public float salePrice;
+        public float cost;
+        public ColorData color;
+        public SizeData size;
     }
 
     [System.Serializable]
@@ -908,6 +1257,9 @@ public class CategoryManager : MonoBehaviour
         public string id;
         public string name;
         public string code;
+        public string createdAt;
+        public string updatedAt;
+        public int sortOrder;
     }
 
     [System.Serializable]
@@ -918,7 +1270,7 @@ public class CategoryManager : MonoBehaviour
         public int sortOrder;
         public string sizeChartUrl;
         public Dimensions dimensions;
-        public string productWeight;
+        public ProductWeight productWeight;
     }
 
     [System.Serializable]
@@ -927,6 +1279,7 @@ public class CategoryManager : MonoBehaviour
         public float price;
         public float salePrice;
         public bool hasSale;
+        public string range;
     }
 
 
@@ -934,7 +1287,7 @@ public class CategoryManager : MonoBehaviour
     public class ProductWeight
     {
         public string unit;
-        public float? value;
+        public float value;
     }
 
     [System.Serializable]
@@ -998,14 +1351,18 @@ public class CategoryManager : MonoBehaviour
         public string code;
         public string createdAt;
         public string updatedAt;
+        public int sortOrder;
     }
 
     [System.Serializable]
-    public class Size
+    public class SizeSingleData
     {
         public string id;
         public string size;
         public int sortOrder;
+        public string sizeChartUrl;
+        public Dimensions dimensions;
+        public ProductWeight productWeight;
     }
 
     [System.Serializable]
@@ -1070,22 +1427,22 @@ public class CategoryManager : MonoBehaviour
         public string ar_type;
     }
 
-    [System.Serializable]
-    public class Variant
-    {
-        public string id;
-        public float price;
-        public int stock;
-        public bool isActive;
-        public string sku;
-        public float? salePrice;
-        public ProductWeight productWeight;
-        public Dimensions dimensions;
-        public string sizeChart;
-        public string sizeFit;
-        public Color color;
-        public Size size;
-    }
+    //[System.Serializable]
+    //public class Variant
+    //{
+    //    public string id;
+    //    public float price;
+    //    public int stock;
+    //    public bool isActive;
+    //    public string sku;
+    //    public float? salePrice;
+    //    public ProductWeight productWeight;
+    //    public Dimensions dimensions;
+    //    public string sizeChart;
+    //    public string sizeFit;
+    //    public Color color;
+    //    public SizeData size;
+    //}
 
     [System.Serializable]
     public class ThreeDModel
@@ -1096,6 +1453,7 @@ public class CategoryManager : MonoBehaviour
         public List<float> pivot;
         public string format;
         public BoundingBox boundingBox;
+        public string texture;
     }
 
     [System.Serializable]
@@ -1164,5 +1522,11 @@ public class CategoryManager : MonoBehaviour
         public List<string> items;
     }
     #endregion
+
+    public class DownloadState : MonoBehaviour
+    {
+        public bool isDownloading;
+        public bool isReady;
+    }
     #endregion
 }

@@ -51,7 +51,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ModelVariant
   img: {fileID: 7037924697742194954}
-  btn: {fileID: 0}
+  btn: {fileID: 4725842383153885694}
+  colorName: {fileID: 0}
+  colorImg: {fileID: 7037924697742194954}
+  selectedImg: {fileID: 6634203295728732510}
   index: 0
 --- !u!1 &2634425303605290017
 GameObject:
@@ -173,13 +176,13 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: CategoriesUI, Assembly-CSharp
-        m_MethodName: ChangeModelColor
-        m_Mode: 2
+      - m_Target: {fileID: 6797312254924926611}
+        m_TargetAssemblyTypeName: ModelVariant, Assembly-CSharp
+        m_MethodName: OnColorClicked
+        m_Mode: 1
         m_Arguments:
-          m_ObjectArgument: {fileID: 7037924697742194954}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.UI.Image, UnityEngine.UI
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -292,7 +295,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1467997254128507981
 RectTransform:
   m_ObjectHideFlags: 0

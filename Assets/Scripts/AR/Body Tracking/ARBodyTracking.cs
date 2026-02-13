@@ -35,6 +35,8 @@ public class ARBodyTracking : MonoBehaviour
     public GameObject m_SkeletonPrefab;
     GameObject skeletonSpawned;
 
+    public float robotModelHeight = 1.857f;
+
     Dictionary<TrackableId, BoneController> m_SkeletonTracker = new Dictionary<TrackableId, BoneController>();
 
     private void OnEnable()
@@ -78,9 +80,16 @@ public class ARBodyTracking : MonoBehaviour
             if (!m_SkeletonTracker.TryGetValue(humanBody.trackableId, out boneController))
             {
                 Debug.Log($"Adding a new skeleton [{humanBody.trackableId}].");
+
                 skeletonSpawned = Instantiate(m_SkeletonPrefab, humanBody.transform);
+                skeletonSpawned.transform.localPosition = Vector3.zero;
+                skeletonSpawned.transform.localRotation = Quaternion.identity;
+                skeletonSpawned.transform.localScale = Vector3.one;
+
                 boneController = skeletonSpawned.GetComponent<BoneController>();
                 m_SkeletonTracker.Add(humanBody.trackableId, boneController);
+
+
             }
 
             boneController.InitializeSkeletonJoints();
@@ -106,8 +115,38 @@ public class ARBodyTracking : MonoBehaviour
         {
             if (m_SkeletonTracker.TryGetValue(humanBody.trackableId, out boneController))
             {
-                boneController.ApplyBodyPose(humanBody); 
-                
+                boneController.ApplyBodyPose(humanBody);
+
+                float scaleFactor = humanBody.estimatedHeightScaleFactor / robotModelHeight;
+
+                boneController.transform.localScale = new Vector3(scaleFactor, scaleFactor, scaleFactor);
+
+                var joints = humanBody.joints;
+
+                var chest = joints[(int)CustomBones.Chest];
+                var hips = joints[(int)CustomBones.Hips];
+                var leftWrist = joints[(int)CustomBones.LeftHand];
+                var neck = joints[(int)CustomBones.Neck2];
+                var leftEye = joints[(int)CustomBones.LeftEye];
+                var rightEye = joints[(int)CustomBones.RightEye];
+
+                if (shirtPrefab && chest.tracked)
+                {
+                    if (!shirtInstance) shirtInstance = Instantiate(shirtPrefab, skeletonSpawned.GetComponent<BoneController>().GetJointTransform(BoneController.JointIndices.Spine6));
+                    shirtInstance.transform.SetLocalPositionAndRotation(
+                        chest.localPose.position + /*chest.anchorPose.rotation * */shirtOffset,
+                        chest.localPose.rotation);
+                    Debug.Log("shirt spawned");
+                }
+
+                if (pantPrefab && hips.tracked)
+                {
+                    if (!pantInstance) pantInstance = Instantiate(pantPrefab);
+                    pantInstance.transform.SetPositionAndRotation(
+                        hips.anchorPose.position + hips.anchorPose.rotation * pantOffset,
+                        hips.anchorPose.rotation);
+                }
+
                 //if (watchInstance != null)
                 //    watchInstance.transform.localPosition = watchOffset;
                 //if (ringInstance != null)
@@ -128,34 +167,6 @@ public class ARBodyTracking : MonoBehaviour
                 //Destroy(ringInstance.gameObject);
                 //m_SkeletonTracker.Remove(trackableId);
             //}
-        }
-        foreach(var body in eventArgs.updated)
-        {
-            var joints = body.joints;
-
-            var chest = joints[(int)CustomBones.Chest];
-            var hips = joints[(int)CustomBones.Hips];
-            var leftWrist = joints[(int)CustomBones.LeftHand];
-            var neck = joints[(int)CustomBones.Neck2];
-            var leftEye = joints[(int)CustomBones.LeftEye];
-            var rightEye = joints[(int)CustomBones.RightEye];
-
-            if (shirtPrefab && chest.tracked)
-            {
-                if (!shirtInstance) shirtInstance = Instantiate(shirtPrefab, skeletonSpawned.GetComponent<BoneController>().GetJointTransform(BoneController.JointIndices.Spine6));
-                shirtInstance.transform.SetLocalPositionAndRotation(
-                    chest.localPose.position + /*chest.anchorPose.rotation * */shirtOffset,
-                    chest.localPose.rotation);
-                Debug.Log("shirt spawned");
-            }
-
-            if (pantPrefab && hips.tracked)
-            {
-                if (!pantInstance) pantInstance = Instantiate(pantPrefab);
-                pantInstance.transform.SetPositionAndRotation(
-                    hips.anchorPose.position + hips.anchorPose.rotation * pantOffset,
-                    hips.anchorPose.rotation);
-            }
         }
 
         //if (watchPrefab && leftWrist.tracked)

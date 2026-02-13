@@ -25,7 +25,6 @@ public enum CategoryType
 
 public class ARJewelryManager : MonoBehaviour
 {
-    
     [Header("References")]
     public ARFaceManager faceManager;
 
@@ -105,8 +104,10 @@ public class ARJewelryManager : MonoBehaviour
     {
         faceManager.trackablesChanged.RemoveListener(OnFacesChanged);
     }
+
     private void OnFacesChanged(ARTrackablesChangedEventArgs<ARFace> args)
     {
+        Debug.Log("Face Detected");
         foreach (var face in args.added)
         {
             //if (currentFace == null)
@@ -143,13 +144,14 @@ public class ARJewelryManager : MonoBehaviour
             {
                 if (currentFace != null)
                 {
+                    item.instance.SetActive(true);
                     item.instance.transform.parent = currentFace.transform;
                     item.instance.transform.localRotation = Quaternion.identity;
                 }
                 else
                     return;
 
-                    Vector3 localPosition = Vector3.zero;
+                Vector3 localPosition = Vector3.zero;
                 switch (item.category)
                 {
                     case CategoryType.Glasses:
@@ -174,14 +176,13 @@ public class ARJewelryManager : MonoBehaviour
                         break;
                 }
                 // Instantiate as child of currentFace.transform
-
-                Debug.Log("Local Position " + localPosition);
+                //Debug.Log("Local Position " + localPosition);
                 if (localPosition == Vector3.zero)
                     continue;
 
                 //item.instance = Instantiate(item.prefab, currentFace.transform);
                 item.instance.transform.localPosition = localPosition;
-                Debug.Log($"New Position for {item.category} {item.instance.transform.localPosition}");
+                Debug.Log($"New Position for {item.category} is: {item.instance.transform.localPosition}");
                 //item.instance.transform.localRotation = Quaternion.identity; // optional
 
                 // --- Add dynamic scale normalization ---
@@ -196,24 +197,27 @@ public class ARJewelryManager : MonoBehaviour
                     case CategoryType.Glasses: targetSize = 0.12f; break;
                         // Add more types if needed
                 }
-                
-                if(item.allowScale)
+                Debug.Log("Face scale: " + currentFace.transform.localScale);
+                if (item.allowScale)
                 {
                     NormalizeJewelryScale(item.instance, targetSize);
                     item.allowScale = true;
                 }
                 Debug.Log("item Scale : " + item.instance.transform.localScale);
             }
+            else
+                Debug.Log("Item instance = null : " + item.category);
         }
     }
     private void RemoveJewelryItems()
     {
-        foreach (var item in jewelryItems)
+        foreach (var item in jewelries)
         {
             if (item.instance != null)
             {
-                Destroy(item.instance);
-                item.instance = null;
+                item.instance.SetActive(false);
+                item.instance.transform.SetParent(null);
+                //item.instance = null;
             }
         }
     }
@@ -583,8 +587,8 @@ public class ARJewelryManager : MonoBehaviour
     private static class ARKitFaceRegion
     {
 #if UNITY_ANDROID
-        public const int LeftEar = 234;         // Sample index
-        public const int RightEar = 454;        // Sample index
+        public const int LeftEar = 215;         // Sample index
+        public const int RightEar = 435;        // Sample index
         public const int NoseTip = 9;           // Sample index
         public const int ForeheadCenter = 10;   // Sample index
         public const int LeftEye = 130;         // Approx eye socket center

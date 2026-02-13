@@ -122,10 +122,24 @@ public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
         modelCamera.transform.LookAt(focusPoint);
     }
 
+    public void NormalizeModelSize(GameObject obj, float targetSize = 10f)
+    {
+        Bounds bounds = GetObjectBounds(obj);
 
+        float maxSize = Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z);
+
+        if (maxSize <= 0f)
+            return;
+
+        float scaleFactor = targetSize / maxSize;
+
+        obj.transform.localScale *= scaleFactor;
+    }
 
     public void FrameObject(GameObject obj)
     {
+        NormalizeModelSize(obj);
+
         Bounds bounds = GetObjectBounds(obj);
 
         focusPoint = bounds.center;   // 🔒 LOCKED
@@ -147,7 +161,7 @@ public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
 
         modelCamera.nearClipPlane = Mathf.Max(0.01f, distance * 0.03f);
 
-        yaw = 0f;
+        yaw = 180f;   // face the front of the model
         pitch = 15f;
 
         UpdateCamera();

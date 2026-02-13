@@ -4616,16 +4616,10 @@ MonoBehaviour:
   slidePanel: {fileID: 461297247}
   planeManager: {fileID: 0}
   objectSelectedIndex: 0
+  selectedMatIndex: 0
   arSession: {fileID: 1655997684}
   modelPrefab: {fileID: 0}
-  UI_3D_Models:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  UI_3D_Models: []
   UI_3D_Models_Parent: {fileID: 0}
   arCamera: {fileID: 153084934}
   selectedObject: {fileID: 0}
@@ -4639,6 +4633,9 @@ MonoBehaviour:
   SD_ProductName: {fileID: 0}
   SD_Price: {fileID: 0}
   SD_SalePrice: {fileID: 0}
+  colorParent_SD: {fileID: 0}
+  colorParent_LD: {fileID: 0}
+  colorPrefab: {fileID: 0}
   SD_Color1: {fileID: 0}
   SD_Color2: {fileID: 0}
   SD_Color3: {fileID: 0}
@@ -4646,6 +4643,7 @@ MonoBehaviour:
   LD_ProductName: {fileID: 0}
   LD_Price: {fileID: 0}
   LD_SalePrice: {fileID: 0}
+  sizes: {fileID: 0}
   LD_Color1: {fileID: 0}
   LD_Color2: {fileID: 0}
   LD_Color3: {fileID: 0}
@@ -8985,14 +8983,7 @@ MonoBehaviour:
   unselectedBgColor: {r: 1, g: 1, b: 1, a: 0.011764706}
   spawner: {fileID: 0}
   arJewelryManager: {fileID: 0}
-  prefabs:
-  - {fileID: 857056807526817943, guid: 4903352533db0bd47a4d8b4b88b7e916, type: 3}
-  - {fileID: 857056807526817943, guid: 51f885a65767bae488aa631c9e58a7eb, type: 3}
-  - {fileID: 3111154595941533671, guid: 46318c6a61d39164384c063dc198dcbe, type: 3}
-  - {fileID: 5039759082606966724, guid: 3c799ab02fadbfd40bf228d2c62801f4, type: 3}
-  - {fileID: 3111154595941533671, guid: 675a214e86cf5d747932382632fc591d, type: 3}
-  - {fileID: 805841464060907228, guid: 0e031763f1cfce14d94a61f98ef2a2bd, type: 3}
-  - {fileID: 5360752921977978236, guid: ebb03fec9227a4a498ecc8b4b09bfaf2, type: 3}
+  prefabs: []
   glbPrafabHorizontal: {fileID: 0}
   glbPrafabVertical: {fileID: 0}
   topLevelCategoryParent: {fileID: 231110712}
@@ -9011,6 +9002,11 @@ MonoBehaviour:
     genders: []
     availabilities: []
     colors: []
+  modelVariantPrefab: {fileID: 0}
+  modelVariantParent: {fileID: 0}
+  mv: {fileID: 0}
+  downloadedModels: []
+  tempModels: []
 --- !u!1 &462371337
 GameObject:
   m_ObjectHideFlags: 0
@@ -9297,7 +9293,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ARBodyTracking
   aRHumanBodyManager: {fileID: 500942741}
-  shirtPrefab: {fileID: 895179227092401512, guid: 31c08666c552a7041bf5e4128269514c, type: 3}
+  shirtPrefab: {fileID: 654682090193114100, guid: 54f0a705b2ab82b438d8b4c9337cee91, type: 3}
   pantPrefab: {fileID: 0}
   watchPrefab: {fileID: 0}
   tiePrefab: {fileID: 0}
@@ -18180,6 +18176,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25e7f97ea677e334ebeb4a5df6853ada, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  leftPercent: 0
+  rightPercent: 0
+  topPercent: 0
+  bottomPercent: 0
 --- !u!1 &1041967032
 GameObject:
   m_ObjectHideFlags: 0
@@ -23828,11 +23828,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e193edba45dee2148993b4cbc7fe85da, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetModel: {fileID: 0}
+  modelCamera: {fileID: 0}
   rotationSpeed: 0.2
+  autoRotateSpeed: 20
+  minPitch: -30
+  maxPitch: 70
+  autoRotateDelay: 3
+  targetModel: {fileID: 0}
   autoRotationSpeed: 10
   interactionPauseDuration: 2
-  modelCamera: {fileID: 0}
   zoomSpeed: 2
   minZoom: -6
   maxZoom: -2

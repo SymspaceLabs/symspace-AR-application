@@ -202,6 +202,7 @@ public class OnBoardingUI : MonoBehaviour
 
     public void BeginSimulation()
     {
+        PlayerPrefs.SetInt("OnBoarding", 1);
         discovery_Panel.SetActive(true);
         HideAll();
         foreach (var screen in screens)

@@ -18,6 +18,8 @@ public class DirectionalKeyMovement : MonoBehaviour
     public bool isRotating = false;
     private float rotationDirection = 0f;
 
+    public string modelID;
+
     private IEnumerator Start()
     {
         bool MovementState = enableDirectionalKeyMovement;

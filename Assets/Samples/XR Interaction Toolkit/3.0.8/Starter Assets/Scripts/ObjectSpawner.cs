@@ -242,9 +242,9 @@ public class ObjectSpawner : MonoBehaviour
     /// Called when an object is selected by touch or other input.
     /// </summary>
     /// <param name="obj">The selected GameObject.</param>
-    public void ObjectSelected(GameObject obj)
+    public void ObjectSelected(int index)
     {
-        UIManagerAR.instance.objectSelectedIndex = obj.GetComponent<ObjectDetail>().index;
+        UIManagerAR.instance.objectSelectedIndex = index;
     }
 
     /// <summary>
@@ -282,18 +282,67 @@ public class ObjectSpawner : MonoBehaviour
     /// Select the color of a spawned object by index.
     /// </summary>
     /// <param name="index">Index of the color to apply.</param>
-    public void SelectObjectIndex(int index)
+    public bool ChangeTextureByIndex(int index)
     {
         //objectIndex = index; // commented out to preserve original logic
+       
+        foreach (Transform child in UIManagerAR.instance.colorParent_LD)
+        {
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        foreach (Transform child in UIManagerAR.instance.colorParent_SD)
+        {
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        foreach (Transform child in CategoryManager.Instance.modelVariantParent)
+        {
+            child.gameObject.SetActive(true);
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        
         if (object1Spawned)
         {
-            /*Material*/ mat = objectsSpawned[0].GetComponentInChildren<MeshRenderer>().material;
-            Debug.Log("index : " + index);
-            mat.color = objectColors[index];
-            objectsSpawned[0].GetComponentInChildren<MeshRenderer>().material = mat;
-            objectsSpawned[0].GetComponentInChildren<MeshRenderer>().UpdateGIMaterials();
+            GameObject obj = objectsSpawned[UIManagerAR.instance.objectSelectedIndex];
+            /*Material*/ mat = obj.GetComponentInChildren<MeshRenderer>().material;
+            
+            var modelView = UIManagerAR.instance.UI_3D_Models.Find(m =>
+            m.GetComponent<ProductDetails>().product.id == obj.GetComponent<ProductDetails>().product.id);
+
+            mat.mainTexture = modelView.GetComponent<ProductDetails>().textures[index];
+
+            obj.GetComponent<ProductDetails>().selectedColorIndex = index;
+            if (UIManagerAR.instance.objectSelectedIndex >= 0 && UIManagerAR.instance.objectSelectedIndex < objectsSpawned.Count)
+            {
+                obj.GetComponentInChildren<MeshRenderer>().material = mat;
+                obj.GetComponentInChildren<MeshRenderer>().UpdateGIMaterials();
+            }
+
+
+            modelView.GetComponentInChildren<MeshRenderer>().material = mat;
             Canvas.ForceUpdateCanvases();
+
+            UIManagerAR.instance.UpdateDetailData();
+
+            return true;
         }
+
+
+        Debug.Log("index : " + index);
+
+        Canvas.ForceUpdateCanvases();
+        return false;
     }
 
     /// <summary>
@@ -341,20 +390,26 @@ public class ObjectSpawner : MonoBehaviour
         // Instantiate the prefab at the specified index
         //var newObject = Instantiate(m_ObjectPrefabs[objectIndex]);
         var newObject = m_ObjectPrefabs[objectIndex];
-        newObject.AddComponent<ObjectDetail>().index = spawnObjectCount; // Assign unique index
-        newObject.SetActive(true);
-        spawnObjectCount++;
-        objectsSpawned.Insert(0, newObject); // Add to the front of spawned list
+        if (!newObject.GetComponent<ObjectDetail>())
+            newObject.AddComponent<ObjectDetail>().index = spawnObjectCount; // Assign unique index
+        else
+            newObject.GetComponent<ObjectDetail>().index = spawnObjectCount;
 
-        ARDimensionVisualizer aRDimension = newObject.GetComponentInChildren<ARDimensionVisualizer>();
+        newObject.SetActive(true);
+        UIManagerAR.instance.objectSelectedIndex = spawnObjectCount;
+        spawnObjectCount++;
+        //objectsSpawned.Insert(0, newObject); // Add to the front of spawned list
+        objectsSpawned.Add(newObject); // Add to the front of spawned list
+
+        //ARDimensionVisualizer aRDimension = newObject.GetComponentInChildren<ARDimensionVisualizer>();
 
         // Check if the spawn surface is vertical (less than 0.5 Y normal)
         bool isVerticalSurface = Mathf.Abs(spawnNormal.y) < 0.5f;
 
         // Set the ARDimensionVisualizer's dimension texts
-        aRDimension.textLength = objectsSize[objectIndex].length;
-        aRDimension.textHeight = objectsSize[objectIndex].height;
-        aRDimension.textDepth = objectsSize[objectIndex].width;
+        //aRDimension.textLength = objectsSize[objectIndex].length;
+        //aRDimension.textHeight = objectsSize[objectIndex].height;
+        //aRDimension.textDepth = objectsSize[objectIndex].width;
 
         // Update the object's scale based on stored dimensions
         //UpdateObjectScale(newObject, isVerticalSurface);
@@ -429,6 +484,11 @@ public class ObjectSpawner : MonoBehaviour
 
         objectSpawned?.Invoke(newObject); // Trigger event
 
+        CategoryManager.Instance.tempModels.Remove(newObject);
+
+        foreach (Transform obj in CategoryManager.Instance.modelVariantParent)
+            obj.gameObject.SetActive(true);
+
         // Update spawn flags for the corresponding object index
         switch (objectIndex)
         {
@@ -447,39 +507,39 @@ public class ObjectSpawner : MonoBehaviour
     /// </summary>
     /// <param name="newObject">The spawned GameObject to scale.</param>
     /// <param name="isVertical">If true, indicates object is on vertical surface.</param>
-    public void UpdateObjectScale(GameObject newObject, bool isVertical = false)
-    {
-        Vector3 modelOriginalHeight;
+    //public void UpdateObjectScale(GameObject newObject, bool isVertical = false)
+    //{
+    //    Vector3 modelOriginalHeight;
 
-        // Get original bounds size of the mesh renderer
-        modelOriginalHeight = newObject.GetComponentInChildren<MeshRenderer>().bounds.size;
+    //    // Get original bounds size of the mesh renderer
+    //    modelOriginalHeight = newObject.GetComponentInChildren<MeshRenderer>().bounds.size;
 
-        // Calculate scale ratios for each axis according to desired size
+    //    // Calculate scale ratios for each axis according to desired size
 
-        if(isVertical)
-        {
-            float temp = objectsSize[objectIndex].length;
-            objectsSize[objectIndex].length = objectsSize[objectIndex].height;
-            objectsSize[objectIndex].height = objectsSize[objectIndex].width;
-            objectsSize[objectIndex].width = temp;
-        }
+    //    if(isVertical)
+    //    {
+    //        float temp = objectsSize[objectIndex].length;
+    //        objectsSize[objectIndex].length = objectsSize[objectIndex].height;
+    //        objectsSize[objectIndex].height = objectsSize[objectIndex].width;
+    //        objectsSize[objectIndex].width = temp;
+    //    }
 
-        Vector3 finalScale = new Vector3(ConvertToUnityScale(objectsSize[objectIndex].length, unit) / modelOriginalHeight.x,
-            ConvertToUnityScale(objectsSize[objectIndex].height, unit) / modelOriginalHeight.y,
-            ConvertToUnityScale(objectsSize[objectIndex].width, unit) / modelOriginalHeight.z
-            );
+    //    Vector3 finalScale = new Vector3(ConvertToUnityScale(objectsSize[objectIndex].length, unit) / modelOriginalHeight.x,
+    //        ConvertToUnityScale(objectsSize[objectIndex].height, unit) / modelOriginalHeight.y,
+    //        ConvertToUnityScale(objectsSize[objectIndex].width, unit) / modelOriginalHeight.z
+    //        );
 
-        //float scaleX = ConvertToUnityScale(objectsSize[objectIndex].length, unit) / modelOriginalHeight.x;
-        //float scaleY = ConvertToUnityScale(objectsSize[objectIndex].height, unit) / modelOriginalHeight.y;
-        //float scaleZ = ConvertToUnityScale(objectsSize[objectIndex].width, unit) / modelOriginalHeight.z;
+    //    //float scaleX = ConvertToUnityScale(objectsSize[objectIndex].length, unit) / modelOriginalHeight.x;
+    //    //float scaleY = ConvertToUnityScale(objectsSize[objectIndex].height, unit) / modelOriginalHeight.y;
+    //    //float scaleZ = ConvertToUnityScale(objectsSize[objectIndex].width, unit) / modelOriginalHeight.z;
 
 
-        //// Use the smallest scale factor for uniform scaling to fit inside bounds
-        //float uniformScale = Mathf.Min(scaleX, Mathf.Min(scaleY, scaleZ));
-        //Debug.Log("Uniform Scale : " + uniformScale);
-        //newObject.transform.localScale = Vector3.one * uniformScale;
-        newObject.transform.localScale = finalScale;
-    }
+    //    //// Use the smallest scale factor for uniform scaling to fit inside bounds
+    //    //float uniformScale = Mathf.Min(scaleX, Mathf.Min(scaleY, scaleZ));
+    //    //Debug.Log("Uniform Scale : " + uniformScale);
+    //    //newObject.transform.localScale = Vector3.one * uniformScale;
+    //    newObject.transform.localScale = finalScale;
+    //}
 
     /// <summary>
     /// Converts dimensions from inches to Unity scale (meters).

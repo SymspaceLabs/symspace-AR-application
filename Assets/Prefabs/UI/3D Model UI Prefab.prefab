@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4438129282296488033}
+  - component: {fileID: 4709331330518259146}
   m_Layer: 8
   m_Name: 3D Model UI Prefab
   m_TagString: Untagged
@@ -32,6 +33,72 @@ Transform:
   - {fileID: 8729152240789623643}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4709331330518259146
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 176823117388271445}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3eeb67fe63ec5a04997bac739d106afa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProductDetails
+  imagesUrl: []
+  sprites: []
+  product:
+    id: 
+    name: 
+    slug: 
+    description: 
+    material: 
+    gender: 
+    ar_type: 
+    company:
+      id: 
+      entityName: 
+      website: 
+      location: 
+      ein: 
+      userId: 
+      slug: 
+      legalName: 
+      address1: 
+      address2: 
+      city: 
+      state: 
+      country: 
+      zip: 
+      category: 
+      businessPhone: 
+      emailSupport: 
+      phoneSupport: 
+      description: 
+      tagLine: 
+      logo: 
+      banner: 
+      web: 
+      instagram: 
+      twitter: 
+      youtube: 
+      facebook: 
+      isOnboardingFormFilled: 0
+    category:
+      id: 
+      name: 
+      slug: 
+    images: []
+    thumbnail: 
+    threeDModels: []
+    colors: []
+    sizes: []
+    displayPrice:
+      price: 0
+      salePrice: 0
+      hasSale: 0
+    availability: 
+  colorIndex: 0
 --- !u!1 &5314519363000038073
 GameObject:
   m_ObjectHideFlags: 0

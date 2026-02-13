@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "16413480362-l7gfvl360ntq012n1b2vmkdd4ih7uet6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.symspacelabs.SymspaceLabs",
+            "certificate_hash": "f717dc67b40726a2c8a3c177dfac22ff0457bb11"
+          }
+        },
+        {
           "client_id": "16413480362-e2g9nraukjjcr5rej9070q4k4iqv156i.apps.googleusercontent.com",
           "client_type": 3
         }

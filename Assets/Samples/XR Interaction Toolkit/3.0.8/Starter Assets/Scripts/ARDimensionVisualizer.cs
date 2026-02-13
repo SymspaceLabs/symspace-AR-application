@@ -1,6 +1,8 @@
-﻿using UnityEngine;
-using System;
+﻿using System;
 using TMPro;
+using UnityEngine;
+using static Unity.Burst.Intrinsics.X86.Avx;
+using static UnityEngine.Rendering.DebugUI.Table;
 
 public class ARDimensionVisualizer : MonoBehaviour
 {
@@ -24,17 +26,24 @@ public class ARDimensionVisualizer : MonoBehaviour
     public float textOffset = 0.05f;
     public float verticalTextOffset = 0.01f;
 
-    private LineRenderer[] lineRenderers = new LineRenderer[6];
-    private GameObject[] lineTexts = new GameObject[6];
-    private Vector3[] externalCorners = new Vector3[8];
+    public LineRenderer[] lineRenderers = new LineRenderer[6];
+    public GameObject[] lineTexts = new GameObject[6];
+    public Vector3[] externalCorners = new Vector3[8];
 
     void Start()
+    {
+        InitializeLines();
+    }
+
+
+    [ContextMenu("Draw Lines")]
+    void InitializeLines()
     {
         Invoke(nameof(CalculateExternalCorners), 1f);
         Invoke(nameof(CreateAllBorderLines), 1f);
         Invoke(nameof(UpdateAllBorderLines), 1f);
         Invoke(nameof(SetupAllTextObjects), 1f);
-        if(!FindFirstObjectByType<UIManagerAR>().isMeasurementOn)
+        if (!FindFirstObjectByType<UIManagerAR>().isMeasurementOn)
             Invoke(nameof(ToggleMeasurement), 1f);
 
         Invoke(nameof(DisableSomeLines), 1);
@@ -98,6 +107,7 @@ public class ARDimensionVisualizer : MonoBehaviour
             lr.endWidth = lineWidth;
             lr.useWorldSpace = false;
             lr.positionCount = 2;
+            lr.alignment = LineAlignment.TransformZ;
             lineRenderers[i] = lr;
 
             AdjustDashes(lineRenderers[i], dashLength: 0.8f);
@@ -139,42 +149,97 @@ public class ARDimensionVisualizer : MonoBehaviour
         lineRenderers[5].SetPositions(new Vector3[] { externalCorners[2], externalCorners[6] }); // Height (back-right)
     }
 
-    void SetupAllTextObjects()
+    public void UpdateTexts()
     {
+        for(int i = 0; i < lineTexts.Length; i ++)
+        {
+            if (lineTexts[i] == null)
+                continue;
+
+            var tmp = lineTexts[i].GetComponentInChildren<TextMeshPro>();
+            if (tmp == null)
+            {
+                Debug.LogError("TextMeshPro missing in prefab!");
+                continue;
+            }
+
+            switch (i)
+            {
+                case 0:
+                case 2:
+                    tmp.text = textLength + " Inch";
+                    break;
+
+                case 1:
+                    tmp.text = textHeight + " Inch";
+                    break;
+
+                case 3:
+                    tmp.text = textDepth + " Inch";
+                    break;
+
+                case 4:
+                    tmp.text = textHeight + " Inch";
+                    break;
+
+                case 5:
+                    tmp.text = textDepth + " Inch";
+                    break;
+            }
+        }
+    }
+
+    public void SetupAllTextObjects()
+    {
+        if (textPrefab == null) return;
+        if (lineRenderers == null) return;
+
         for (int i = 0; i < lineRenderers.Length; i++)
         {
-            if (textPrefab == null) continue;
+            if (lineRenderers[i] == null)
+                continue;
 
             GameObject textObj = Instantiate(textPrefab);
             textObj.name = "LineText_" + i;
             textObj.transform.SetParent(lineRenderers[i].transform, false);
+
             lineTexts[i] = textObj;
+
+            var tmp = textObj.GetComponentInChildren<TextMeshPro>();
+            if (tmp == null)
+            {
+                Debug.LogError("TextMeshPro missing in prefab!");
+                continue;
+            }
 
             switch (i)
             {
-                case 0: // Width (front)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textLength + " Inch";
+                case 0:
+                case 2:
+                    tmp.text = textLength + " Inch";
                     break;
-                case 2: // Width (back)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textLength + " Inch";
+
+                case 1:
+                    tmp.text = textHeight + " Inch";
                     break;
-                case 1: // Depth (right)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textHeight + " Inch";
+
+                case 3:
+                    tmp.text = textDepth + " Inch";
                     break;
-                case 3: // Depth (left)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textDepth + " Inch";
+
+                case 4:
+                    tmp.text = textHeight + " Inch";
                     break;
-                case 4: // Height (front-left)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textHeight + " Inch";
-                    break;
-                case 5: // Height (back-right)
-                    lineTexts[i].GetComponentInChildren<TextMeshPro>().text = textDepth + " Inch";
+
+                case 5:
+                    tmp.text = textDepth + " Inch";
                     break;
             }
 
-            SetupTextAlignment(i);
+                SetupTextAlignment(i);
         }
     }
+
     void SetupTextAlignment(int i)
     {
         if (i >= lineRenderers.Length || lineTexts[i] == null) return;
@@ -224,7 +289,7 @@ public class ARDimensionVisualizer : MonoBehaviour
         {
             Vector3 modelCenter = transform.position;
             Vector3 fromModelCenter = (center - modelCenter).normalized;
-            Vector3 labelPosition = center + fromModelCenter * 0.4f;
+            Vector3 labelPosition = center + fromModelCenter * 0.3f;
             lineTexts[i].transform.position = labelPosition;
 
             if (lineTexts[i].transform.localPosition.x < 0)
@@ -240,22 +305,35 @@ public class ARDimensionVisualizer : MonoBehaviour
 
     public void DisableSomeLines()
     {
-        lineTexts[0].SetActive(false);
-        lineTexts[1].SetActive(false);
-        lineTexts[5].SetActive(false);
+        if (lineTexts[0] != null)
+        {
+            lineTexts[0].SetActive(false);
+            lineRenderers[0].enabled = false;
+        }
+        if (lineTexts[1] != null)
+        {
+            lineTexts[1].SetActive(false);
+            lineRenderers[1].enabled = false;
 
-        lineRenderers[0].enabled = false;
-        lineRenderers[1].enabled = false;
-        lineRenderers[5].enabled = false;
+        }
+        if (lineTexts[5] != null)
+        {
+            lineTexts[5].SetActive(false);
+            lineRenderers[5].enabled = false;
+
+        }
+
     }
 
     public void ToggleMeasurement()
     {
             foreach (var line in lineTexts)
-                line.SetActive(!line.activeSelf);
+                if(line != null)
+                    line.SetActive(!line.activeSelf);
 
             foreach (var lines in lineRenderers)
-                lines.enabled = !lines.enabled;
+                if (lines != null)
+                    lines.enabled = !lines.enabled;
 
         DisableSomeLines();
     }

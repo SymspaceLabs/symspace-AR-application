@@ -7403,6 +7403,7 @@ MonoBehaviour:
   slidePanel: {fileID: 461297250}
   planeManager: {fileID: 0}
   objectSelectedIndex: 0
+  selectedMatIndex: 0
   arSession: {fileID: 1655997684}
   modelPrefab: {fileID: 0}
   UI_3D_Models: []
@@ -7419,6 +7420,10 @@ MonoBehaviour:
   SD_ProductName: {fileID: 0}
   SD_Price: {fileID: 0}
   SD_SalePrice: {fileID: 0}
+  SD_sizes: {fileID: 0}
+  colorParent_SD: {fileID: 0}
+  colorParent_LD: {fileID: 0}
+  colorPrefab: {fileID: 0}
   SD_Color1: {fileID: 0}
   SD_Color2: {fileID: 0}
   SD_Color3: {fileID: 0}
@@ -7426,9 +7431,14 @@ MonoBehaviour:
   LD_ProductName: {fileID: 0}
   LD_Price: {fileID: 0}
   LD_SalePrice: {fileID: 0}
+  LD_sizes: {fileID: 0}
   LD_Color1: {fileID: 0}
   LD_Color2: {fileID: 0}
   LD_Color3: {fileID: 0}
+  isSizeSelected: 0
+  selectedSizeIndex: 0
+  maxStocks: 0
+  stocksSelected: {fileID: 0}
   arController: 1
   spawner: {fileID: 0}
 --- !u!114 &234504260
@@ -9246,7 +9256,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 170406083}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.86212844
+  m_Size: 0.9270386
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -10200,9 +10210,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.AROcclusionManager
   m_HumanSegmentationStencilMode: 0
   m_HumanSegmentationDepthMode: 0
-  m_EnvironmentDepthMode: 1
-  m_EnvironmentDepthTemporalSmoothing: 1
-  m_OcclusionPreferenceMode: 0
+  m_EnvironmentDepthMode: 0
+  m_EnvironmentDepthTemporalSmoothing: 0
+  m_OcclusionPreferenceMode: 2
 --- !u!1 &383165498
 GameObject:
   m_ObjectHideFlags: 0
@@ -10286,7 +10296,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 535339334}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.5223514
+  m_Size: 0.52235144
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -12763,333 +12773,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05a29b8048f1dd749974bda3c5a466e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainCategories:
-  - name: Discover
-    subcategories: []
-  - name: Fits
-    subcategories: []
-  - name: Furniture
-    subcategories:
-    - name: Sofas
-      products:
-      - itemName: NYC Couches
-        itemType: Simple Two-Seater Couch
-        price: $899.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: 23c61024fe8006745bb59210b6b03f8c, type: 3}
-        width: 67.5
-        depth: 60
-        height: 54
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 1
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-      - itemName: Fancy Furniture
-        itemType: Cotton Couch
-        price: $1,199.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: 398060143e59f334eb4d94e39f40d0d4, type: 3}
-        width: 100
-        depth: 80
-        height: 72
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 1
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-      - itemName: "Ashley\u2019s Furniture 1"
-        itemType: Soft Minimalistic Couch
-        price: $1,999.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: 7181b7d9897eec74f8d3f7586d851d63, type: 3}
-        width: 150
-        depth: 70
-        height: 70
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 1
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-    - name: Chairs
-      products:
-      - itemName: Meridan
-        itemType: Leather Cushioned CHair
-        price: $149.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: f508e012b71ef8641a383d6a91e1a633, type: 3}
-        width: 30
-        depth: 30
-        height: 36
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 1
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-      - itemName: "Ashley\u2019s Furniture"
-        itemType: Satin Chair
-        price: $99.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: 2ff170f40d3c35c418928341dde2826d, type: 3}
-        width: 25
-        depth: 30
-        height: 36
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 1
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-    - name: Tables
-      products:
-      - itemName: Silver Table
-        itemType: Coffee Table
-        price: '#499.99'
-        discountPrice: 
-        image: {fileID: 21300000, guid: 29a37cda521438b4ebda7927264d8bc0, type: 3}
-        width: 30
-        depth: 30
-        height: 36
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 1
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-  - name: Electronics
-    subcategories:
-    - name: TVs
-      products:
-      - itemName: Eastenhome
-        itemType: TV HD 720p LED TV
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 0e212095a4a33dc42b44bcf36d8235b0, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 0
-        isFurniture: 1
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-  - name: Accessories
-    subcategories:
-    - name: Bags
-      products: []
-    - name: Jewelry
-      products:
-      - itemName: Cuban Link Chain
-        itemType: Necklass
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 869099808ee3a6140965b4ea6443551f, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: Necklace
-      - itemName: Necklace CubanLink
-        itemType: Necklace
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 63503216bc4bbe149a7c433404980fd6, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: Necklace
-      - itemName: Necklace Pearl Necklace
-        itemType: Necklace
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: be993fff2591a2a4888235c19296a2b0, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: Necklace
-      - itemName: Jumka
-        itemType: Earing
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 91ee7aaf04012d84493c1e68e1506b37, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: Earing
-      - itemName: Earing Jan Twenty Eighth 2
-        itemType: Earing
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 214f3bd0a740a104dafea2ca25fb6201, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: Earing
-    - name: Watches
-      products:
-      - itemName: watch
-        itemType: Hand Watch
-        price: $50
-        discountPrice: 
-        image: {fileID: 21300000, guid: 8b0cfa0b049c37a4c9007e6729905a45, type: 3}
-        width: 0
-        depth: 0
-        height: 0
-        texture: []
-        unit: 
-        horizontal: 0
-        isFaceObject: 0
-        isFurniture: 0
-        isHandObject: 1
-        isBodyObject: 0
-        categoryType: Watch
-    - name: Rings
-      products:
-      - itemName: Ring
-        itemType: Ring
-        price: $100
-        discountPrice: 
-        image: {fileID: 21300000, guid: 9ef06c63aa08ecd4182268077612bb0a, type: 3}
-        width: 0
-        depth: 0
-        height: 0
-        texture: []
-        unit: 
-        horizontal: 0
-        isFaceObject: 0
-        isFurniture: 0
-        isHandObject: 1
-        isBodyObject: 0
-        categoryType: Ring
-    - name: Headwear
-      products: []
-    - name: Wallets
-      products: []
-    - name: Belts
-      products: []
-    - name: Other
-      products: []
-  - name: Eyewear
-    subcategories:
-    - name: Sunglasses
-      products:
-      - itemName: Glasses 1
-        itemType: Glasses
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: e15d3177b6fac884b8ebaea174f2a733, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: Glasses
-      - itemName: Glasses 2
-        itemType: Glasses
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 84e79cf81658bb64192dac94e8492593, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: Glasses
-      - itemName: Glasses 3
-        itemType: Glasses
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 8ff3a5a576124b3428bca447fabc293d, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: Glasses
-      - itemName: Glasses 4
-        itemType: Glasses
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 18515ba5a05f17f46aec1f6df1f1b8db, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: Glasses
   mainCategoriesImages:
   - {fileID: 1966089678}
   - {fileID: 752051856}
@@ -13106,14 +12789,7 @@ MonoBehaviour:
   unselectedBgColor: {r: 1, g: 1, b: 1, a: 0.011764706}
   spawner: {fileID: 0}
   arJewelryManager: {fileID: 500942741}
-  prefabs:
-  - {fileID: 857056807526817943, guid: 4903352533db0bd47a4d8b4b88b7e916, type: 3}
-  - {fileID: 857056807526817943, guid: 51f885a65767bae488aa631c9e58a7eb, type: 3}
-  - {fileID: 3111154595941533671, guid: 46318c6a61d39164384c063dc198dcbe, type: 3}
-  - {fileID: 5039759082606966724, guid: 3c799ab02fadbfd40bf228d2c62801f4, type: 3}
-  - {fileID: 3111154595941533671, guid: 675a214e86cf5d747932382632fc591d, type: 3}
-  - {fileID: 805841464060907228, guid: 0e031763f1cfce14d94a61f98ef2a2bd, type: 3}
-  - {fileID: 5360752921977978236, guid: ebb03fec9227a4a498ecc8b4b09bfaf2, type: 3}
+  prefabs: []
   glbPrafabHorizontal: {fileID: 0}
   glbPrafabVertical: {fileID: 0}
   topLevelCategoryParent: {fileID: 231110712}
@@ -13132,6 +12808,13 @@ MonoBehaviour:
     genders: []
     availabilities: []
     colors: []
+  modelVariantPrefab: {fileID: 0}
+  modelVariantParent: {fileID: 0}
+  mv: {fileID: 0}
+  downloadedModels: []
+  tempModels: []
+  finalScale: {x: 0, y: 0, z: 0}
+  firstTime: 0
 --- !u!224 &461297249
 RectTransform:
   m_ObjectHideFlags: 0
@@ -13399,77 +13082,77 @@ MonoBehaviour:
   faceManager: {fileID: 500942742}
   jewelryItems:
   - category: 3
-    prefab: {fileID: 6615057711458450658, guid: b185ec693545c6641ad95fe77448e894, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: 0.014, y: -0.02, z: 0.05}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 2
-    prefab: {fileID: 6615057711458450658, guid: b185ec693545c6641ad95fe77448e894, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: -0.014, y: -0.02, z: 0.05}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 3
-    prefab: {fileID: 6512941284398344298, guid: b5e65d5fc39a091469f24dbe9b08b5a0, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: 0.017, y: -0.02, z: 0.05}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 2
-    prefab: {fileID: 6512941284398344298, guid: bb47f68ff8aad37458de06ace0ece556, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: -0.017, y: -0.02, z: 0.05}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 6
-    prefab: {fileID: 5418117207455442742, guid: ee74bbd879f7ffb47981a6c843038926, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: 0, y: -0.005, z: 0.025}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 6
-    prefab: {fileID: 359311865010356578, guid: f40ca264b67e2484f8467533cffce5d5, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: 0, y: -0.005, z: 0.025}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 6
-    prefab: {fileID: 7029400414406848803, guid: 1a3b35ed441db9e41b65c644819d7e01, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: 0, y: -0.005, z: 0.025}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 6
-    prefab: {fileID: 6343940955434717544, guid: 2d050722640101943bc7894a9d73c212, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: 0, y: -0.005, z: 0.025}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 0
-    prefab: {fileID: 8346516920569567297, guid: 7d8ceabe70a8a6345a1377ea3bd5db85, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: 0.005, y: -0.05, z: 0.1}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 0
-    prefab: {fileID: 6483113796386760798, guid: a3a9cc93e6ab8bb44a2f4c31f0b3b2e1, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: 0, y: -0.05, z: 0.1}
     smoothTime: 0
     instance: {fileID: 0}
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   - category: 0
-    prefab: {fileID: 3391222421660590622, guid: 3367736d765ea964db84e4281da8cf3e, type: 3}
+    prefab: {fileID: 0}
     localOffset: {x: 0.005, y: -0.03, z: 0.1}
     smoothTime: 0
     instance: {fileID: 0}
@@ -19569,169 +19252,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05a29b8048f1dd749974bda3c5a466e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainCategories:
-  - name: Discover
-    subcategories: []
-  - name: Fits
-    subcategories: []
-  - name: Furniture
-    subcategories:
-    - name: Sofas
-      products:
-      - itemName: NYC Couches
-        itemType: Simple Two-Seater Couch
-        price: $899.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: 23c61024fe8006745bb59210b6b03f8c, type: 3}
-        width: 67.5
-        depth: 60
-        height: 54
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-      - itemName: Fancy Furniture
-        itemType: Cotton Couch
-        price: $1,199.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: 398060143e59f334eb4d94e39f40d0d4, type: 3}
-        width: 100
-        depth: 80
-        height: 72
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-      - itemName: "Ashley\u2019s Furniture 1"
-        itemType: Soft Minimalistic Couch
-        price: $1,999.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: 7181b7d9897eec74f8d3f7586d851d63, type: 3}
-        width: 150
-        depth: 70
-        height: 70
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-    - name: Chairs
-      products:
-      - itemName: Meridan
-        itemType: Leather Cushioned CHair
-        price: $149.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: f508e012b71ef8641a383d6a91e1a633, type: 3}
-        width: 30
-        depth: 30
-        height: 36
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-      - itemName: "Ashley\u2019s Furniture"
-        itemType: Satin Chair
-        price: $99.99
-        discountPrice: 
-        image: {fileID: 21300000, guid: 2ff170f40d3c35c418928341dde2826d, type: 3}
-        width: 25
-        depth: 30
-        height: 36
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-    - name: Tables
-      products:
-      - itemName: Silver Table
-        itemType: Coffee Table
-        price: '#499.99'
-        discountPrice: 
-        image: {fileID: 21300000, guid: 29a37cda521438b4ebda7927264d8bc0, type: 3}
-        width: 30
-        depth: 30
-        height: 36
-        texture: []
-        unit: in
-        horizontal: 1
-        isFaceObject: 0
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-  - name: Electronics
-    subcategories:
-    - name: TVs
-      products:
-      - itemName: Eastenhome
-        itemType: TV HD 720p LED TV
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 0e212095a4a33dc42b44bcf36d8235b0, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 0
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-  - name: Accessories
-    subcategories:
-    - name: Bags
-      products: []
-    - name: Jewelry
-      products:
-      - itemName: Golden Necklass
-        itemType: Necklass
-        price: $149.99
-        discountPrice: $79.99
-        image: {fileID: 21300000, guid: 869099808ee3a6140965b4ea6443551f, type: 3}
-        width: 35
-        depth: 30
-        height: 5
-        texture: []
-        unit: in
-        horizontal: 0
-        isFaceObject: 1
-        isFurniture: 0
-        isHandObject: 0
-        isBodyObject: 0
-        categoryType: 
-    - name: Watches
-      products: []
-    - name: Headwear
-      products: []
-    - name: Wallets
-      products: []
-    - name: Belts
-      products: []
-    - name: Other
-      products: []
-  - name: Eyewear
-    subcategories: []
   mainCategoriesImages:
   - {fileID: 954876258}
   - {fileID: 1332784505}
@@ -19774,6 +19294,13 @@ MonoBehaviour:
     genders: []
     availabilities: []
     colors: []
+  modelVariantPrefab: {fileID: 0}
+  modelVariantParent: {fileID: 0}
+  mv: {fileID: 0}
+  downloadedModels: []
+  tempModels: []
+  finalScale: {x: 0, y: 0, z: 0}
+  firstTime: 0
 --- !u!114 &729244259
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20046,7 +19573,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 320259733}
   m_HandleRect: {fileID: 320259732}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -27797,6 +27324,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25e7f97ea677e334ebeb4a5df6853ada, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  leftPercent: 0
+  rightPercent: 0
+  topPercent: 0
+  bottomPercent: 0
 --- !u!1 &1039145452
 GameObject:
   m_ObjectHideFlags: 0
@@ -28790,7 +28321,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1054905567
 RectTransform:
   m_ObjectHideFlags: 0
@@ -40967,7 +40498,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1790368323}
   m_HandleRect: {fileID: 1790368322}
   m_Direction: 0
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -49899,7 +49430,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: AR Scene
+          m_StringArgument: Blogs
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &1949488948
