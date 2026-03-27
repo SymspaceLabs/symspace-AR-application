@@ -419,6 +419,14 @@ MonoBehaviour:
       id: 
       name: 
       slug: 
+      parent:
+        id: 
+        name: 
+        slug: 
+        parent:
+          id: 
+          name: 
+          slug: 
     images: []
     thumbnail: 
     threeDModels: []
@@ -428,12 +436,16 @@ MonoBehaviour:
       price: 0
       salePrice: 0
       hasSale: 0
+      range: 
     availability: 
-    status: 
     variants: []
+    status: 
+    isSorted: 0
   selectedColorIndex: 0
   colors: []
   textures: []
+  isSizeSelected: 0
+  category: 0
 --- !u!1 &3904748748383542035
 GameObject:
   m_ObjectHideFlags: 0
@@ -570,6 +582,29 @@ MonoBehaviour:
   textDepth: 0
   textOffset: 0.05
   verticalTextOffset: 0.01
+  lineRenderers:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  lineTexts:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  externalCorners:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
 --- !u!1 &7388102642618079983
 GameObject:
   m_ObjectHideFlags: 0
@@ -708,6 +743,10 @@ PrefabInstance:
     - target: {fileID: 5626388012901643927, guid: 35680ec0aa1453742a70d4dc603dc9dd, type: 3}
       propertyPath: m_Name
       value: Canvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 5626388012901643927, guid: 35680ec0aa1453742a70d4dc603dc9dd, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8114390095158829857, guid: 35680ec0aa1453742a70d4dc603dc9dd, type: 3}
       propertyPath: targetModel

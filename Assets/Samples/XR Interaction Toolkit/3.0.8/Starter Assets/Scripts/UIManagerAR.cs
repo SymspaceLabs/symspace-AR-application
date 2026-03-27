@@ -1,14 +1,17 @@
+using System;
 using System.Collections;
-using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
+using TMPro;
+using Unity.XRTools.ModuleLoader;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using UnityEngine.XR.Interaction.Toolkit.Transformers;
-using TMPro;
-using System.Linq;
+using UnityEngine.XR.Management;
 
 public class UIManagerAR : MonoBehaviour
 {
@@ -107,9 +110,25 @@ public class UIManagerAR : MonoBehaviour
 
     public TextMeshProUGUI stocksSelected;
 
+    public Action OnResetClick;
+
     private void Awake()
     {
         instance = this;
+
+        if(PlayerPrefs.GetInt("Restart") == 1 && !SceneManager.GetActiveScene().name.Equals("AR Body Tracking With Mars"))
+        {
+            PlayerPrefs.SetInt("Restart", 0);
+            StartCoroutine(RestartScene());
+        }
+    }
+
+    IEnumerator RestartScene()
+    {
+        yield return LoaderUtility.Initialize();
+        LoaderUtility.GetActiveLoader()?.Start();
+        yield return null;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     private void Start()
@@ -219,6 +238,7 @@ public class UIManagerAR : MonoBehaviour
     public void BlogScene()
     {
         SceneManager.LoadScene("Blogs");
+        //ARSceneHelper.CleanLoad("Blogs");
     }
 
     public void ChangeARScene(string sceneName)
@@ -230,18 +250,19 @@ public class UIManagerAR : MonoBehaviour
 
     private IEnumerator SwitchScene(string sceneName)
     {
-        if (arSession != null)
-        {
-            arSession.Reset(); // Or arSession.enabled = false;
-            arSession.enabled = false;
-        }
+        yield return null;
 
         DisableOcclusion();
+#if UNITY_IOS
+        if (sceneName.Equals("AR Body Tracking With Mars"))
+            LoaderUtility.Deinitialize();
+#endif
+#if UNITY_ANDROID
+        if(!sceneName.Equals("AR Body Tracking With Mars") && !sceneName.Equals("Hand Tracking"))
+#endif
+            SceneManager.LoadScene(sceneName);
 
-        // Wait a frame or two to let ARSession properly stop
-        yield return new WaitForSeconds(2f);
-
-        SceneManager.LoadScene(sceneName);
+        //ARSceneHelper.CleanLoad(sceneName);
     }
 
     public void MenuBtn()
@@ -339,7 +360,6 @@ public class UIManagerAR : MonoBehaviour
                 model.SetActive(true);
                 CategoryManager.Products product = selectedModelDetails.product;
 
-                model.GetComponentInChildren<MeshRenderer>().material.mainTexture = model.GetComponent<ProductDetails>().textures[textureIndex];
 
                 SD_CompanyName.text = product.company.entityName;
                 SD_ProductName.text = product.name;
@@ -423,8 +443,8 @@ public class UIManagerAR : MonoBehaviour
 
                 //largeDetail.GetComponent<CategoryManager>().SetProductImages(selectedModelDetails);
 
-
-                spawner.objectColors.Clear();
+                if(spawner != null)
+                    spawner.objectColors.Clear();
                 foreach (Transform obj in CategoryManager.Instance.modelVariantParent)
                     Destroy(obj.gameObject);
 
@@ -432,7 +452,8 @@ public class UIManagerAR : MonoBehaviour
                 {
                     UnityEngine.Color newColor1;
                     ColorUtility.TryParseHtmlString(product.colors[i].code, out newColor1);
-                    spawner.objectColors.Add(newColor1);
+                    if (spawner != null)
+                        spawner.objectColors.Add(newColor1);
                     ModelVariant mv = Instantiate(CategoryManager.Instance.modelVariantPrefab, CategoryManager.Instance.modelVariantParent).GetComponent<ModelVariant>();
                     mv.index = i;
 
@@ -443,14 +464,17 @@ public class UIManagerAR : MonoBehaviour
                         //mv.colorName.text = product.colors[i].name;
                     }
                 }
-
-                spawner.ChangeTextureByIndex(textureIndex);
-                if (spawner.ChangeTextureByIndex(textureIndex))
+                if (spawner != null)
                 {
-                    UpdateDetailData();
+                    spawner.ChangeTextureByIndex(textureIndex);
+                    if (spawner.ChangeTextureByIndex(textureIndex))
+                    {
+                        UpdateDetailData();
+                    }
                 }
 
                 ChangeModelVariant();
+                model.GetComponentInChildren<MeshRenderer>().material.mainTexture = model.GetComponent<ProductDetails>().textures[textureIndex];
                 break;
             }
         }
@@ -686,8 +710,12 @@ public class UIManagerAR : MonoBehaviour
 
     public void NextPreviousImage(int index)
     {
-        ProductDetails pd = spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
-        string id = pd.product.colors[pd.selectedColorIndex].id;
+        ProductDetails pd = null;
+        if (spawner != null)
+            pd = spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
+        else
+            pd = UI_3D_Models[objectSelectedIndex].GetComponent<ProductDetails>();
+        string colorCode = pd.product.colors[pd.selectedColorIndex].code;
         Debug.Log("Object selected : " + pd.selectedColorIndex);
         Debug.Log("ID: " + pd.product.id);
         Debug.Log("current Index before : " + currentImage);
@@ -701,7 +729,7 @@ public class UIManagerAR : MonoBehaviour
         }
         
         if(currentImage != 0)
-            while (selectedModelDetails.product.images[currentImage].colorId != id)
+            while (selectedModelDetails.product.images[currentImage].colorCode != colorCode)
             {
                 currentImage += index;
 
@@ -775,6 +803,8 @@ public class UIManagerAR : MonoBehaviour
 
         itemsToPlaceParent.SetActive(false);
         TogglePlaneVisuals(false);
+
+        OnResetClick?.Invoke();
     }
 
     public void ToggleMovementUI()

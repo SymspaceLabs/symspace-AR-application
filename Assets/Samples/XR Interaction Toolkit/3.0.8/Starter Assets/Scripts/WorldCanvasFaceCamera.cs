@@ -1,27 +1,35 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Canvas))]
 public class WorldCanvasFaceCamera : MonoBehaviour
 {
     public Transform targetModel;         // The model to follow
-    //public Vector3 normalizedOffset = new Vector3(-1f, 1f, 0f);  // Direction to offset, not a fixed distance
     private Camera mainCamera;
     private Canvas canvas;
-    //private Vector3 boundsOffset;
     public float verticalPadding = 0.1f;    // Extra space above the object
 
     public ProductDetails pd;
     public ObjectDetail objDetail;
 
+    public CanvasPosition canvasPosition = CanvasPosition.Top; // default Top
+    public Vector3 customOffset; // only used if CanvasPosition.Custom is selected
+
     void Awake()
     {
-        pd = GetComponentInParent<ProductDetails>();
-        objDetail = GetComponentInParent<ObjectDetail>();
+        //pd = GetComponentInParent<ProductDetails>();
+        //objDetail = GetComponentInParent<ObjectDetail>();
         mainCamera = Camera.main;
         canvas = GetComponent<Canvas>();
         canvas.worldCamera = mainCamera;
         canvas.enabled = false;
+
+        // Detach canvas so scaling of model does not affect it
+        transform.SetParent(null);
+
+        // Set fixed canvas scale
+        transform.localScale = Vector3.one * 0.005f;
 
         if (targetModel != null)
         {
@@ -32,22 +40,66 @@ public class WorldCanvasFaceCamera : MonoBehaviour
             Vector3 topPosition = bounds.center + Vector3.up * (bounds.extents.y + verticalPadding);
             transform.position = topPosition;
         }
+
+        UIManagerAR.instance.OnResetClick += DestroyItself;
     }
 
     void LateUpdate()
     {
-        if (targetModel == null || mainCamera == null) return;
+        if (targetModel == null || mainCamera == null || !targetModel.gameObject.activeInHierarchy)
+            return;
 
+        // Calculate bounds of the model
         Bounds bounds = CalculateBounds(targetModel.gameObject);
 
-        // Position the canvas just above the top of the object
-        Vector3 topPosition = bounds.center + Vector3.up * (bounds.extents.y + verticalPadding);
-        transform.position = topPosition;
+        // Compute offset based on inspector selection
+        Vector3 offset = Vector3.zero;
+        float x = bounds.extents.x + verticalPadding;
+        float y = bounds.extents.y + verticalPadding;
+        float z = bounds.extents.z + verticalPadding;
 
-        // Always face the camera
+        switch (canvasPosition)
+        {
+            case CanvasPosition.Top:
+                offset = Vector3.up * y;
+                break;
+            case CanvasPosition.Bottom:
+                offset = Vector3.down * y;
+                break;
+            case CanvasPosition.Left:
+                offset = Vector3.left * x;
+                break;
+            case CanvasPosition.Right:
+                offset = Vector3.right * x;
+                break;
+            case CanvasPosition.TopLeft:
+                offset = new Vector3(-x, y, 0);
+                break;
+            case CanvasPosition.TopRight:
+                offset = new Vector3(x, y, 0);
+                break;
+            case CanvasPosition.BottomLeft:
+                offset = new Vector3(-x, -y, 0);
+                break;
+            case CanvasPosition.BottomRight:
+                offset = new Vector3(x, -y, 0);
+                break;
+            case CanvasPosition.Custom:
+                offset = customOffset;
+                break;
+        }
+
+        // Update canvas position relative to the model
+        transform.position = bounds.center + offset;
+
+        // Make the canvas face the camera
         transform.LookAt(mainCamera.transform);
         transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
 
+        // Keep the canvas scale constant
+        transform.localScale = Vector3.one * 0.005f;
+
+        // Enable canvas if not already
         if (!canvas.enabled)
             canvas.enabled = true;
     }
@@ -68,20 +120,52 @@ public class WorldCanvasFaceCamera : MonoBehaviour
 
     public void PlusButton()
     {
-        for (int i = 0; i < UIManagerAR.instance.spawner.objectsSpawned.Count; i++)
-        {
-            if (UIManagerAR.instance.spawner.objectsSpawned[i].name == pd.gameObject.name)
+        if (SceneManager.GetActiveScene().name.Equals("AR Scene"))
+            for (int i = 0; i < UIManagerAR.instance.spawner.objectsSpawned.Count; i++)
             {
-                UIManagerAR.instance.objectSelectedIndex = i;
-                break;
+                if (UIManagerAR.instance.spawner.objectsSpawned[i].name == pd.gameObject.name)
+                {
+                    UIManagerAR.instance.objectSelectedIndex = i;
+                    break;
+                }
             }
-        }
-
+        else
+            for (int i = 0; i < UIManagerAR.instance.UI_3D_Models.Count; i++)
+            {
+                if (UIManagerAR.instance.UI_3D_Models[i].name == pd.gameObject.name)
+                {
+                    UIManagerAR.instance.objectSelectedIndex = i;
+                    break;
+                }
+            }
+        Debug.Log("Plus button clicked");
         UIManagerAR.instance.PlusBtn(pd.product.id, pd.selectedColorIndex);
     }
 
+    void DestroyItself()
+    {
+        Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        UIManagerAR.instance.OnResetClick -= DestroyItself;
+    }
     string CleanName(string originalName)
     {
         return originalName.Replace("(Clone)", "").Trim();
+    }
+
+    public enum CanvasPosition
+    {
+        Top,
+        Bottom,
+        Left,
+        Right,
+        TopLeft,
+        TopRight,
+        BottomLeft,
+        BottomRight,
+        Custom  // optional: if you want to provide a manual Vector3
     }
 }

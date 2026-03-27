@@ -16,4 +16,6 @@ public class ProductDetails : MonoBehaviour
     public List<Texture2D> textures;
 
     public bool isSizeSelected = false;
+
+    public CategoryType category;
 }

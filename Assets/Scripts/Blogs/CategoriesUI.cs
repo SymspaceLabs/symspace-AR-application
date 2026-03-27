@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.XR.ARFoundation;
 using UnityGLTF;
 
 public class CategoriesUI : MonoBehaviour
@@ -218,11 +219,8 @@ public class CategoriesUI : MonoBehaviour
         using (UnityWebRequest www = UnityWebRequest.Get(url))
         {
             currentRequest = www;
-            Debug.Log("1");
             www.downloadHandler = new DownloadHandlerFile(localPath);
-            Debug.Log("2");
             yield return www.SendWebRequest();
-            Debug.Log("3");
 
             if (www.result != UnityWebRequest.Result.Success)
             {
@@ -230,7 +228,6 @@ public class CategoriesUI : MonoBehaviour
                 state.isDownloading = false; // allow retry
                 yield break;
             }
-            Debug.Log("4");
         }
 
         // --- Step 2: Load GLB with UnityGLTF ---
@@ -363,7 +360,7 @@ public class CategoriesUI : MonoBehaviour
         {
             GameObject newItem = Instantiate(productPrefab, contentParent);
 
-            newItem.transform.Find("Item Name").GetComponent<TextMeshProUGUI>().text = product.company.legalName;
+            newItem.transform.Find("Item Name").GetComponent<TextMeshProUGUI>().text = product.company.entityName;
             newItem.transform.Find("Item Name").GetComponent<TextMeshProUGUI>().enabled = true;
 
             newItem.transform.Find("Item Type").GetComponent<TextMeshProUGUI>().text = product.name;
@@ -392,7 +389,8 @@ public class CategoriesUI : MonoBehaviour
             }
 
             if(product.thumbnail.Length > 0)
-                StartCoroutine(DownloadImage(product.thumbnail, newItem.transform.Find("Item Icon").GetComponent<Image>(), newItem.transform.Find("Loading Icon").gameObject));
+                StartCoroutine(DownloadImage(product.thumbnail, newItem.GetComponentsInChildren<Transform>(true)
+                            .FirstOrDefault(t => t.name == "Item Icon").GetComponent<Image>(), newItem.transform.Find("Loading Icon").gameObject));
     
             newItem.GetComponent<Button>().onClick.AddListener(() => {
                 ShowItemDetail(product);
@@ -560,8 +558,7 @@ public class CategoriesUI : MonoBehaviour
                         }
                     }
 
-                    sizes.value = 0;
-                    sizes.RefreshShownValue();
+                    
 
                     var stateCheck = targetModel.GetComponent<DownloadState>() ?? targetModel.AddComponent<DownloadState>();
                     Debug.Log("stateCheck is Ready " + stateCheck.isReady + ", isdownloading : " + stateCheck.isDownloading, targetModel.gameObject);
@@ -585,6 +582,12 @@ public class CategoriesUI : MonoBehaviour
                     selectedProduct.product = products;
                     if(downloaded == null)
                         StartCoroutine(SetProductImages(selectedProduct));
+
+                    sizes.value = 0;
+                    if (product.sizes.Count == 1)
+                        ChangeSize();
+
+                    sizes.RefreshShownValue();
 
                     ChangeModelTexture(0);
 
@@ -649,24 +652,33 @@ public class CategoriesUI : MonoBehaviour
         isSizeSelected = true;
         selectedSizeIndex = sizes.value;
 
-        if (selectedSizeIndex == 0)
+        int tempSizeIndex = selectedSizeIndex;
+
+        if (selectedProduct.product.sizes.Count == 1)
+            tempSizeIndex = selectedSizeIndex;
+        else
+            tempSizeIndex = selectedSizeIndex - 1;
+
+        if (selectedProduct.product.sizes.Count > 1 && selectedSizeIndex == 0)
+            return;
+        else if (selectedProduct.product.sizes.Count == 0)
             return;
 
-        if (selectedProduct.product.variants[selectedSizeIndex - 1].salePrice > 0 && selectedProduct.product.variants[selectedSizeIndex - 1].price > selectedProduct.product.variants[selectedSizeIndex - 1].salePrice)
+        if (selectedProduct.product.variants[tempSizeIndex].salePrice > 0 && selectedProduct.product.variants[tempSizeIndex].price > selectedProduct.product.variants[tempSizeIndex].salePrice)
         {
-            itemPrice.text = "<s>$" + selectedProduct.product.variants[selectedSizeIndex - 1].price + "<s>";
+            itemPrice.text = "<s>$" + selectedProduct.product.variants[tempSizeIndex].price + "<s>";
             itemPrice.color = new Color(0.7f, 0.7f, 0.7f);
-            itemDiscountPrice.text = "$" + selectedProduct.product.variants[selectedSizeIndex - 1].salePrice;
+            itemDiscountPrice.text = "$" + selectedProduct.product.variants[tempSizeIndex].salePrice;
             itemDiscountPrice.gameObject.SetActive(true);
         }
         else
         {
-            itemPrice.text = "$" + selectedProduct.product.variants[selectedSizeIndex - 1].price;
+            itemPrice.text = "$" + selectedProduct.product.variants[tempSizeIndex].price;
             itemPrice.color = new Color(0f, 0f, 0f);
             itemDiscountPrice.gameObject.SetActive(false);
         }
 
-        maxStocks = selectedProduct.product.variants[selectedSizeIndex - 1].stock;
+        maxStocks = selectedProduct.product.variants[tempSizeIndex].stock;
 
         //if(maxStocks > 0)
         //    stocksSelected.text = "1";
@@ -911,19 +923,28 @@ public class CategoriesUI : MonoBehaviour
             isSizeSelected = true;
             selectedSizeIndex = sizes.value;
 
-            if (selectedSizeIndex == 0)
+            int tempSizeIndex = selectedSizeIndex;
+
+            if (selectedProduct.product.sizes.Count == 1)
+                tempSizeIndex = selectedSizeIndex;
+            else
+                tempSizeIndex = selectedSizeIndex - 1;
+
+            if (selectedProduct.product.sizes.Count > 1 && selectedSizeIndex == 0)
+                return;
+            else if (selectedProduct.product.sizes.Count == 0)
                 return;
 
-            if (selectedProduct.product.variants[selectedSizeIndex - 1].salePrice > 0 && selectedProduct.product.variants[selectedSizeIndex - 1].price > selectedProduct.product.variants[selectedSizeIndex - 1].salePrice)
+            if (selectedProduct.product.variants[tempSizeIndex].salePrice > 0 && selectedProduct.product.variants[tempSizeIndex].price > selectedProduct.product.variants[tempSizeIndex].salePrice)
             {
-                itemPrice.text = "<s>$" + selectedProduct.product.variants[selectedSizeIndex - 1].price + "<s>";
+                itemPrice.text = "<s>$" + selectedProduct.product.variants[tempSizeIndex].price + "<s>";
                 itemPrice.color = new Color(0.7f, 0.7f, 0.7f);
-                itemDiscountPrice.text = "$" + selectedProduct.product.variants[selectedSizeIndex - 1].salePrice;
+                itemDiscountPrice.text = "$" + selectedProduct.product.variants[tempSizeIndex].salePrice;
                 itemDiscountPrice.gameObject.SetActive(true);
             }
             else
             {
-                itemPrice.text = "$" + selectedProduct.product.variants[selectedSizeIndex - 1].price;
+                itemPrice.text = "$" + selectedProduct.product.variants[tempSizeIndex].price;
                 itemPrice.color = new Color(0f, 0f, 0f);
                 itemDiscountPrice.gameObject.SetActive(false);
             }
@@ -992,6 +1013,7 @@ public class CategoriesUI : MonoBehaviour
             ProductSelection.SetSelection(p, true, p.category.name, false, p.threeDModels[0].url);
             SceneManager.LoadScene("AR Face");
         }
+#if UNITY_IOS
         else if(p.ar_type.Equals("hand-tracking"))
         {
             CategoryType category;
@@ -1000,6 +1022,21 @@ public class CategoriesUI : MonoBehaviour
             ProductSelection.SetSelection(p, true, p.category.name, false, p.threeDModels[0].url);
             SceneManager.LoadScene("Hand Tracking");
         }
+        else if (p.ar_type.Equals("body-tracking"))
+        {
+            if (!SceneManager.GetActiveScene().name.Equals("AR Body Tracking With Mars"))
+            {
+                CategoryType category;
+                ProductSelection.TryParseObjectType(p.name, out category);
+                ProductSelection.ClearSelection();
+                ProductSelection.SetSelection(p, false, p.category.name, false, p.threeDModels[0].url);
+
+                LoaderUtility.Deinitialize();
+
+                SceneManager.LoadScene("AR Body Tracking With Mars");
+            }
+        }
+#endif
     }
 
     public void ChangeModelColor(Image img)
@@ -1021,7 +1058,7 @@ public class CategoriesUI : MonoBehaviour
         statusText.text = message;
         statusText.color = isError ? Color.red : Color.white;
     }
-    #endregion
+#endregion
 
     #region Structure Classes
     [System.Serializable]

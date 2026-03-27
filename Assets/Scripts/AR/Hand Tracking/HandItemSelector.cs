@@ -1,3 +1,4 @@
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -10,347 +11,380 @@ public class HandItemSelector : MonoBehaviour
 {
     public static HandItemSelector Instance;
 
-    // Lists for pre-loaded objects (remove these if you're only using downloaded models)
+    #region Inspector
+
     public List<GameObject> watches;
     public List<GameObject> rings;
 
-    // Spawn parents for downloaded models
     public Transform watchSpawnParent;
     public Transform ringSpawnParent;
 
-    Vector3 initialWatchPos;
-    Quaternion initialWatchRot;
-    Vector3 initialWatchScale;
-
-    public Vector3 initialRingPos;
-    public Quaternion initialRingRot;
-    public Vector3 initialRingScale;
-
-    // Parent containers for UI organization
     public GameObject watchesParent;
     public GameObject ringsParent;
 
-    // Active spawned models
-    private GameObject activeWatch;
-    private GameObject activeRing;
+    #endregion
 
-    // Cache for downloaded models to avoid re-downloading
-    private Dictionary<string, GameObject> downloadedModels = new Dictionary<string, GameObject>();
+
+    #region Runtime Containers
+
+    Dictionary<CategoryType, List<GameObject>> preloadedItems;
+    Dictionary<CategoryType, Transform> spawnParents;
+    Dictionary<CategoryType, GameObject> activeItems = new();
+    Dictionary<CategoryType, GameObject> uiParents;
+
+    Dictionary<CategoryType, Vector3> initialPos = new();
+    Dictionary<CategoryType, Quaternion> initialRot = new();
+    Dictionary<CategoryType, Vector3> initialScale = new();
+
+    Dictionary<string, GameObject> downloadedModels = new();
+
+    #endregion
+
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
         Instance = this;
 
-        initialWatchPos = watchSpawnParent.localPosition;
-        initialWatchRot = watchSpawnParent.localRotation;
-        initialWatchScale = watchSpawnParent.localScale;
+        preloadedItems = new()
+        {
+            { CategoryType.Watches, watches },
+            { CategoryType.Rings, rings }
+        };
 
-        initialRingPos = ringSpawnParent.localPosition;
-        initialRingRot = ringSpawnParent.localRotation;
-        initialRingScale = ringSpawnParent.localScale;
+        spawnParents = new()
+        {
+            { CategoryType.Watches, watchSpawnParent },
+            { CategoryType.Rings, ringSpawnParent }
+        };
+
+        uiParents = new()
+        {
+            { CategoryType.Watches, watchesParent },
+            { CategoryType.Rings, ringsParent }
+        };
+
+        CacheInitialTransforms();
     }
 
     private void Start()
     {
-        // Disable pre-loaded objects initially
         DisableAllObjects();
 
         if (ProductSelection.productData != null)
+            SelectItem(ProductSelection.productData.name, ProductSelection.categoryName);
+            //HandleProductSelection();
+    }
+
+    #endregion
+
+
+    #region Initialization
+
+    void CacheInitialTransforms()
+    {
+        foreach (var kv in spawnParents)
         {
-            HandleProductSelection();
+            initialPos[kv.Key] = kv.Value.localPosition;
+            initialRot[kv.Key] = kv.Value.localRotation;
+            initialScale[kv.Key] = kv.Value.localScale;
         }
     }
 
-    private void HandleProductSelection()
+    void ResetSpawnParent(CategoryType category)
     {
-        if (ProductSelection.SelectedObjectType == CategoryType.Watches)
+        Transform parent = spawnParents[category];
+
+        parent.localPosition = initialPos[category];
+        parent.localRotation = initialRot[category];
+        parent.localScale = initialScale[category];
+    }
+
+    #endregion
+
+
+    #region Selection
+
+    void HandleProductSelection(ProductItemData pid = null)
+    {
+        CategoryType category = ProductSelection.SelectedObjectType;
+        string itemName = ProductSelection.productData.name;
+
+
+        //if (downloadedModels.ContainsKey(name))
+        //{
+        //    GameObject existing = downloadedModels[name];
+
+        //    var state = existing.GetComponent<DownloadState>();
+
+        //    if (state != null)
+        //    {
+        //        if (state.isDownloading)
+        //        {
+        //            Debug.Log("Model already downloading.");
+        //            //yield break;
+        //        }
+
+        //        if (state.isReady)
+        //        {
+        //            SelectItem(name, category.ToString());
+        //            //yield break;
+        //        }
+        //    }
+        //}
+
+        //var item = GetPreloadedItem(category, itemName);
+
+        /* if (item != null)
+             SelectItem(item.name, category.ToString(), pid);
+         else */
+        if (ShouldDownloadModel())
         {
-            // Check if we should download or use pre-loaded
-            if (ShouldDownloadModel())
-            {
-                StartCoroutine(DownloadAndSpawnModel(CategoryType.Watches));
-            }
-            else
-            {
-                // Use pre-loaded watch
-                foreach (GameObject w in watches)
-                {
-                    if (w.name == ProductSelection.productData.name)
-                    {
-                        SelectItem(w.name, CategoryType.Watches.ToString());
-                    }
-                }
-            }
+            StartCoroutine(DownloadAndSpawnModel(category, pid ? pid.ProductProgress : null, pid ? pid.DownloadFailed : null));
+            return;
         }
-        else if (ProductSelection.SelectedObjectType == CategoryType.Rings)
-        {
-            // Check if we should download or use pre-loaded
-            if (ShouldDownloadModel())
-            {
-                StartCoroutine(DownloadAndSpawnModel(CategoryType.Rings));
-            }
-            else
-            {
-                // Use pre-loaded ring
-                foreach (GameObject r in rings)
-                {
-                    if (r.name == ProductSelection.productData.name)
-                    {
-                        SelectItem(r.name, CategoryType.Rings.ToString());
-                    }
-                }
-            }
-        }
+
     }
 
-    private bool ShouldDownloadModel()
+    GameObject GetPreloadedItem(CategoryType category, string name)
     {
-        // Check if product has a model URL or if it's not in pre-loaded lists
-        bool hasUrl = !string.IsNullOrEmpty(ProductSelection.modelURL);
-        bool isPreLoaded = watches.Any(w => w.name == ProductSelection.productData.name) ||
-                          rings.Any(r => r.name == ProductSelection.productData.name);
-
-        return hasUrl && !isPreLoaded;
+        return preloadedItems[category].FirstOrDefault(x => x.name == name);
     }
 
-    public void DisableAllObjects()
+    public void SelectItem(string itemName, string categoryName, ProductItemData pid = null)
     {
-        // Disable pre-loaded objects
-        //foreach (var item in watches)
-        //    item.SetActive(false);
-
-        //foreach (var item in rings)
-        //    item.SetActive(false);
-
-        //Disable downloaded models
-        DisableDownloadedModels();
-    }
-
-    private void DisableDownloadedModels()
-    {
-        if (activeWatch != null && !watches.Any(w => w == activeWatch))
-            activeWatch.SetActive(false);
-
-        if (activeRing != null && !rings.Any(r => r == activeRing))
-            activeRing.SetActive(false);
-    }
-
-    private GameObject GetItemByName(List<GameObject> list, string name) =>
-        list.FirstOrDefault(obj => obj.name == name);
-
-    public void SelectItem(string itemName, string categoryName)
-    {
-        CategoryType category;
-        ProductSelection.TryParseObjectType(categoryName, out category);
+        ProductSelection.TryParseObjectType(categoryName, out CategoryType category);
 
         ProductSelection.SelectedObjectType = category;
 
-        switch (category)
+        GameObject item = GetItem(itemName, category);
+
+        if (item == null)
         {
-            case CategoryType.Watches:
-                HandleWatchSelection(itemName);
-
-                break;
-
-            case CategoryType.Rings:
-                HandleRingSelection(itemName);
-                break;
+            //HandleProductSelection(pid? pid: null);
+            if (ShouldDownloadModel())
+            {
+                StartCoroutine(DownloadAndSpawnModel(category, pid ? pid.ProductProgress : null, pid ? pid.DownloadFailed : null));
+                return;
+            }
         }
+
+        var state = item.GetComponent<DownloadState>();
+
+        if (state != null && !state.isReady)
+        {
+            Debug.Log("Model not ready yet.");
+            return;
+        }
+
+        SetActiveItem(category, item);
+
+
+        CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
     }
 
-    private void HandleWatchSelection(string itemName)
+    GameObject GetItem(string itemName, CategoryType category)
     {
-        // First check downloaded models
-        if (downloadedModels.ContainsKey(itemName) && downloadedModels[itemName] != null)
-        {
-            if (activeWatch != null && activeWatch != downloadedModels[itemName])
-                activeWatch.SetActive(false);
+        if (downloadedModels.ContainsKey(itemName))
+            return downloadedModels[itemName];
 
-            activeWatch = downloadedModels[itemName];
-            activeWatch.SetActive(true);
-            watchesParent.SetActive(true);
-        }
-        else
-        {
-            HandleProductSelection();
-        }
-        
-        // Then check pre-loaded watches
-        //else
-        //{
-        //    if (activeWatch != null && activeWatch.name != itemName)
-        //        activeWatch.SetActive(false);
-
-        //    activeWatch = GetItemByName(watches, itemName);
-        //    if (activeWatch != null)
-        //    {
-        //        activeWatch.SetActive(true);
-        //        watchesParent.SetActive(true);
-        //    }
-        //}
+        return GetPreloadedItem(category, itemName);
     }
 
-    private void HandleRingSelection(string itemName)
+    void SetActiveItem(CategoryType category, GameObject obj)
     {
-        // First check downloaded models
-        if (downloadedModels.ContainsKey(itemName) && downloadedModels[itemName] != null)
-        {
-            if (activeRing != null && activeRing != downloadedModels[itemName])
-                activeRing.SetActive(false);
+        if (activeItems.ContainsKey(category) && activeItems[category] != obj)
+            activeItems[category].SetActive(false);
 
-            activeRing = downloadedModels[itemName];
-            activeRing.SetActive(true);
-            ringsParent.SetActive(true);
-        }
-        else
-        {
-            HandleProductSelection();
-        }
+        activeItems[category] = obj;
 
-        // Then check pre-loaded rings
-        //else
-        //{
-        //    if (activeRing != null && activeRing.name != itemName)
-        //        activeRing.SetActive(false);
-
-        //    activeRing = GetItemByName(rings, itemName);
-        //    if (activeRing != null)
-        //    {
-        //        activeRing.SetActive(true);
-        //        ringsParent.SetActive(true);
-        //    }
-        //}
+        obj.SetActive(true);
+        uiParents[category].SetActive(true);
     }
 
-    public IEnumerator DownloadAndSpawnModel(CategoryType category)
-    {
-        if (string.IsNullOrEmpty(ProductSelection.modelURL))
-        {
-            Debug.LogError($"No model URL for product: {ProductSelection.productData.name}");
-            yield break;
-        }
+    #endregion
 
-        // Check if already downloaded
-        if (downloadedModels.ContainsKey(ProductSelection.productData.name) && downloadedModels[ProductSelection.productData.name] != null)
-        {
-            Debug.Log($"Model already downloaded: {ProductSelection.productData.name}");
-            SelectItem(ProductSelection.productData.name, category.ToString());
-            yield break;
-        }
+
+    #region Download System
+
+    bool ShouldDownloadModel()
+    {
+        bool hasUrl = !string.IsNullOrEmpty(ProductSelection.modelURL);
+
+        bool isPreloaded =
+            watches.Any(w => w.name == ProductSelection.productData.name) ||
+            rings.Any(r => r.name == ProductSelection.productData.name);
+
+        return hasUrl && !isPreloaded;
+    }
+
+    public IEnumerator DownloadAndSpawnModel(
+        CategoryType category,
+        Action<float> onProgress = null,
+        Action onFailed = null)
+    {
+        string name = ProductSelection.productData.name;
 
         string url = ProductSelection.modelURL;
-        string localPath = Path.Combine(Application.persistentDataPath, $"{ProductSelection.productData.name}.glb");
-
-        Debug.Log($"Downloading model from: {url}");
-        Debug.Log($"Saving to: {localPath}");
+        string localPath = Path.Combine(Application.persistentDataPath, $"{name}.glb");
 
         using (UnityWebRequest www = UnityWebRequest.Get(url))
         {
             www.downloadHandler = new DownloadHandlerFile(localPath);
-            yield return www.SendWebRequest();
+            www.SendWebRequest();
+
+
+            while (!www.isDone)
+            {
+                onProgress?.Invoke(www.downloadProgress);
+                yield return null;
+            }
 
             if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Download failed for {ProductSelection.productData.name}: {www.error}");
+                Debug.LogError("Download failed: " + www.error);
+                onFailed?.Invoke();
                 yield break;
             }
 
-            Debug.Log($"Download completed: {localPath}");
-
-            // Load and spawn the GLB model
-            yield return StartCoroutine(LoadAndSpawnGLB(localPath, ProductSelection.productData, category));
+            onProgress?.Invoke(1f);
+            Debug.Log("total size : " + www.downloadedBytes);
         }
+
+        yield return StartCoroutine(LoadAndSpawnGLB(localPath, category));
+
     }
 
-    private IEnumerator LoadAndSpawnGLB(string filePath, CategoryManager.Products productData, CategoryType category)
+    #endregion
+
+
+    #region GLB Loading
+
+    IEnumerator LoadAndSpawnGLB(string path, CategoryType category)
     {
-        using (FileStream stream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+        using FileStream stream = new(path, FileMode.Open, FileAccess.Read);
+
+        var importer = new GLTFSceneImporter(stream, new ImportOptions());
+
+        yield return importer.LoadSceneAsync();
+
+        GameObject model = importer.LastLoadedScene;
+
+        if (model == null)
         {
-            var importOptions = new ImportOptions();
-            var importer = new GLTFSceneImporter(stream, importOptions);
+            Debug.LogError("GLB failed to load.");
+            yield break;
+        }
 
-            yield return importer.LoadSceneAsync();
-            GameObject loadedGLB = importer.LastLoadedScene;
+        string name = ProductSelection.productData.name;
 
-            if (loadedGLB == null)
-            {
-                Debug.LogError($"Failed to load GLB model: {productData.name}");
-                yield break;
-            }
+        model.name = name;
 
-            // Set up the loaded model
-            loadedGLB.name = productData.name;
+        var state = model.GetComponent<DownloadState>();
+        if (state == null)
+            state = model.AddComponent<DownloadState>();
 
-            // Get the actual mesh (often a child of the root)
-            Transform modelTransform = loadedGLB.transform;
-            if (loadedGLB.transform.childCount > 0)
-            {
-                modelTransform = loadedGLB.transform.GetChild(0);
-            }
+        state.isDownloading = true;
+        state.isReady = false;
 
-            if(category == CategoryType.Watches)
-            {
-                watchSpawnParent.localPosition = initialWatchPos;
-                watchSpawnParent.localRotation = initialWatchRot;
-                watchSpawnParent.localScale = initialWatchScale;
-            }
-            else
-            {
-                ringSpawnParent.localPosition = initialRingPos;
-                ringSpawnParent.localRotation = initialRingRot;
-                ringSpawnParent.localScale = initialRingScale;
-            }
+        Transform parent = spawnParents[category];
 
-            // Set parent based on category
-            Transform spawnParent = category == CategoryType.Watches ? watchSpawnParent : ringSpawnParent;
+        ResetSpawnParent(category);
 
-            // Reset transform
-            loadedGLB.transform.localRotation = Quaternion.identity;
-            loadedGLB.transform.localScale = Vector3.one;
-            loadedGLB.transform.localEulerAngles = new Vector3(0,180,0);
+        // Reset transform
+        model.transform.localRotation = Quaternion.identity;
+        model.transform.localScale = Vector3.one;
+        model.transform.localEulerAngles = new Vector3(0, 180, 0);
 
-            if(category == CategoryType.Rings)
-                spawnParent.localEulerAngles = new Vector3(90,0,0);
 
-            // watches[0].transform.localEulerAngles = new Vector3(0, 0, 0);
+        if (category == CategoryType.Rings)
+            parent.localEulerAngles = new Vector3(90, 0, 0);
 
-            foreach (Transform obj in spawnParent)
-                obj.gameObject.SetActive(false);    
-            loadedGLB.transform.SetParent(spawnParent);
+        // watches[0].transform.localEulerAngles = new Vector3(0, 0, 0);
 
-            loadedGLB.transform.localPosition = Vector3.zero;
-            // yield return new WaitForSeconds(1f);
-            // watches[0].transform.localEulerAngles = new Vector3(90, 0, 0);
-            // Debug.Log("Watch : " + watches[0].transform.localEulerAngles);
+        foreach (Transform obj in parent)
+            obj.gameObject.SetActive(false);
+        model.transform.SetParent(parent);
 
-            if (category == CategoryType.Watches)
-            {
-                //GetComponent<HandTrackingVisualizer>().currentWristAnchor = loadedGLB;
-                GetComponent<HandTrackingVisualizer>().watchWidth = loadedGLB.GetComponentInChildren<MeshRenderer>().bounds.size.x;
-            }
+        model.transform.localPosition = Vector3.zero;
+        // yield return new WaitForSeconds(1f);
+        // watches[0].transform.localEulerAngles = new Vector3(90, 0, 0);
+        // Debug.Log("Watch : " + watches[0].transform.localEulerAngles);
 
-            if(category == CategoryType.Rings)
-                spawnParent.localEulerAngles = new Vector3(0,0,0);
-                
-            //else if (category == CategoryType.Rings)
-            //    GetComponent<RingPlacer>().currentRing = loadedGLB;
+        if (category == CategoryType.Watches)
+        {
+            //GetComponent<HandTrackingVisualizer>().currentWristAnchor = loadedGLB;
+            GetComponent<HandTrackingVisualizer>().watchWidth = model.GetComponentInChildren<MeshRenderer>().bounds.size.x;
+        }
 
-            Debug.Log("cateogry : " + category);
+        if (category == CategoryType.Rings)
+            parent.localEulerAngles = new Vector3(0, 0, 0);
 
-            // Add to downloaded models cache
-            downloadedModels[ProductSelection.productData.name] = loadedGLB;
+        //else if (category == CategoryType.Rings)
+        //    GetComponent<RingPlacer>().currentRing = loadedGLB;
 
-            // Initially disable the model
-            loadedGLB.SetActive(false);
+        Debug.Log("cateogry : " + category);
 
-            Debug.Log($"✅ Model loaded and cached: {ProductSelection.productData.name}");
+        // Add to downloaded models cache
+        downloadedModels[ProductSelection.productData.name] = model;
 
-            // Automatically select the downloaded model
-            SelectItem(ProductSelection.productData.name, category.ToString());
+        // Initially disable the model
+        //model.SetActive(false);
+
+        Debug.Log($"✅ Model loaded and cached: {ProductSelection.productData.name}");
+
+        //model.transform.localScale = Vector3.one;
+        //model.transform.SetParent(parent);
+        //model.transform.localPosition = Vector3.zero;
+        //model.transform.localRotation = Quaternion.identity;
+        //model.transform.localEulerAngles = new Vector3(0, 180, 0);
+
+        //foreach (Transform t in parent)
+        //    t.gameObject.SetActive(false);
+
+        //if (category == CategoryType.Watches)
+        //{
+        //    GetComponent<HandTrackingVisualizer>().watchWidth =
+        //        model.GetComponentInChildren<MeshRenderer>().bounds.size.x;
+        //}
+
+        //downloadedModels[name] = model;
+
+        state.isDownloading = false;
+        state.isReady = true;
+
+        //Debug.Log($"Model downloaded and cached: {name}");
+
+        //SelectItem(name, category.ToString());
+
+        CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
+    }
+
+    #endregion
+
+
+    #region Utilities
+
+    public bool IsModelReady(string name)
+    {
+        if (!downloadedModels.ContainsKey(name))
+            return false;
+
+        var state = downloadedModels[name].GetComponent<DownloadState>();
+
+        return state != null && state.isReady;
+    }
+
+    public void DisableAllObjects()
+    {
+        foreach (var item in activeItems.Values)
+        {
+            if (item != null)
+                item.SetActive(false);
         }
     }
 
-    // Cleanup method to remove downloaded models
     public void ClearDownloadedModels()
     {
         foreach (var model in downloadedModels.Values)
@@ -358,19 +392,34 @@ public class HandItemSelector : MonoBehaviour
             if (model != null)
                 Destroy(model);
         }
-        downloadedModels.Clear();
 
-        // Reset active references
-        activeWatch = null;
-        activeRing = null;
+        downloadedModels.Clear();
+        activeItems.Clear();
     }
 
-    // Method to pre-download a model (optional)
+    public void DeleteAllHandItems()
+    {
+        foreach (var parent in spawnParents.Values)
+        {
+            foreach (Transform t in parent)
+                Destroy(t.gameObject);
+        }
+
+        ClearDownloadedModels();
+    }
+
     public void PreDownloadModel(CategoryType category)
     {
         if (!downloadedModels.ContainsKey(ProductSelection.productData.name))
-        {
             StartCoroutine(DownloadAndSpawnModel(category));
-        }
     }
+
+    #endregion
+}
+
+
+public class DownloadState : MonoBehaviour
+{
+    public bool isDownloading;
+    public bool isReady;
 }

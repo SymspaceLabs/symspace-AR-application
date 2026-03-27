@@ -26,8 +26,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/AR Body Tracking.unity
     guid: 7380a5ddf19f550499d7c8b240dea0f7
+  - enabled: 1
+    path: Assets/Scenes/AR Body Tracking With Mars.unity
+    guid: ffd88d863e4492a4abe9a1ba0fd9336b
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 28e8c22ebcbef97489d16e2ec7f63b49, type: 2}
+    com.unity.mars-ar-foundation-providers.xr_subsystem_settings: {fileID: 11400000, guid: f00a7f39cf31c3b4bb6da8a66b2130df, type: 2}
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 4152637a518cfc34fadc085c14f32510, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 956a41cd2eefb78458c8cfbc8d82bafb, type: 2}
   m_UseUCBPForAssetBundles: 0

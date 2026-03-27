@@ -43,6 +43,9 @@ public class IOSHandDetector : MonoBehaviour
     public RingPlacer RP;
     public HandItemSelector HIS;
 
+    private Coroutine tutorialRoutine;
+    private bool tutorialActive = true;
+
     public GameObject firstTutorialPage;
     public GameObject secondTutorialPage;
 
@@ -61,25 +64,66 @@ public class IOSHandDetector : MonoBehaviour
             InitializeNativePlugin();
         }
 
-        StartCoroutine(HandleTutorials());
+        tutorialRoutine = StartCoroutine(TutorialFlow());
+
         Invoke(nameof(EnableObjects), 5f);
     }
 
-    IEnumerator HandleTutorials()
+    IEnumerator TutorialFlow()
     {
+        tutorialActive = true;
+
         firstTutorialPage.SetActive(true);
+
         yield return new WaitForSeconds(2f);
+
+        if (!tutorialActive) yield break;
+
         firstTutorialPage.SetActive(false);
-        secondTutorialPage.SetActive(true);
-        yield return new WaitForSeconds(1f);
-        secondTutorialPage.SetActive(false);
-        yield return new WaitForSeconds(0.05f);
-        secondTutorialPage.SetActive(true);
-        yield return new WaitForSeconds(1f);
-        secondTutorialPage.SetActive(false);
-        yield return new WaitForSeconds(0.05f);
-        secondTutorialPage.SetActive(true);
+
+        yield return StartCoroutine(BlinkSecondPage());
     }
+
+    IEnumerator BlinkSecondPage()
+    {
+        while (tutorialActive)
+        {
+            secondTutorialPage.SetActive(true);
+            yield return new WaitForSeconds(1f);
+
+            if (!tutorialActive) yield break;
+
+            secondTutorialPage.SetActive(false);
+            yield return new WaitForSeconds(0.05f);
+        }
+    }
+
+    public void StopTutorial()
+    {
+        tutorialActive = false;
+
+        if (tutorialRoutine != null)
+            StopCoroutine(tutorialRoutine);
+
+        firstTutorialPage.SetActive(false);
+        secondTutorialPage.SetActive(false);
+    }
+
+    //IEnumerator HandleTutorials()
+    //{
+    //    firstTutorialPage.SetActive(true);
+    //    yield return new WaitForSeconds(2f);
+    //    firstTutorialPage.SetActive(false);
+    //    secondTutorialPage.SetActive(true);
+    //    yield return new WaitForSeconds(1f);
+    //    secondTutorialPage.SetActive(false);
+    //    yield return new WaitForSeconds(0.05f);
+    //    secondTutorialPage.SetActive(true);
+    //    yield return new WaitForSeconds(1f);
+    //    secondTutorialPage.SetActive(false);
+    //    yield return new WaitForSeconds(0.05f);
+    //    secondTutorialPage.SetActive(true);
+    //}
 
     void EnableObjects()
     {

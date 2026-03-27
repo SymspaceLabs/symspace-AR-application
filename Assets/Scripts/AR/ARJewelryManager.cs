@@ -1,4 +1,5 @@
-﻿using System.Collections;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using TMPro;
@@ -53,8 +54,13 @@ public class ARJewelryManager : MonoBehaviour
 
     private string localPath;
 
+
+    public List<GameObject> downloadedModels;
+
     private void Start()
     {
+        localPath = Path.Combine(Application.persistentDataPath, "tempModel.glb");
+
         DisableOcclusion();
 
         //if(ProductSelection.ProductName != null)
@@ -157,8 +163,13 @@ public class ARJewelryManager : MonoBehaviour
                     case CategoryType.Glasses:
                         if (currentFace.leftEye != null && currentFace.rightEye != null)
                         {
+#if UNITY_IOS
                             Vector3 leftEye = currentFace.leftEye.localPosition;
                             Vector3 rightEye = currentFace.rightEye.localPosition;
+#elif UNITY_ANDROID
+                            Vector3 leftEye = GetLandmarkWorldPosition(ARKitFaceRegion.LeftEye, Vector3.zero);
+                            Vector3 rightEye = GetLandmarkWorldPosition(ARKitFaceRegion.RightEye, Vector3.zero);
+#endif
                             localPosition = (leftEye + rightEye) / 2f + item.localOffset;
                         }
                         break;
@@ -178,7 +189,10 @@ public class ARJewelryManager : MonoBehaviour
                 // Instantiate as child of currentFace.transform
                 //Debug.Log("Local Position " + localPosition);
                 if (localPosition == Vector3.zero)
+                {
+                    Debug.Log("LocalPosition is Zero : " + item.category);
                     continue;
+                }
 
                 //item.instance = Instantiate(item.prefab, currentFace.transform);
                 item.instance.transform.localPosition = localPosition;
@@ -222,21 +236,167 @@ public class ARJewelryManager : MonoBehaviour
         }
     }
 
-    public void JewelrySelected(Products p, string url, string categoryName)
+    GameObject FindExistingModel(string productId, CategoryType cat)
+    {
+        GameObject downloaded;
+        if (cat == CategoryType.LeftEarring)
+            downloaded = downloadedModels.Find(m =>
+            m.GetComponent<ProductDetails>().product.id == productId && m.GetComponent<ProductDetails>().category == CategoryType.LeftEarring);
+        else if (cat == CategoryType.RightEarring)
+            downloaded = downloadedModels.Find(m =>
+            m.GetComponent<ProductDetails>().product.id == productId && m.GetComponent<ProductDetails>().category == CategoryType.RightEarring);
+        else
+            downloaded = downloadedModels.Find(m =>
+                m.GetComponent<ProductDetails>().product.id == productId);
+
+        if (downloaded != null)
+            return downloaded;
+
+        return null;
+    }
+
+    public IEnumerator JewelrySelected(Products p, string url, string categoryName, ProductItemData pid)
     {
         CategoryType category;
         ProductSelection.TryParseObjectType(categoryName, out category);
+        Debug.Log("name: " + categoryName + ", result: " + category);
+        GameObject newObject = null;
+        GameObject downloadedModel = null;
+        GameObject leftEarringInstance = null;
+        GameObject rightEarringInstance = null;
+        DownloadState stateCheck = null;
 
-        GameObject newObject;
-        if (category == CategoryType.Necklaces)
-            newObject = Instantiate(necklaceHolder);
+        if(category == CategoryType.Earrings)
+        {
+            leftEarringInstance = FindExistingModel(p.id, CategoryType.LeftEarring);
+            rightEarringInstance = FindExistingModel(p.id, CategoryType.RightEarring);
+        }
         else
-            newObject = Instantiate(jewelryHolder);
+        {
+            downloadedModel = FindExistingModel(p.id, category);
+        }
 
-        StartCoroutine(DownloadAndAssign(url, newObject, p));
+        if (leftEarringInstance == null)
+        {
+            if (downloadedModel != null)
+                newObject = downloadedModel;
+            else
+            {
+                if (category == CategoryType.Necklaces)
+                    newObject = Instantiate(necklaceHolder);
+                else
+                    newObject = Instantiate(jewelryHolder);
+
+                var state = newObject.GetComponent<DownloadState>() ?? newObject.AddComponent<DownloadState>();
+                state.isDownloading = false;
+                state.isReady = false;
+
+                newObject.GetComponent<ProductDetails>().product.id = p.id;
+            }
+
+            stateCheck = newObject.GetComponent<DownloadState>();
+
+            if (!stateCheck.isReady && !stateCheck.isDownloading)
+            {
+                if (pid != null)
+                {
+                    Debug.Log("PID is not empty");
+                    yield return StartCoroutine(DownloadAndAssign(url, newObject, p, pid.ProductProgress, pid.DownloadFailed));
+
+                }
+                else
+                    yield return StartCoroutine(DownloadAndAssign(url, newObject, p));
+            }
+        }
+        else
+            stateCheck = leftEarringInstance.GetComponent<DownloadState>();
+
+        var newJewelry = new Jewelries
+            {
+                category = category,
+                instance = newObject
+            };
+
+        Jewelries newLeftJewelry = null;
+        Jewelries newRightJewelry = null;
+
+        if(leftEarringInstance != null)
+            newLeftJewelry = new Jewelries
+            {
+                category = CategoryType.LeftEarring,
+                instance = leftEarringInstance
+            };
+
+        if(rightEarringInstance != null)
+            newRightJewelry = new Jewelries
+            {
+                category = CategoryType.RightEarring,
+                instance = rightEarringInstance
+            };
+
+        if (downloadedModel != null)
+        {
+            if (!downloadedModel.activeInHierarchy)
+            {
+                for (int i = 0; i < jewelries.Count; i++)
+                {
+                    if (jewelries[i].category != newJewelry.category)
+                        continue;
+
+                    // Remove old instance
+                    if (jewelries[i].instance != null)
+                    {
+                        //Destroy(jewelries[i].instance);
+                        jewelries[i].instance.gameObject.SetActive(false);
+                        jewelries[i].instance = newJewelry.instance;
+                        jewelries[i].instance.gameObject.SetActive(true);
+                    }
+                }
+            }
+        }
+
+        if(leftEarringInstance != null)
+        {
+            if (!leftEarringInstance.activeInHierarchy)
+            {
+                for (int i = 0; i < jewelries.Count; i++)
+                {
+                    if (jewelries[i].category == CategoryType.LeftEarring)
+                    {
+                        jewelries[i].instance.gameObject.SetActive(false);
+                        jewelries[i].instance = newLeftJewelry.instance;
+                        jewelries[i].instance.gameObject.SetActive(true);
+                    }
+                    else
+                    {
+                        jewelries[i].instance.gameObject.SetActive(false);
+                        jewelries[i].instance = newRightJewelry.instance;
+                        jewelries[i].instance.gameObject.SetActive(true);
+                    }
+                }
+            }
+        }
+
+
+        if (stateCheck.isReady)
+            CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
     }
 
-    IEnumerator DownloadAndAssign(string url, GameObject targetPrefab, Products p)
+    public string GetUniqueName(string baseName, List<GameObject> existingObjects)
+    {
+        string newName = baseName;
+        int counter = 1;
+
+        while (existingObjects.Exists(obj => obj.name == newName))
+        {
+            newName = $"{baseName}_{counter}";
+            counter++;
+        }
+
+        return newName;
+    }
+
+    IEnumerator DownloadAndAssign(string url, GameObject targetPrefab, Products p, Action<float> onProgress = null, Action onFailed = null)
     {
         if (targetPrefab == null)
         {
@@ -244,152 +404,190 @@ public class ARJewelryManager : MonoBehaviour
             yield break;
         }
 
+        yield return null;
+
+        var state = targetPrefab.GetComponent<DownloadState>();
+        state.isDownloading = true;
+        state.isReady = false;
+
         using (UnityWebRequest www = UnityWebRequest.Get(url))
         {
-            string localPath = Path.Combine(Application.persistentDataPath, Path.GetFileName(url));
+            //string localPath = Path.Combine(Application.persistentDataPath, Path.GetFileName(url));
             www.downloadHandler = new DownloadHandlerFile(localPath);
-            yield return www.SendWebRequest();
+            /*yield return */www.SendWebRequest();
+
+            while (!www.isDone)
+            {
+                // Progress value (0..1)
+                float progress = www.downloadProgress;
+
+                onProgress?.Invoke(progress);
+
+                yield return null; // wait one frame
+            }
 
             if (www.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError("Download failed: " + www.error);
+                onFailed?.Invoke();
                 yield break;
             }
 
-            using (FileStream stream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
+            onProgress?.Invoke(1f); // ensure 100%
+        }
+
+        using (FileStream stream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
+        {
+            var importOptions = new ImportOptions();
+            var importer = new GLTFSceneImporter(stream, importOptions);
+
+            yield return importer.LoadSceneAsync(); // Loads the GLB into a new GameObject
+            GameObject loadedGLB = importer.LastLoadedScene;
+
+            if (loadedGLB == null)
             {
-                var importOptions = new ImportOptions();
-                var importer = new GLTFSceneImporter(stream, importOptions);
-
-                yield return importer.LoadSceneAsync(); // Loads the GLB into a new GameObject
-                GameObject loadedGLB = importer.LastLoadedScene;
-
-                if (loadedGLB == null)
-                {
-                    Debug.LogError("Failed to load GLB model!");
-                    yield break;
-                }
-                Transform actualObject = loadedGLB.transform.childCount > 0
-                         ? loadedGLB.transform.GetChild(0)
-                         : loadedGLB.transform;
-                actualObject.localScale = Vector3.one;
-
-                loadedGLB.transform.parent = targetPrefab.transform;
-                loadedGLB.transform.localPosition = Vector3.zero;
-                loadedGLB.transform.localRotation = Quaternion.identity;
-
-                CategoryType cat;
-                ProductSelection.TryParseObjectType(p.category.name, out cat);
-
-                var newJewelry = new Jewelries
-                {
-                    category = cat,
-                    instance = targetPrefab
-                };
-
-                Debug.Log("Name : " + p.name + ", tag : " + p.category.name);
-                Debug.Log("category : " + cat);
-                //if(Equip(newJewelry))
-                GameObject newRightEaring = new GameObject();
-
-
-                if (newJewelry.category == CategoryType.Earrings)
-                {
-                    newRightEaring = Instantiate(newJewelry.instance);
-                    Quaternion tempRotation = newRightEaring.transform.GetChild(0).transform.rotation;
-                    tempRotation.y = 180f;
-                    newRightEaring.transform.GetChild(0).transform.rotation = tempRotation;
-                }
-
-
-                //Vector3 camPos = Camera.main.transform.position;
-                //camPos.y = newJewelry.instance.transform.position.y;
-                //newJewelry.instance.transform.LookAt(camPos);
-
-                for (int i = 0; i < jewelries.Count; i++)
-                {
-                    switch (newJewelry.category)
-                    {
-                        case CategoryType.Earrings:
-                            {
-                                // Earrings map to TWO slots
-                                if (jewelries[i].category != CategoryType.LeftEarring &&
-                                    jewelries[i].category != CategoryType.RightEarring)
-                                    break;
-
-                                // Remove old instance
-                                if (jewelries[i].instance != null)
-                                {
-                                    Destroy(jewelries[i].instance);
-                                    jewelries[i].instance = null;
-                                }
-
-                                // Assign new instance
-                                if (jewelries[i].category == CategoryType.LeftEarring)
-                                    jewelries[i].instance = newJewelry.instance;
-                                else // RightEarring
-                                    jewelries[i].instance = newRightEaring;
-
-                                currentItemSelected = i;
-                                break;
-                            }
-
-                        default:
-                            {
-                                // All other jewelry = 1:1 category mapping
-                                if (jewelries[i].category != newJewelry.category)
-                                    break;
-
-                                // Remove old instance
-                                if (jewelries[i].instance != null)
-                                {
-                                    Destroy(jewelries[i].instance);
-                                    jewelries[i].instance = null;
-                                }
-
-                                // Apply offset & assign
-                                //Vector3 tempRotation = newJewelry.instance.transform.localEulerAngles;
-                                //tempRotation.x = -20f;
-                                //newJewelry.instance.transform.localEulerAngles = tempRotation;
-
-                                jewelries[i].instance = newJewelry.instance;
-                                currentItemSelected = i;
-
-                                if (jewelries[i].category == CategoryType.Necklaces)
-                                {
-                                    Vector3 tempRot = jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles;
-                                    tempRot.x = -20f;
-                                    tempRot.y = 180;
-                                    jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles = tempRot;
-                                }
-                                else if (jewelries[i].category == CategoryType.Glasses)
-                                {
-                                    Vector3 tempRot = jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles;
-                                    tempRot.y = 180;
-                                    jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles = tempRot;
-                                }
-
-                                    break;
-                            }
-                    }
-                }
-
-                foreach (var jewelry in jewelries)
-                {
-                    if (jewelry.instance != null)
-                    {
-                        jewelry.instance.transform.localScale = Vector3.one;
-                        if (jewelry.category == CategoryType.LeftEarring || jewelry.category == CategoryType.RightEarring)
-                            jewelry.instance.transform.localScale *= 2.5f;
-                        else if (jewelry.category == CategoryType.Glasses)
-                            jewelry.instance.transform.localScale *= 1.2f;
-                        else
-                            jewelry.instance.transform.localScale *= 1.3f;
-                    }
-                }
-
-                Debug.Log("✅ GLB model downloaded, instantiated, and scaled successfully.");
+                Debug.LogError("Failed to load GLB model!");
+                yield break;
             }
+            Transform actualObject = loadedGLB.transform.childCount > 0
+                        ? loadedGLB.transform.GetChild(0)
+                        : loadedGLB.transform;
+            actualObject.localScale = Vector3.one;
+
+            loadedGLB.transform.parent = targetPrefab.transform;
+            loadedGLB.transform.localPosition = Vector3.zero;
+            loadedGLB.transform.localRotation = Quaternion.identity;
+
+
+            targetPrefab.name = GetUniqueName(p.name, downloadedModels);
+
+            CategoryType cat;
+            ProductSelection.TryParseObjectType(p.category.name, out cat);
+
+            var newJewelry = new Jewelries
+            {
+                category = cat,
+                instance = targetPrefab
+            };
+
+            Debug.Log("Name : " + p.name + ", tag : " + p.category.name);
+            Debug.Log("category : " + cat);
+            //if(Equip(newJewelry))
+            GameObject newRightEaring = new GameObject();
+
+
+            if (newJewelry.category == CategoryType.Earrings)
+            {
+                newRightEaring = Instantiate(newJewelry.instance);
+                Quaternion tempRotation = newRightEaring.transform.GetChild(0).transform.rotation;
+                tempRotation.y = 180f;
+                newRightEaring.transform.GetChild(0).transform.rotation = tempRotation;
+            }
+
+
+            //Vector3 camPos = Camera.main.transform.position;
+            //camPos.y = newJewelry.instance.transform.position.y;
+            //newJewelry.instance.transform.LookAt(camPos);
+
+            for (int i = 0; i < jewelries.Count; i++)
+            {
+                switch (newJewelry.category)
+                {
+                    case CategoryType.Earrings:
+                        {
+                            // Earrings map to TWO slots
+                            if (jewelries[i].category != CategoryType.LeftEarring &&
+                                jewelries[i].category != CategoryType.RightEarring)
+                                break;
+
+                            // Remove old instance
+                            if (jewelries[i].instance != null)
+                            {
+                                //Destroy(jewelries[i].instance);
+                                jewelries[i].instance.gameObject.SetActive(false);
+                                jewelries[i].instance = null;
+                            }
+
+                            // Assign new instance
+                            if (jewelries[i].category == CategoryType.LeftEarring)
+                            {
+                                newJewelry.instance.GetComponent<ProductDetails>().category = CategoryType.LeftEarring;
+                                jewelries[i].instance = newJewelry.instance;
+                            }
+                            else // RightEarring
+                            {
+                                newRightEaring.GetComponent<ProductDetails>().category = CategoryType.RightEarring;
+                                jewelries[i].instance = newRightEaring;
+                            }
+
+                            currentItemSelected = i;
+                            break;
+                        }
+
+                    default:
+                        {
+                            // All other jewelry = 1:1 category mapping
+                            if (jewelries[i].category != newJewelry.category)
+                                break;
+
+                            // Remove old instance
+                            if (jewelries[i].instance != null)
+                            {
+                                //Destroy(jewelries[i].instance);
+                                jewelries[i].instance.gameObject.SetActive(false);
+                                jewelries[i].instance = null;
+                            }
+
+                            // Apply offset & assign
+                            //Vector3 tempRotation = newJewelry.instance.transform.localEulerAngles;
+                            //tempRotation.x = -20f;
+                            //newJewelry.instance.transform.localEulerAngles = tempRotation;
+
+                            newJewelry.instance.GetComponent<ProductDetails>().category = newJewelry.category;
+
+                            jewelries[i].instance = newJewelry.instance;
+                            currentItemSelected = i;
+
+                            if (jewelries[i].category == CategoryType.Necklaces)
+                            {
+                                Vector3 tempRot = jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles;
+                                tempRot.x = -20f;
+                                tempRot.y = 180;
+                                jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles = tempRot;
+                            }
+                            else if (jewelries[i].category == CategoryType.Glasses)
+                            {
+                                Vector3 tempRot = jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles;
+                                tempRot.y = 180;
+                                jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles = tempRot;
+                            }
+
+                                break;
+                        }
+                }
+            }
+
+            foreach (var jewelry in jewelries)
+            {
+                if (jewelry.instance != null)
+                {
+                    jewelry.instance.transform.localScale = Vector3.one;
+                    if (jewelry.category == CategoryType.LeftEarring || jewelry.category == CategoryType.RightEarring)
+                        jewelry.instance.transform.localScale *= 2.5f;
+                    else if (jewelry.category == CategoryType.Glasses)
+                        jewelry.instance.transform.localScale *= 1.2f;
+                    else
+                        jewelry.instance.transform.localScale *= 1.3f;
+                }
+            }
+
+            state.isDownloading = false;
+            state.isReady = true;
+
+            if (!downloadedModels.Contains(targetPrefab))
+                downloadedModels.Add(targetPrefab);
+
+            Debug.Log("✅ GLB model downloaded, instantiated, and scaled successfully.");
         }
     }
 
@@ -414,7 +612,18 @@ public class ARJewelryManager : MonoBehaviour
         return true;
     }
 
-
+    public void DeleteAllJewelries()
+    {
+        foreach(var jewelry in jewelries)
+        {
+            if (jewelry.instance != null)
+            {
+                //Destroy(jewelry.instance.gameObject);
+                jewelry.instance.gameObject.SetActive(false);
+                jewelry.instance = null;
+            }
+        }
+    }
 
     private void UpdateItems()
     {
@@ -591,8 +800,8 @@ public class ARJewelryManager : MonoBehaviour
         public const int RightEar = 435;        // Sample index
         public const int NoseTip = 9;           // Sample index
         public const int ForeheadCenter = 10;   // Sample index
-        public const int LeftEye = 130;         // Approx eye socket center
-        public const int RightEye = 359;        // Approx eye socket center
+        public const int LeftEye = 133;         // Approx eye socket center
+        public const int RightEye = 362;        // Approx eye socket center
         public const int HeadTop = 20;          // Approx top of head (for headpin)
         public const int ChinIndex = 152;       // Approx bottom of chin
 #elif UNITY_IOS

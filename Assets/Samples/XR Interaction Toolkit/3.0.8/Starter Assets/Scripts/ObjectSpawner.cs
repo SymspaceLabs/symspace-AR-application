@@ -422,18 +422,32 @@ public class ObjectSpawner : MonoBehaviour
 
         EnsureFacingCamera(); // Confirm the facing camera is assigned
 
+        //Transform plusBtnCanvas = newObject.GetComponentInChildren<Canvas>().transform;
+
         // Orient the spawned object based on surface type
         if (!isVerticalSurface)
         {
             var facePosition = m_CameraToFace.transform.position;
             var forward = facePosition - spawnPoint;
             BurstMathUtility.ProjectOnPlane(forward, spawnNormal, out var projectedForward);
+            
+            //CategoryManager.Instance.UnparentSafely(plusBtnCanvas, newObject.transform);
+
             newObject.transform.rotation = Quaternion.LookRotation(projectedForward, spawnNormal);
+            
+            Physics.SyncTransforms();
+            Canvas.ForceUpdateCanvases();
+
+            //CategoryManager.Instance.ReparentSafely(plusBtnCanvas, newObject.transform);
         }
         else
         {
             BurstMathUtility.ProjectOnPlane(spawnPoint, spawnNormal, out var projectedForward);
+
+            //CategoryManager.Instance.UnparentSafely(plusBtnCanvas, newObject.transform);
+
             newObject.transform.rotation = Quaternion.LookRotation(projectedForward, spawnNormal);
+
 
             Vector3 euler = newObject.transform.eulerAngles;
 
@@ -449,6 +463,11 @@ public class ObjectSpawner : MonoBehaviour
             }
 
             newObject.transform.rotation = Quaternion.Euler(euler);
+            
+            Physics.SyncTransforms();
+            Canvas.ForceUpdateCanvases();
+
+            //CategoryManager.Instance.ReparentSafely(plusBtnCanvas, newObject.transform);
         }
 
         // Apply a random y-axis rotation if enabled
@@ -466,19 +485,7 @@ public class ObjectSpawner : MonoBehaviour
             visualizationTrans.rotation = newObject.transform.rotation;
         }
 
-        Transform plusBtnCanvas = newObject.GetComponentInChildren<Canvas>().transform;
-
-        StartCoroutine(FixCanvasNextFrame(plusBtnCanvas, newObject.transform, plusBtnCanvas.localScale));
-
-        IEnumerator FixCanvasNextFrame(Transform canvas, Transform parent, Vector3 scale)
-        {
-            canvas.SetParent(null, true);
-            canvas.localScale = scale;
-
-            yield return null; // wait one frame
-
-            canvas.SetParent(parent, true);
-        }
+        
 
         //StartCoroutine(UIManagerAR.instance.ChangeMovementControllers(newObject)); // Change UI movement controllers
 

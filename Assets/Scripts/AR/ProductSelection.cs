@@ -19,6 +19,9 @@ public static class ProductSelection
     public static string modelURL;
 
     public static Sprite fetchedSprite;
+
+    public static string categoryName;
+
     //public static PlaneType SelectedPlaneType { get; private set; }
 
     // Call this method when the user selects a product

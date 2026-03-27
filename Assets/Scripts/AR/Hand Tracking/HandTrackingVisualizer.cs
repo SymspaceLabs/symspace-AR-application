@@ -116,7 +116,7 @@ public class HandTrackingVisualizer : MonoBehaviour
                     if(obj.gameObject.activeInHierarchy)
                     {
                         ringPlacer.ProcessHandLandmarks(landmarks, imageWidth, imageHeight, handness);
-                        GetComponent<IOSHandDetector>().secondTutorialPage.SetActive(false);
+                        GetComponent<IOSHandDetector>().StopTutorial();
                         break;
                     }
             }
@@ -144,7 +144,7 @@ public class HandTrackingVisualizer : MonoBehaviour
 
         finalScale *= 36f;
 
-        Debug.Log($"Hand Width: {handWidth:F3}m, Distance: {distance:F2}m, Scale: {finalScale:F3}");
+        //Debug.Log($"Hand Width: {handWidth:F3}m, Distance: {distance:F2}m, Scale: {finalScale:F3}");
 
         return finalScale;
     }
@@ -358,7 +358,7 @@ public class HandTrackingVisualizer : MonoBehaviour
             currentWristAnchor.transform.SetPositionAndRotation(position, rotation);
             currentWristAnchor.transform.localScale = Vector3.one * baseWatchScale;
             isWatchSpawned = true;
-            GetComponent<IOSHandDetector>().secondTutorialPage.SetActive(false);
+            GetComponent<IOSHandDetector>().StopTutorial();
         }
         else if (wristAnchorPrefab != null)
         {

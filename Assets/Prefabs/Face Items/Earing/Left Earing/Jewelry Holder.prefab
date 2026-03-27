@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8479662419064518250}
+  - component: {fileID: 3521387730614287876}
   m_Layer: 0
   m_Name: Jewelry Holder
   m_TagString: Untagged
@@ -31,3 +32,85 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3521387730614287876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6615057711458450658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3eeb67fe63ec5a04997bac739d106afa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ProductDetails
+  imagesUrl: []
+  texturesUrl: []
+  sprites: []
+  product:
+    id: 
+    name: 
+    slug: 
+    description: 
+    material: 
+    gender: 
+    ar_type: 
+    company:
+      id: 
+      entityName: 
+      website: 
+      location: 
+      ein: 
+      userId: 
+      slug: 
+      legalName: 
+      address1: 
+      address2: 
+      city: 
+      state: 
+      country: 
+      zip: 
+      category: 
+      businessPhone: 
+      emailSupport: 
+      phoneSupport: 
+      description: 
+      tagLine: 
+      logo: 
+      banner: 
+      web: 
+      instagram: 
+      twitter: 
+      youtube: 
+      facebook: 
+      isOnboardingFormFilled: 0
+    category:
+      id: 
+      name: 
+      slug: 
+      parent:
+        id: 
+        name: 
+        slug: 
+        parent:
+          id: 
+          name: 
+          slug: 
+    images: []
+    thumbnail: 
+    threeDModels: []
+    colors: []
+    sizes: []
+    displayPrice:
+      price: 0
+      salePrice: 0
+      hasSale: 0
+      range: 
+    availability: 
+    variants: []
+    status: 
+    isSorted: 0
+  selectedColorIndex: 0
+  colors: []
+  textures: []
+  isSizeSelected: 0

@@ -1,8 +1,10 @@
-using UnityEngine;
-using UnityEngine.XR.ARFoundation;
-using System.Collections.Generic;
-using UnityEngine.XR.ARSubsystems;
+using GLTF.Schema;
 using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 
 
 public class ARBodyTracking : MonoBehaviour
@@ -16,6 +18,7 @@ public class ARBodyTracking : MonoBehaviour
     public GameObject tiePrefab;
     public GameObject glassesPrefab;
     public GameObject ringPrefab;
+    public GameObject hatPrefab;
 
     [Header("Offsets")]
     public Vector3 shirtOffset = new Vector3(0, 0, 0);
@@ -24,6 +27,7 @@ public class ARBodyTracking : MonoBehaviour
     public Vector3 tieOffset = new Vector3(0, 0, 0);
     public Vector3 glassesOffset = new Vector3(0, 0, 0);
     public Vector3 ringOffset = new Vector3(0, 0, 0);
+    public Vector3 hatOffset = new Vector3(0, 0.1f, 0);
 
     private GameObject shirtInstance;
     private GameObject pantInstance;
@@ -31,11 +35,28 @@ public class ARBodyTracking : MonoBehaviour
     private GameObject tieInstance;
     private GameObject glassesInstance;
     private GameObject ringInstance;
+    private GameObject hatInstance;
 
     public GameObject m_SkeletonPrefab;
     GameObject skeletonSpawned;
 
     public float robotModelHeight = 1.857f;
+
+    [Header("Accessories Configuration")]
+    public List<TrackedItem> accessories = new List<TrackedItem>();
+
+    [Header("Target Real World Dimensions (Meters)")]
+    public float targetShirtHeight = 0.75f; // 75cm
+    public float targetShirtWidth = 0.55f;  // 55cm
+    public float targetShirtDepth = 0.20f;  // 20cm
+
+    private Vector3 shirtBaseScale = Vector3.one;
+
+    [Header("Smoothing Settings")]
+    [Range(0, 1)]
+    public float positionSmoothing = 0.2f; // Lower = smoother/slower, Higher = faster/snappier
+    [Range(0, 1)]
+    public float rotationSmoothing = 0.15f;
 
     Dictionary<TrackableId, BoneController> m_SkeletonTracker = new Dictionary<TrackableId, BoneController>();
 
@@ -115,45 +136,23 @@ public class ARBodyTracking : MonoBehaviour
         {
             if (m_SkeletonTracker.TryGetValue(humanBody.trackableId, out boneController))
             {
-                boneController.ApplyBodyPose(humanBody);
 
-                float scaleFactor = humanBody.estimatedHeightScaleFactor / robotModelHeight;
+                SmoothApplyBodyPose(boneController, humanBody);
+                //boneController.ApplyBodyPose(humanBody);
+                float humanScale = humanBody.estimatedHeightScaleFactor;
 
-                boneController.transform.localScale = new Vector3(scaleFactor, scaleFactor, scaleFactor);
+                //boneController.transform.localScale = new Vector3(humanScale, humanScale, humanScale);
+                // Smoothly scale the root too
+                boneController.transform.localScale = Vector3.Lerp(
+                    boneController.transform.localScale,
+                    Vector3.one * humanScale,
+                    positionSmoothing
+                );
 
-                var joints = humanBody.joints;
-
-                var chest = joints[(int)CustomBones.Chest];
-                var hips = joints[(int)CustomBones.Hips];
-                var leftWrist = joints[(int)CustomBones.LeftHand];
-                var neck = joints[(int)CustomBones.Neck2];
-                var leftEye = joints[(int)CustomBones.LeftEye];
-                var rightEye = joints[(int)CustomBones.RightEye];
-
-                if (shirtPrefab && chest.tracked)
+                foreach (var item in accessories)
                 {
-                    if (!shirtInstance) shirtInstance = Instantiate(shirtPrefab, skeletonSpawned.GetComponent<BoneController>().GetJointTransform(BoneController.JointIndices.Spine6));
-                    shirtInstance.transform.SetLocalPositionAndRotation(
-                        chest.localPose.position + /*chest.anchorPose.rotation * */shirtOffset,
-                        chest.localPose.rotation);
-                    Debug.Log("shirt spawned");
+                    SyncItem(item, humanBody, boneController, humanScale);
                 }
-
-                if (pantPrefab && hips.tracked)
-                {
-                    if (!pantInstance) pantInstance = Instantiate(pantPrefab);
-                    pantInstance.transform.SetPositionAndRotation(
-                        hips.anchorPose.position + hips.anchorPose.rotation * pantOffset,
-                        hips.anchorPose.rotation);
-                }
-
-                //if (watchInstance != null)
-                //    watchInstance.transform.localPosition = watchOffset;
-                //if (ringInstance != null)
-                //    ringInstance.transform.localPosition = ringOffset;
-
-                //boneController.ApplyObjectPosition(watchInstance.transform, humanBody, BoneController.JointIndices.RightHand, watchOffset);
-                //boneController.ApplyObjectPosition(ringInstance.transform, humanBody, BoneController.JointIndices.RightHandMid1, ringOffset);
             }
         }
 
@@ -195,6 +194,91 @@ public class ARBodyTracking : MonoBehaviour
         //        rot);
         //}
     }
+
+    private void SyncItem(TrackedItem item, ARHumanBody body, BoneController controller, float scale)
+    {
+        if (item.prefab == null) return;
+
+        // 1. Check if the specific joint is tracked
+        var joint = body.joints[(int)item.bone];
+        if (!joint.tracked) return;
+
+        // 2. Get the bone transform from the robot skeleton
+        Transform boneTransform = controller.GetJointTransform((BoneController.JointIndices)item.bone);
+
+        if (item.instance == null)
+        {
+            item.instance = Instantiate(item.prefab);
+            item.baseScale = CalculateBaseScale(item.instance, item.realWorldDimensions);
+        }
+
+        // 3. Sync Position (World space + Offset)
+        item.instance.transform.position = boneTransform.position + (boneTransform.rotation * (item.offset * scale));
+
+        // 4. Sync Rotation (Using the "Green is Front" logic)
+        // Adjust these vectors if specific items (like shoes) face a different way
+        Vector3 forward = boneTransform.up;    // Green
+        Vector3 up = boneTransform.right;      // Red
+        if (forward != Vector3.zero)
+        {
+            item.instance.transform.rotation = Quaternion.LookRotation(forward, up);
+        }
+
+        // 5. Sync Scale (Real world size * AR height factor)
+        item.instance.transform.localScale = Vector3.Scale(item.baseScale, Vector3.one * scale);
+    }
+
+    private Vector3 CalculateBaseScale(GameObject obj, Vector3 targetDimensions)
+    {
+        MeshFilter mesh = obj.GetComponentInChildren<MeshFilter>();
+        if (mesh == null) return Vector3.one;
+
+        Vector3 meshSize = mesh.sharedMesh.bounds.size;
+        return new Vector3(
+            targetDimensions.x / meshSize.x,
+            targetDimensions.y / meshSize.y,
+            targetDimensions.z / meshSize.z
+        );
+    }
+
+    public Slider xSlider;
+    public Slider ySlider;
+    public Slider zSlider;
+
+    // New method to handle the "Lag" effect
+    private void SmoothApplyBodyPose(BoneController controller, ARHumanBody body)
+    {
+        // We iterate through the joints and Lerp their local positions/rotations
+        foreach (var joint in body.joints)
+        {
+            if (!joint.tracked) continue;
+
+            Transform boneTransform = controller.GetJointTransform((BoneController.JointIndices)joint.index);
+            if (boneTransform == null) continue;
+
+            // Smooth Position
+            boneTransform.localPosition = Vector3.Lerp(
+                boneTransform.localPosition,
+                joint.localPose.position,
+                positionSmoothing
+            );
+
+            // Smooth Rotation
+            boneTransform.localRotation = Quaternion.Slerp(
+                boneTransform.localRotation,
+                joint.localPose.rotation,
+                rotationSmoothing
+            );
+        }
+    }
+
+    //private void Update()
+    //{
+    //    if(accessories.Count == 2)
+    //    {
+    //        accessories[1].realWorldDimensions = new Vector3(xSlider.value, ySlider.value, zSlider.value);
+    //    }
+    //}
 
     private void DestroyAllInstances()
     {
@@ -238,5 +322,17 @@ public class ARBodyTracking : MonoBehaviour
         Chin = 53,
         LeftEye = 54,
         RightEye = 59
+    }
+
+    [System.Serializable]
+    public class TrackedItem
+    {
+        public string label;
+        public GameObject prefab;
+        public CustomBones bone;
+        public Vector3 offset;
+        public Vector3 realWorldDimensions = new Vector3(0.5f, 0.5f, 0.1f); // Width, Height, Depth in meters
+        [HideInInspector] public GameObject instance;
+        [HideInInspector] public Vector3 baseScale;
     }
 }

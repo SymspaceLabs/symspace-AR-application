@@ -34,6 +34,15 @@ public class BlogsUI : MonoBehaviour
 
     public List<GameObject> bottomBtns;
 
+    public Image homeBtn;
+    public Image shopBtn;
+
+    public Sprite homeBlack;
+    public Sprite homeBlue;
+
+    public Sprite shopBlack;
+    public Sprite shopBlue;
+
     public GameObject loadingPanel;
     #endregion
 
@@ -43,6 +52,12 @@ public class BlogsUI : MonoBehaviour
         statusText.gameObject.SetActive(false);
 
         LoadBlogs();
+
+        homeBtn.sprite = homeBlue;
+        shopBtn.sprite = shopBlack;
+
+        homeBtn.transform.GetChild(0).gameObject.SetActive(true);
+        shopBtn.transform.GetChild(0).gameObject.SetActive(false);
     }
 
     void Start()
@@ -232,6 +247,15 @@ public class BlogsUI : MonoBehaviour
         PlayerPrefs.SetInt("OnBoarding", 0);
         PlayerPrefs.DeleteKey("id");
         SceneManager.LoadScene("Home");
+    }
+
+    private void OnDisable()
+    {
+        homeBtn.sprite = homeBlack;
+        shopBtn.sprite = shopBlue;
+
+        homeBtn.transform.GetChild(0).gameObject.SetActive(false);
+        shopBtn.transform.GetChild(0).gameObject.SetActive(true);
     }
     #endregion
 

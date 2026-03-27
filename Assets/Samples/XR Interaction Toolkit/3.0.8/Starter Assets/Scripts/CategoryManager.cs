@@ -10,6 +10,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit.Transformers;
 using UnityGLTF;
+using static UnityEngine.UI.Image;
 
 public class CategoryManager : MonoBehaviour
 {
@@ -64,6 +65,8 @@ public class CategoryManager : MonoBehaviour
 
     public Vector3 finalScale;
     public bool firstTime = false;
+
+    public GameObject plusBtnCanvas;
 
     #region Private Variables
     private string localPath;
@@ -242,7 +245,7 @@ public class CategoryManager : MonoBehaviour
         {
             if (SceneManager.GetActiveScene().name == "AR Face")
             {
-                arJewelryManager.JewelrySelected(p, p.threeDModels[0].url, p.category.name);
+                StartCoroutine(arJewelryManager.JewelrySelected(p, p.threeDModels[0].url, p.category.name, pid ? pid : null));
             }
             else if (SceneManager.GetActiveScene().name == "AR Scene")
             {
@@ -258,7 +261,7 @@ public class CategoryManager : MonoBehaviour
 
                 GameObject downloadedModel = FindExistingModel(p.id);
 
-                if(downloadedModel != null)
+                if (downloadedModel != null)
                     newObject = downloadedModel;
                 else
                 {
@@ -309,7 +312,13 @@ public class CategoryManager : MonoBehaviour
                     if (!tempModels.Contains(newObject))
                         tempModels.Add(newObject);
                 }
-                    UIManagerAR.instance.eventSystem.gameObject.SetActive(true);
+
+                WorldCanvasFaceCamera btnCanvas = Instantiate(plusBtnCanvas).GetComponent<WorldCanvasFaceCamera>();
+                btnCanvas.targetModel = newObject.GetComponentInChildren<MeshRenderer>().transform;
+                btnCanvas.pd = newObject.GetComponent<ProductDetails>();
+                btnCanvas.objDetail = newObject.GetComponent<ObjectDetail>();
+
+                UIManagerAR.instance.eventSystem.gameObject.SetActive(true);
 
                 //EventSystem.current.gameObject.SetActive(true);
                 spawner.object1Spawned = false;
@@ -338,10 +347,10 @@ public class CategoryManager : MonoBehaviour
                     mv.colorName.text = p.colors[i].name;
                 }
 
-                
+
                 UIManagerAR.instance.spawner.ChangeTextureByIndex(0);
 
-                if(downloadedModel != null)
+                if (downloadedModel != null)
                 {
                     foreach (var obj in UIManagerAR.instance.UI_3D_Models)
                     {
@@ -370,9 +379,23 @@ public class CategoryManager : MonoBehaviour
 
                 UIManagerAR.instance.TogglePlaneVisuals(true);
 
-                if(stateCheck.isReady)
+                if (stateCheck.isReady)
                     GetComponent<SlideUpPanel>().HidePanel();
                 #endregion
+            }
+            else if (SceneManager.GetActiveScene().name == "Hand Tracking")
+            {
+                if (HandItemSelector.Instance != null)
+                {
+                    ProductSelection.ClearSelection();
+                    ProductSelection.SetSelection(p, false, p.category.name, false, p.threeDModels[0].url);
+                    HandItemSelector.Instance.SelectItem(p.name, p.category.name, pid);
+                }
+            }
+            else if (SceneManager.GetActiveScene().name.Equals("AR Body Tracking With Mars"))
+            {
+                Debug.Log("Mars 1");
+                BodyTrackingWithMars.Instance.BodyModelSelected(p, url, p.category.name, pid);
             }
         }
         yield return null;
@@ -430,63 +453,151 @@ public class CategoryManager : MonoBehaviour
         Debug.Log("dimension Index : " + dimensionIndex);
         Vector3 modelOriginalHeight;
 
-        // Get original bounds size of the mesh renderer
 
-        newObject.transform.localScale = Vector3.one;
+        Physics.SyncTransforms();
+        Canvas.ForceUpdateCanvases();
 
-        modelOriginalHeight = newObject.GetComponentInChildren<MeshFilter>().sharedMesh.bounds.size;
-
-        //obj.transform.parent = realParent;
-
-        // Calculate scale ratios for each axis according to desired size
-        ARDimensionVisualizer arDimension = newObject.GetComponentInChildren<ARDimensionVisualizer>();
-
-
-        float axis_L =  pd.product.sizes[dimensionIndex].dimensions.length;
-        float axis_H =  pd.product.sizes[dimensionIndex].dimensions.height;
-        float axis_W = pd.product.sizes[dimensionIndex].dimensions.width;
-
-        arDimension.textLength = axis_L;
-        arDimension.textHeight = axis_H;
-        arDimension.textDepth = axis_W;
-
-        arDimension.UpdateTexts();
-
-        if (isVertical)
+        StartCoroutine(DelayFunction());
+        
+        IEnumerator DelayFunction()
         {
-            //if (!pd.product.isSorted)
-            //{
-                //float temp = axis_L;
-                //axis_L = axis_H;
-                //axis_H = axis_W;
-                ////axis_H = temp;
-                //axis_W = temp;
-            //}
 
-            finalScale = new Vector3(ConvertToUnityScale(axis_H, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.y,
-            ConvertToUnityScale(axis_W, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.z,
-            ConvertToUnityScale(axis_L, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.x
-            );
-            newObject.transform.localScale = finalScale;
+            // Get original bounds size of the mesh renderer
+
+            //Transform plusBtnCanvas = newObject.GetComponentInChildren<Canvas>().transform;
+
+            //plusBtnCanvas.SetParent(null, true);
+            Debug.Log("parent scale : " + newObject.transform.localScale);
+            //UnparentSafely(plusBtnCanvas, newObject.transform);
+            yield return null;
+            //newObject.transform.localScale = Vector3.one;
+
+            modelOriginalHeight = newObject.GetComponentInChildren<MeshFilter>().sharedMesh.bounds.size;
+
+            //obj.transform.parent = realParent;
+
+            // Calculate scale ratios for each axis according to desired size
+            ARDimensionVisualizer arDimension = newObject.GetComponentInChildren<ARDimensionVisualizer>();
+
+
+            float axis_L =  pd.product.sizes[dimensionIndex].dimensions.length;
+            float axis_H =  pd.product.sizes[dimensionIndex].dimensions.height;
+            float axis_W = pd.product.sizes[dimensionIndex].dimensions.width;
+
+            arDimension.textLength = axis_L;
+            arDimension.textHeight = axis_H;
+            arDimension.textDepth = axis_W;
+
+            arDimension.UpdateTexts();
+
+            if (isVertical)
+            {
+                //if (!pd.product.isSorted)
+                //{
+                    //float temp = axis_L;
+                    //axis_L = axis_H;
+                    //axis_H = axis_W;
+                    ////axis_H = temp;
+                    //axis_W = temp;
+                //}
+
+                finalScale = new Vector3(ConvertToUnityScale(axis_H, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.y,
+                ConvertToUnityScale(axis_W, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.z,
+                ConvertToUnityScale(axis_L, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.x
+                );
+                newObject.transform.localScale = finalScale;
+            }
+            else
+            {
+                finalScale = new Vector3(ConvertToUnityScale(axis_L, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.x,
+                ConvertToUnityScale(axis_H, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.y,
+                ConvertToUnityScale(axis_W, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.z
+                );
+                newObject.transform.localScale = finalScale;
+            }
+            //finalScale = new Vector3(ConvertToUnityScale(axis_L, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.x,
+            //    ConvertToUnityScale(axis_H, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.y,
+            //    ConvertToUnityScale(axis_W, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.z
+            //    );
+            //    newObject.transform.localScale = finalScale;
+
+            Debug.Log("model Original Size : " + modelOriginalHeight);
+            Debug.Log("Length: " + axis_L + ", Width: " + axis_W + ", Height: " + axis_H);
+
+            Physics.SyncTransforms();
+            Canvas.ForceUpdateCanvases();
+
+            //plusBtnCanvas.SetParent(newObject.transform, true);
+            yield return new WaitForSeconds(1f);
+            //ReparentSafely(plusBtnCanvas, newObject.transform);
         }
-        else
-        {
-            finalScale = new Vector3(ConvertToUnityScale(axis_L, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.x,
-            ConvertToUnityScale(axis_H, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.y,
-            ConvertToUnityScale(axis_W, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.z
-            );
-            newObject.transform.localScale = finalScale;
-        }
-        //finalScale = new Vector3(ConvertToUnityScale(axis_L, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.x,
-        //    ConvertToUnityScale(axis_H, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.y,
-        //    ConvertToUnityScale(axis_W, pd.product.sizes[dimensionIndex].dimensions.unit) / modelOriginalHeight.z
-        //    );
-        //    newObject.transform.localScale = finalScale;
-
-        Debug.Log("model Original Size : " + modelOriginalHeight);
-        Debug.Log("Length: " + axis_L + ", Width: " + axis_W + ", Height: " + axis_H);
-
     }
+
+    public void ReparentSafely(Transform child, Transform parent)
+    {
+        if (child == null || parent == null)
+        {
+            Debug.LogWarning("Assign both child and parent!");
+            return;
+        }
+
+        // 1. Store child's world matrix
+        Matrix4x4 childWorldMatrix = child.localToWorldMatrix;
+
+        // 2. Parent the child
+        child.SetParent(parent, worldPositionStays: false); // we handle world matrix manually
+
+        // 3. Compute local matrix relative to new parent
+        Matrix4x4 parentWorldToLocal = parent.worldToLocalMatrix;
+        Matrix4x4 childLocalMatrix = parentWorldToLocal * childWorldMatrix;
+
+        // 4. Extract position, rotation, and scale from matrix
+        child.localPosition = childLocalMatrix.GetColumn(3);
+        child.localRotation = Quaternion.LookRotation(
+            childLocalMatrix.GetColumn(2),
+            childLocalMatrix.GetColumn(1)
+        );
+        child.localScale = new Vector3(
+            childLocalMatrix.GetColumn(0).magnitude,
+            childLocalMatrix.GetColumn(1).magnitude,
+            childLocalMatrix.GetColumn(2).magnitude
+        );
+
+        Debug.Log($"Child {child.name} safely reparented under {parent.name} with matrix. {child.localScale.ToString("F9")}");
+    }
+
+    public void UnparentSafely(Transform child, Transform parent)
+    {
+        if (child == null)
+        {
+            Debug.LogWarning("Assign a child!");
+            return;
+        }
+
+        Debug.Log("Child local scale: " + child.localScale.ToString("F9"));
+        // Store world matrix
+        Matrix4x4 childWorldMatrix = child.localToWorldMatrix;
+
+        // Remove parent
+        child.SetParent(null, worldPositionStays: false);
+
+        // Set local transform from world matrix (no parent now)
+        child.localPosition = childWorldMatrix.GetColumn(3);
+        child.localRotation = Quaternion.LookRotation(
+            childWorldMatrix.GetColumn(2),
+            childWorldMatrix.GetColumn(1)
+        );
+        child.localScale = new Vector3(
+            childWorldMatrix.GetColumn(0).magnitude,
+            childWorldMatrix.GetColumn(1).magnitude,
+            childWorldMatrix.GetColumn(2).magnitude
+        );
+
+        child.localScale = new Vector3(0.005f, 0.005f, 0.005f);
+
+        Debug.Log($"Child {child.name} safely unparented using matrix. {child.lossyScale.ToString("F9")}");
+    }
+
     float ConvertToUnityScale(float inputSize, string unit)
     {
         switch (unit.ToLower())
@@ -540,16 +651,22 @@ public class CategoryManager : MonoBehaviour
                 UIManagerAR.instance.ChangeARScene("Hand Tracking");
                 return false;
             }
-            else if (SceneManager.GetActiveScene().name == "Hand Tracking")
+            return true;
+        }
+        else if (p.ar_type.Equals("body-tracking"))
+        {
+            if (!SceneManager.GetActiveScene().name.Equals("AR Body Tracking With Mars"))
             {
-                if (HandItemSelector.Instance != null)
-                {
-                    ProductSelection.ClearSelection();
-                    ProductSelection.SetSelection(p, false, p.category.name, false, p.threeDModels[0].url);
-                    HandItemSelector.Instance.SelectItem(p.name, p.category.name);
-                }
+                Debug.Log("not Mars");
+                CategoryType category;
+                ProductSelection.TryParseObjectType(p.name, out category);
+                ProductSelection.ClearSelection();
+                ProductSelection.SetSelection(p, false, p.category.name, false, p.threeDModels[0].url);
+                UIManagerAR.instance.ChangeARScene("AR Body Tracking With Mars");
                 return false;
             }
+                Debug.Log("Mars");
+            return true;
         }
         return true;
     }
@@ -682,6 +799,7 @@ public class CategoryManager : MonoBehaviour
             //if (p.ar_type.Equals("horizontal-plane detection"))
             //{
                 UpdateObjectScale(targetObject.GetComponent<ProductDetails>(), targetObject, !p.ar_type.Equals("horizontal-plane detection"));
+            yield return new WaitForSeconds(0.2f);
             //}
             //else
             //{
@@ -714,16 +832,20 @@ public class CategoryManager : MonoBehaviour
 
             pd.product = p;
 
+            ProductDetails target_pd = targetObject.GetComponent<ProductDetails>();
+            target_pd.imagesUrl = pd.imagesUrl;
+            target_pd.texturesUrl = pd.texturesUrl;
+            target_pd.sprites = pd.sprites;
+            target_pd.product  = pd.product;
+            target_pd.colors  = pd.colors;
+            target_pd.textures  = pd.textures;
+
+
             StartCoroutine(SetProductImages(pd));
 
             modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = targetMF.mesh;
             modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = targetMR.materials;
             modelToView.name = targetObject.name;
-
-            Transform modelVisual = targetObject.transform.Find("Visual").transform;
-            modelVisual.parent = null;
-            modelToView.transform.localScale = modelVisual.localScale;
-            modelVisual.parent = targetObject.transform;
 
             mv.FrameObject(modelToView);
 
@@ -765,6 +887,7 @@ public class CategoryManager : MonoBehaviour
             {
                 btn.onClick.AddListener(() =>
                 {
+                    ProductSelection.categoryName = category.name;
                     string formattedType = category.name.Replace(" ", "-");
                     Debug.Log("corrected formate : " + formattedType);
                     StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?subcategory=" + formattedType, "",
@@ -777,10 +900,10 @@ public class CategoryManager : MonoBehaviour
                         {
                             PopulateSubCategories(category.items);
                             Debug.Log("Product Spawned " + productsSpawned);
-                            if (productsSpawned)
-                                subCategoryParent.gameObject.SetActive(false);
-                            else
-                                subCategoryParent.gameObject.SetActive(true);
+                            //if (productsSpawned)
+                            //    subCategoryParent.gameObject.SetActive(false);
+                            //else
+                            //    subCategoryParent.gameObject.SetActive(true);
                         }
                     },
                     (error) =>
@@ -802,7 +925,27 @@ public class CategoryManager : MonoBehaviour
             if (Categories[0] != null)
             {
                 firstTime = true;
-                topLevelCategoryParent.GetChild(0).GetComponent<Button>()?.onClick?.Invoke();
+                Button btn = topLevelCategoryParent.GetChild(0).GetComponent<Button>();
+                Debug.Log("Button listener count: " + btn.onClick.GetPersistentEventCount());
+
+                StartCoroutine(somefunction());
+                IEnumerator somefunction()
+                {
+                    bool categoryFound = false;
+
+                    yield return new WaitForSeconds(1f);
+                    foreach(Transform btn in topLevelCategoryParent)
+                    {
+                        if (btn.name == ProductSelection.categoryName)
+                        {
+                            categoryFound = true;
+                            btn.GetComponent<Button>()?.onClick?.Invoke();
+                        }
+                    }
+
+                    if (!categoryFound)
+                        topLevelCategoryParent.GetChild(0).GetComponent<Button>()?.onClick?.Invoke();
+                }
             }
         }
             
@@ -840,10 +983,10 @@ public class CategoryManager : MonoBehaviour
                         {
                             PopulateLeafCategories(sub.items);
                             Debug.Log("Product Spawned " + productsSpawned);
-                            if (productsSpawned)
-                                leafCategoryParent.gameObject.SetActive(false);
-                            else
-                                leafCategoryParent.gameObject.SetActive(true);
+                            //if (productsSpawned)
+                            //    leafCategoryParent.gameObject.SetActive(false);
+                            //else
+                            //    leafCategoryParent.gameObject.SetActive(true);
 
 
                         }
@@ -977,7 +1120,7 @@ public class CategoryManager : MonoBehaviour
                     });
 
                     //product.isSorted = true;
-                    card.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(ProductSelectedFunction(product, product.threeDModels[0].url, product.ar_type, card.transform.Find("Border/ProductImage").GetComponent<UnityEngine.UI.Image>().sprite, pid)));
+                    card.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(ProductSelectedFunction(product, product.threeDModels[0].url, product.ar_type, pid.productImage.sprite, pid)));
                 }
             },
             (error) =>
@@ -1401,6 +1544,24 @@ public class CategoryManager : MonoBehaviour
 
     [System.Serializable]
     public class Category
+    {
+        public string id;
+        public string name;
+        public string slug;
+        public Parent parent;
+    }
+
+    [System.Serializable]
+    public class Parent
+    {
+        public string id;
+        public string name;
+        public string slug;
+        public LesserParent parent;
+    }
+
+    [System.Serializable]
+    public class LesserParent
     {
         public string id;
         public string name;

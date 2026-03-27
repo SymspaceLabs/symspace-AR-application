@@ -16,6 +16,7 @@ public class ProductItemData : MonoBehaviour
 
     public void ProductProgress(float progress)
     {
+        //Debug.Log("Progess Updating");
         loadingBar.SetActive(true);
         loadingBarImage.fillAmount = 1 - progress;
         percentageTxt.text = Mathf.RoundToInt(progress * 100f) + "%";
