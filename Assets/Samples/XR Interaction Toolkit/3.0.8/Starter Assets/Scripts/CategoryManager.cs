@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -122,9 +123,9 @@ public class CategoryManager : MonoBehaviour
 
     void GetAllProducts(string type)
     {
-        string formattedType = type.ToLower().Replace("'", "").Replace(" ", "-");
-        Debug.Log("corrected formate : " + formattedType);
-        StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?subcategoryItem=" + formattedType, "",
+        //string formattedType = type.ToLower().Replace("'", "").Replace(" ", "-");
+        Debug.Log("corrected formate : " + type);
+        StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?" + type, "",
         (response) =>
         {
             ProductResponse responseData = JsonUtility.FromJson<ProductResponse>(response);
@@ -887,10 +888,12 @@ public class CategoryManager : MonoBehaviour
             {
                 btn.onClick.AddListener(() =>
                 {
+                    string query = string.Join("&", category.slugs.Select(s => $"{category.queryParam}={s}"));
+
                     ProductSelection.categoryName = category.name;
-                    string formattedType = category.name.Replace(" ", "-");
-                    Debug.Log("corrected formate : " + formattedType);
-                    StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?subcategory=" + formattedType, "",
+                    //string formattedType = category.name.Replace(" ", "-");
+                    Debug.Log("corrected query : " + query);
+                    StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?" + query, "",
                     (response) =>
                     {
                         ProductResponse responseData = JsonUtility.FromJson<ProductResponse>(response);
@@ -971,9 +974,10 @@ public class CategoryManager : MonoBehaviour
             {
                 btn.onClick.AddListener(() =>
                 {
-                    string formattedType = sub.name.Replace(" ", "-");
-                    Debug.Log("corrected formate : " + formattedType);
-                    StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?subcategoryItem=" + formattedType, "",
+                    string query = sub.queryParam + "=" + sub.slug;
+                    //string formattedType = sub.name.Replace(" ", "-");
+                    Debug.Log("corrected formate : " + query);
+                    StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?" + query, "",
                     (response) =>
                     {
                         ProductResponse responseData = JsonUtility.FromJson<ProductResponse>(response);
@@ -1004,7 +1008,7 @@ public class CategoryManager : MonoBehaviour
         }
     }
 
-    private void PopulateLeafCategories(List<string> leafNodes)
+    private void PopulateLeafCategories(List<SubItems> leafNodes)
     {
         foreach (Transform child in leafCategoryParent)
             Destroy(child.gameObject);
@@ -1013,7 +1017,7 @@ public class CategoryManager : MonoBehaviour
         {
             GameObject buttonObj = Instantiate(categoryButtonPrefab, leafCategoryParent);
             TextMeshProUGUI label = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
-            if (label != null) label.text = leaf;
+            if (label != null) label.text = leaf.name;
 
             Button btn = buttonObj.GetComponent<Button>();
             if (btn != null)
@@ -1022,7 +1026,8 @@ public class CategoryManager : MonoBehaviour
                 {
                     if (leaf != null)
                     {
-                        GetAllProducts(leaf);
+                        string query = leaf.queryParam + "=" + leaf.slug;
+                        GetAllProducts(query);
                         UnSelectAllImages(leafCategoryParent);
                         SelectedImage(buttonObj.GetComponent<UnityEngine.UI.Image>());
                     }
@@ -1258,33 +1263,6 @@ public class CategoryManager : MonoBehaviour
         Debug.Log("texture Finish");
         
     }
-
-    //public void ChangeModelTexture(int index)
-    //{
-    //    foreach (Transform child in UIManagerAR.instance.colorParent_SD)
-    //    {
-    //        if (child.GetComponent<ModelVariant>()?.index == index)
-    //            child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
-    //        else
-    //            child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
-    //    }
-
-    //    if (index >= UIManagerAR.instance.selectedModelDetails.textures.Count)
-    //        return;
-
-    //    UIManagerAR.instance.selectedModelDetails.selectedColorIndex = index;
-    //    Material mat = UIManagerAR.instance.selectedModelDetails.transform.Find("Visual").GetComponent<MeshRenderer>().material;
-
-    //    //Color newColor1;
-    //    //ColorUtility.TryParseHtmlString(selectedProduct.product.colors[index].code, out newColor1);
-    //    //mat.color = newColor1;
-
-    //    mat.mainTexture = selectedProduct.textures[index];
-
-    //    targetModel.transform.Find("Visual").GetComponent<MeshRenderer>().material = mat;
-
-
-    //}
 
     #endregion
 
@@ -1673,6 +1651,8 @@ public class CategoryManager : MonoBehaviour
     public class CategoryData
     {
         public string name;
+        public List<string> slugs;
+        public string queryParam;
         public List<Items> items;
     }
 
@@ -1680,7 +1660,17 @@ public class CategoryManager : MonoBehaviour
     public class Items
     {
         public string name;
-        public List<string> items;
+        public string slug;
+        public string queryParam;
+        public List<SubItems> items;
+    }
+
+    [Serializable]
+    public class SubItems
+    {
+        public string name;
+        public string slug;
+        public string queryParam;
     }
     #endregion
 

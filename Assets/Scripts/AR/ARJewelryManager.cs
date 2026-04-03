@@ -18,6 +18,7 @@ public enum CategoryType
     RightEarring,
     NosePin,
     Cap,
+    Hat,
     Glasses,
     HeadPin,
     Watches,
@@ -113,13 +114,13 @@ public class ARJewelryManager : MonoBehaviour
 
     private void OnFacesChanged(ARTrackablesChangedEventArgs<ARFace> args)
     {
-        Debug.Log("Face Detected");
+        //Debug.Log("Face Detected");
         foreach (var face in args.added)
         {
             //if (currentFace == null)
             //{
-                currentFace = face;
-                Invoke(nameof(InitializeJewelryItems), 3f);
+            currentFace = face;
+            Invoke(nameof(InitializeJewelryItems), 3f);
             //}
         }
 
@@ -151,13 +152,14 @@ public class ARJewelryManager : MonoBehaviour
                 if (currentFace != null)
                 {
                     item.instance.SetActive(true);
-                    item.instance.transform.parent = currentFace.transform;
+                    //item.instance.transform.parent = currentFace.transform;
                     item.instance.transform.localRotation = Quaternion.identity;
                 }
                 else
                     return;
 
                 Vector3 localPosition = Vector3.zero;
+
                 switch (item.category)
                 {
                     case CategoryType.Glasses:
@@ -166,41 +168,65 @@ public class ARJewelryManager : MonoBehaviour
 #if UNITY_IOS
                             Vector3 leftEye = currentFace.leftEye.localPosition;
                             Vector3 rightEye = currentFace.rightEye.localPosition;
-#elif UNITY_ANDROID
-                            Vector3 leftEye = GetLandmarkWorldPosition(ARKitFaceRegion.LeftEye, Vector3.zero);
-                            Vector3 rightEye = GetLandmarkWorldPosition(ARKitFaceRegion.RightEye, Vector3.zero);
-#endif
                             localPosition = (leftEye + rightEye) / 2f + item.localOffset;
+#endif
                         }
+#if UNITY_ANDROID
+
+                            item.instance.transform.parent = currentFace.GetComponent<ARFaceLandMarks>().glassesPosition;
+                            localPosition = Vector3.zero + item.localOffset;
+                            //Vector3 leftEye = GetLandmarkWorldPosition(ARKitFaceRegion.LeftEye, Vector3.zero);
+                            //Vector3 rightEye = GetLandmarkWorldPosition(ARKitFaceRegion.RightEye, Vector3.zero);
+                            //localPosition = (leftEye + rightEye) / 2f + item.localOffset;
+#endif
                         break;
+
                     case CategoryType.LeftEarring:
-                        localPosition = GetLandmarkWorldPosition(ARKitFaceRegion.LeftEar, item.localOffset);
+                        item.instance.transform.parent = currentFace.GetComponent<ARFaceLandMarks>().leftEaring;
+                        localPosition = Vector3.zero/* + item.localOffset*/;
+                        //localPosition = GetLandmarkWorldPosition(ARKitFaceRegion.LeftEar, item.localOffset);
                         break;
+
                     case CategoryType.RightEarring:
-                        localPosition = GetLandmarkWorldPosition(ARKitFaceRegion.RightEar, item.localOffset);
+                        item.instance.transform.parent = currentFace.GetComponent<ARFaceLandMarks>().rightEaring;
+                        localPosition = Vector3.zero/* + item.localOffset*/;
+                        //localPosition = GetLandmarkWorldPosition(ARKitFaceRegion.RightEar, item.localOffset);
                         break;
+
                     case CategoryType.Necklaces:
-                        localPosition = GetLandmarkWorldPosition(ARKitFaceRegion.ChinIndex, item.localOffset);
+                        item.instance.transform.parent = currentFace.GetComponent<ARFaceLandMarks>().necklacePoint;
+                        localPosition = Vector3.zero/* + item.localOffset*/;
+                        //localPosition = GetLandmarkWorldPosition(ARKitFaceRegion.ChinIndex, item.localOffset);
                         break;
+
                     case CategoryType.NosePin:
                         localPosition = GetLandmarkWorldPosition(ARKitFaceRegion.NoseTip, item.localOffset);
                         break;
-                }
-                // Instantiate as child of currentFace.transform
-                //Debug.Log("Local Position " + localPosition);
-                if (localPosition == Vector3.zero)
-                {
-                    Debug.Log("LocalPosition is Zero : " + item.category);
-                    continue;
+
+                    // ✅ NEW: CAP SUPPORT
+                    case CategoryType.Cap:
+                        item.instance.transform.parent = currentFace.GetComponent<ARFaceLandMarks>().headTop;
+                        localPosition = Vector3.zero/* + item.localOffset*/;
+                        //localPosition = GetLandmarkWorldPosition(ARKitFaceRegion.HeadTop, item.localOffset);
+                        break;
+
+                    case CategoryType.Hat:
+                        item.instance.transform.parent = currentFace.GetComponent<ARFaceLandMarks>().headTop;
+                        localPosition = Vector3.zero/* + item.localOffset*/;
+                        //localPosition = GetLandmarkWorldPosition(ARKitFaceRegion.HeadTop, item.localOffset);
+                        break;
                 }
 
-                //item.instance = Instantiate(item.prefab, currentFace.transform);
+
+                //if (localPosition == Vector3.zero)
+                //    continue;
+
                 item.instance.transform.localPosition = localPosition;
-                Debug.Log($"New Position for {item.category} is: {item.instance.transform.localPosition}");
-                //item.instance.transform.localRotation = Quaternion.identity; // optional
 
-                // --- Add dynamic scale normalization ---
-                float targetSize = 0.05f; // Default target size in meters; adjust per jewelry type if needed
+                Debug.Log($"item.instance parent : {item.instance.transform.parent.name} parent Pos : {item.instance.transform.parent.localPosition}, item Pos: {item.instance.transform.localPosition}");
+
+                float targetSize = 0.05f;
+
                 switch (item.category)
                 {
                     case CategoryType.Necklaces: targetSize = 0.1f; break;
@@ -209,18 +235,17 @@ public class ARJewelryManager : MonoBehaviour
                     case CategoryType.RightEarring: targetSize = 0.03f; break;
                     case CategoryType.NosePin: targetSize = 0.015f; break;
                     case CategoryType.Glasses: targetSize = 0.12f; break;
-                        // Add more types if needed
+
+                    // ✅ NEW
+                    case CategoryType.Cap: targetSize = 0.18f; break;
                 }
-                Debug.Log("Face scale: " + currentFace.transform.localScale);
+
                 if (item.allowScale)
                 {
                     NormalizeJewelryScale(item.instance, targetSize);
                     item.allowScale = true;
                 }
-                Debug.Log("item Scale : " + item.instance.transform.localScale);
             }
-            else
-                Debug.Log("Item instance = null : " + item.category);
         }
     }
     private void RemoveJewelryItems()
@@ -266,7 +291,7 @@ public class ARJewelryManager : MonoBehaviour
         GameObject rightEarringInstance = null;
         DownloadState stateCheck = null;
 
-        if(category == CategoryType.Earrings)
+        if (category == CategoryType.Earrings)
         {
             leftEarringInstance = FindExistingModel(p.id, CategoryType.LeftEarring);
             rightEarringInstance = FindExistingModel(p.id, CategoryType.RightEarring);
@@ -312,22 +337,22 @@ public class ARJewelryManager : MonoBehaviour
             stateCheck = leftEarringInstance.GetComponent<DownloadState>();
 
         var newJewelry = new Jewelries
-            {
-                category = category,
-                instance = newObject
-            };
+        {
+            category = category,
+            instance = newObject
+        };
 
         Jewelries newLeftJewelry = null;
         Jewelries newRightJewelry = null;
 
-        if(leftEarringInstance != null)
+        if (leftEarringInstance != null)
             newLeftJewelry = new Jewelries
             {
                 category = CategoryType.LeftEarring,
                 instance = leftEarringInstance
             };
 
-        if(rightEarringInstance != null)
+        if (rightEarringInstance != null)
             newRightJewelry = new Jewelries
             {
                 category = CategoryType.RightEarring,
@@ -355,7 +380,7 @@ public class ARJewelryManager : MonoBehaviour
             }
         }
 
-        if(leftEarringInstance != null)
+        if (leftEarringInstance != null)
         {
             if (!leftEarringInstance.activeInHierarchy)
             {
@@ -414,7 +439,8 @@ public class ARJewelryManager : MonoBehaviour
         {
             //string localPath = Path.Combine(Application.persistentDataPath, Path.GetFileName(url));
             www.downloadHandler = new DownloadHandlerFile(localPath);
-            /*yield return */www.SendWebRequest();
+            /*yield return */
+            www.SendWebRequest();
 
             while (!www.isDone)
             {
@@ -523,47 +549,74 @@ public class ARJewelryManager : MonoBehaviour
                             currentItemSelected = i;
                             break;
                         }
+                    case CategoryType.Necklaces:
+                        HandleSingleItem(i, newJewelry);
+                        break;
 
-                    default:
-                        {
-                            // All other jewelry = 1:1 category mapping
-                            if (jewelries[i].category != newJewelry.category)
-                                break;
+                    case CategoryType.Cap:
+                        HandleSingleItem(i, newJewelry);
+                        break;
 
-                            // Remove old instance
-                            if (jewelries[i].instance != null)
-                            {
-                                //Destroy(jewelries[i].instance);
-                                jewelries[i].instance.gameObject.SetActive(false);
-                                jewelries[i].instance = null;
-                            }
+                    case CategoryType.Hat:
+                        HandleSingleItem(i, newJewelry);
+                        break;
 
-                            // Apply offset & assign
-                            //Vector3 tempRotation = newJewelry.instance.transform.localEulerAngles;
-                            //tempRotation.x = -20f;
-                            //newJewelry.instance.transform.localEulerAngles = tempRotation;
+                    case CategoryType.Glasses:
+                        HandleSingleItem(i, newJewelry);
+                        break;
 
-                            newJewelry.instance.GetComponent<ProductDetails>().category = newJewelry.category;
+                    case CategoryType.NosePin:
+                        HandleSingleItem(i, newJewelry);
+                        break;
+                        /*
+                                            default:
+                                                {
+                                                    // All other jewelry = 1:1 category mapping
+                                                    if (jewelries[i].category != newJewelry.category)
+                                                        break;
 
-                            jewelries[i].instance = newJewelry.instance;
-                            currentItemSelected = i;
+                                                    // Remove old instance
+                                                    if (jewelries[i].instance != null)
+                                                    {
+                                                        //Destroy(jewelries[i].instance);
+                                                        jewelries[i].instance.gameObject.SetActive(false);
+                                                        jewelries[i].instance = null;
+                                                    }
 
-                            if (jewelries[i].category == CategoryType.Necklaces)
-                            {
-                                Vector3 tempRot = jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles;
-                                tempRot.x = -20f;
-                                tempRot.y = 180;
-                                jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles = tempRot;
-                            }
-                            else if (jewelries[i].category == CategoryType.Glasses)
-                            {
-                                Vector3 tempRot = jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles;
-                                tempRot.y = 180;
-                                jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles = tempRot;
-                            }
+                                                    // Apply offset & assign
+                                                    //Vector3 tempRotation = newJewelry.instance.transform.localEulerAngles;
+                                                    //tempRotation.x = -20f;
+                                                    //newJewelry.instance.transform.localEulerAngles = tempRotation;
 
-                                break;
-                        }
+                                                    newJewelry.instance.GetComponent<ProductDetails>().category = newJewelry.category;
+
+                                                    jewelries[i].instance = newJewelry.instance;
+                                                    currentItemSelected = i;
+
+                                                    if (jewelries[i].category == CategoryType.Necklaces)
+                                                    {
+                                                        Vector3 tempRot = jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles;
+                                                        tempRot.x = -20f;
+                                                        tempRot.y = 180;
+                                                        jewelries[i].instance.transform.GetChild(1).transform.localEulerAngles = tempRot;
+                                                    }
+                                                    else if (jewelries[i].category == CategoryType.Glasses)
+                                                    {
+                                                        Vector3 tempRot = jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles;
+                                                        tempRot.y = 180;
+                                                        jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles = tempRot;
+                                                    }
+                                                    // ✅ NEW CAP ROTATION
+                                                    else if (jewelries[i].category == CategoryType.Cap)
+                                                    {
+                                                        Vector3 tempRot = jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles;
+                                                        tempRot.y = 180;
+                                                        tempRot.x = 10f; // slight forward tilt
+                                                        jewelries[i].instance.transform.GetChild(0).transform.localEulerAngles = tempRot;
+                                                    }
+
+                                                    break;
+                                                }*/
                 }
             }
 
@@ -576,8 +629,13 @@ public class ARJewelryManager : MonoBehaviour
                         jewelry.instance.transform.localScale *= 2.5f;
                     else if (jewelry.category == CategoryType.Glasses)
                         jewelry.instance.transform.localScale *= 1.2f;
+
+                    // ✅ NEW
+                    else if (jewelry.category == CategoryType.Cap)
+                        jewelry.instance.transform.localScale *= 0.7f;
+
                     else
-                        jewelry.instance.transform.localScale *= 1.3f;
+                        jewelry.instance.transform.localScale *= 1f;
                 }
             }
 
@@ -589,6 +647,47 @@ public class ARJewelryManager : MonoBehaviour
 
             Debug.Log("✅ GLB model downloaded, instantiated, and scaled successfully.");
         }
+    }
+
+    void HandleSingleItem(int i, Jewelries newJewelry)
+    {
+        if (jewelries[i].category != newJewelry.category)
+            return;
+
+        // Remove old
+        if (jewelries[i].instance != null)
+        {
+            jewelries[i].instance.gameObject.SetActive(false);
+            jewelries[i].instance = null;
+        }
+
+        // Assign new
+        newJewelry.instance.GetComponent<ProductDetails>().category = newJewelry.category;
+        jewelries[i].instance = newJewelry.instance;
+        currentItemSelected = i;
+
+        // Category-specific tweaks
+        /*if (newJewelry.category == CategoryType.Necklaces)
+        {
+            Vector3 rot = jewelries[i].instance.transform.GetChild(1).localEulerAngles;
+            rot.x = -20f;
+            rot.y = 180;
+            jewelries[i].instance.transform.GetChild(1).localEulerAngles = rot;
+        }
+        else */if (newJewelry.category == CategoryType.Glasses)
+        {
+            Vector3 rot = jewelries[i].instance.transform.GetChild(0).localEulerAngles;
+            rot.y = 180;
+            jewelries[i].instance.transform.GetChild(0).localEulerAngles = rot;
+            Debug.Log("Glasses Rotated");
+        }
+        else if(newJewelry.category == CategoryType.LeftEarring || newJewelry.category == CategoryType.RightEarring)
+        {
+            Vector3 rot = jewelries[i].instance.transform.GetChild(0).localEulerAngles;
+            rot.y = 180;
+            jewelries[i].instance.transform.GetChild(0).localEulerAngles = rot;
+        }
+            Debug.Log("New Jewelry : " + newJewelry.category);
     }
 
     public bool Equip(Jewelries newItem)

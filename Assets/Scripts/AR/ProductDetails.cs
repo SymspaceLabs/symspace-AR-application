@@ -13,7 +13,7 @@ public class ProductDetails : MonoBehaviour
 
     public List<Color> colors = new List<Color>();
 
-    public List<Texture2D> textures;
+    public List<Texture2D> textures = new List<Texture2D>();
 
     public bool isSizeSelected = false;
 

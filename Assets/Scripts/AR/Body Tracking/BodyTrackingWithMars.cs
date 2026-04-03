@@ -26,6 +26,8 @@ public class BodyTrackingWithMars : MonoBehaviour
 
     public ModelViewer mv;
 
+    public ProductDetails productSelected;
+
     private void Awake()
     {
         // Original behavior: only set the singleton instance
@@ -190,8 +192,8 @@ public class BodyTrackingWithMars : MonoBehaviour
                     pd.imagesUrl.Add(img.url);
 
                 pd.texturesUrl.Clear();
-                foreach(var texture in p.threeDModels)
-                    pd.texturesUrl.Add(texture.url);
+                foreach(var model in p.threeDModels)
+                    pd.texturesUrl.Add(model.texture);
 
                 pd.colors.Clear();
                 for (int i = 0; i < p.colors.Count; i++)
@@ -202,12 +204,33 @@ public class BodyTrackingWithMars : MonoBehaviour
                 }
 
                 pd.product = p;
-                StartCoroutine(CategoryManager.Instance.SetProductImages(pd));
+                yield return StartCoroutine(CategoryManager.Instance.SetProductImages(pd));
 
                 WorldCanvasFaceCamera btnCanvas = Instantiate(plusBtnCanvas).GetComponent<WorldCanvasFaceCamera>();
+
+                // Assign correct target
                 btnCanvas.targetModel = loadedGLB.transform;
-                btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.BottomLeft;
-                btnCanvas.targetModel = chestPosition;
+
+                // 🔹 Set position based on BodySlot
+                switch (slot)
+                {
+                    case BodySlot.Top:
+                        btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Custom;
+                        break;
+
+                    case BodySlot.Bottom:
+                        btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Custom;
+                        break;
+
+                    case BodySlot.Head:
+                        btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.TopRight;
+                        break;
+
+                    default:
+                        btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.BottomLeft;
+                        break;
+                }
+
                 btnCanvas.pd = pd;
 
                 GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
@@ -243,6 +266,13 @@ public class BodyTrackingWithMars : MonoBehaviour
 
                 modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
                 modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().materials;
+
+                Material mat = loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().material;
+
+                if(pd.textures.Count > 0)
+                    mat.mainTexture = pd.textures[0];
+
+                loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().material = mat;
 
                 loadedGLB.name = CategoryManager.Instance.GetUniqueName(p.name, UIManagerAR.instance.UI_3D_Models);
 
@@ -321,6 +351,48 @@ public class BodyTrackingWithMars : MonoBehaviour
             if (result != null) return result;
         }
         return null;
+    }
+
+    public void ChangeModelTexture(int index)
+    {
+        foreach (Transform child in UIManagerAR.instance.colorParent_LD)
+        {
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        foreach (Transform child in UIManagerAR.instance.colorParent_SD)
+        {
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        foreach (Transform child in CategoryManager.Instance.modelVariantParent)
+        {
+            child.gameObject.SetActive(true);
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        if (index >= UIManagerAR.instance.selectedModelDetails.textures.Count)
+            return;
+
+        UIManagerAR.instance.selectedModelDetails.selectedColorIndex = index;
+        Material mat = UIManagerAR.instance.selectedModelDetails.transform.Find("Visual").GetComponent<MeshRenderer>().material;
+
+        //Color newColor1;
+        //ColorUtility.TryParseHtmlString(selectedProduct.product.colors[index].code, out newColor1);
+        //mat.color = newColor1;
+
+        mat.mainTexture = UIManagerAR.instance.selectedModelDetails.textures[index];
+
+        productSelected.GetComponentInChildren<SkinnedMeshRenderer>().material = mat;
     }
 
     public enum BodySlot

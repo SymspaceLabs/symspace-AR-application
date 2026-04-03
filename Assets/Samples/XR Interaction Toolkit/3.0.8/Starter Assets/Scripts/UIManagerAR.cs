@@ -647,8 +647,9 @@ public class UIManagerAR : MonoBehaviour
             return;
         
         Debug.Log("LD size changed");
-
-        ProductDetails pd = spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
+        ProductDetails pd = null;
+        if (spawner != null)
+            spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
 
         UpdateDetailUI();
 
@@ -657,8 +658,9 @@ public class UIManagerAR : MonoBehaviour
         //else
         stocksSelected.text = "1";
 
-        CategoryManager.Instance.UpdateObjectScale(pd, spawner.objectsSpawned[objectSelectedIndex], 
-            !pd.product.ar_type.Equals("horizontal-plane detection"), selectedModelDetails.product.sizes.Count == 1? selectedSizeIndex : selectedSizeIndex -1);
+        if(spawner != null)
+            CategoryManager.Instance.UpdateObjectScale(pd, spawner.objectsSpawned[objectSelectedIndex], 
+                !pd.product.ar_type.Equals("horizontal-plane detection"), selectedModelDetails.product.sizes.Count == 1? selectedSizeIndex : selectedSizeIndex -1);
     }
 
     public void ChangeSize_SD()
@@ -672,7 +674,8 @@ public class UIManagerAR : MonoBehaviour
 
         Debug.Log("SD size changed");
 
-        ProductDetails pd = spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
+        if(spawner != null)
+            /*ProductDetails pd = */spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
 
         UpdateDetailUI();
 

@@ -403,3 +403,5 @@ MonoBehaviour:
   verticalPadding: -0.25
   pd: {fileID: 0}
   objDetail: {fileID: 0}
+  canvasPosition: 8
+  customOffset: {x: 0.5, y: 0.5, z: 0}

@@ -39,6 +39,9 @@ public class WorldCanvasFaceCamera : MonoBehaviour
             // Position the canvas just above the top of the object
             Vector3 topPosition = bounds.center + Vector3.up * (bounds.extents.y + verticalPadding);
             transform.position = topPosition;
+
+            if (BodyTrackingWithMars.Instance != null)
+                BodyTrackingWithMars.Instance.productSelected = pd;
         }
 
         UIManagerAR.instance.OnResetClick += DestroyItself;
@@ -130,14 +133,18 @@ public class WorldCanvasFaceCamera : MonoBehaviour
                 }
             }
         else
-            for (int i = 0; i < UIManagerAR.instance.UI_3D_Models.Count; i++)
-            {
-                if (UIManagerAR.instance.UI_3D_Models[i].name == pd.gameObject.name)
-                {
-                    UIManagerAR.instance.objectSelectedIndex = i;
-                    break;
-                }
-            }
+        {
+            BodyTrackingWithMars.Instance.productSelected = pd;
+        }
+            //for (int i = 0; i < UIManagerAR.instance.UI_3D_Models.Count; i++)
+            //{
+            //    if (UIManagerAR.instance.UI_3D_Models[i].name == pd.gameObject.name)
+            //    {
+            //        UIManagerAR.instance.objectSelectedIndex = i;
+            //        break;
+            //    }
+            //}
+
         Debug.Log("Plus button clicked");
         UIManagerAR.instance.PlusBtn(pd.product.id, pd.selectedColorIndex);
     }

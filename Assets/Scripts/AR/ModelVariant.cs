@@ -14,7 +14,10 @@ public class ModelVariant : MonoBehaviour
 
     public void OnButtonClick()
     {
-        UIManagerAR.instance.spawner.ChangeTextureByIndex(index);
+        if (UIManagerAR.instance.spawner != null)
+            UIManagerAR.instance.spawner.ChangeTextureByIndex(index);
+        else if (BodyTrackingWithMars.Instance != null)
+            BodyTrackingWithMars.Instance.ChangeModelTexture(index);
     }
 
     public void OnColorClicked()

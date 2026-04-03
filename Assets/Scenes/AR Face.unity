@@ -9298,6 +9298,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 339212093}
   m_CullTransparentMesh: 1
+--- !u!115 &342871675
+MonoScript:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 7
+  m_DefaultReferences: {}
+  m_Icon: {fileID: 0}
+  m_Type: 0
+  m_ExecutionOrder: 0
+  m_ClassName: UModelerXCurveCache
+  m_Namespace: Tripolygon.UModelerX.Runtime
+  m_AssemblyName: Tripolygon.UModelerX.Runtime
 --- !u!1 &346402980
 GameObject:
   m_ObjectHideFlags: 0
@@ -13174,9 +13189,9 @@ MonoBehaviour:
     velocity: {x: 0, y: 0, z: 0}
     isSpawn: 0
   jewelries:
-  - category: 0
+  - category: 7
     instance: {fileID: 0}
-    localOffset: {x: 0, y: 0.02, z: 0.1}
+    localOffset: {x: 0, y: 0, z: 0.025}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
@@ -13192,9 +13207,15 @@ MonoBehaviour:
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
+  - category: 0
+    instance: {fileID: 0}
+    localOffset: {x: 0, y: 0.03, z: 0.2}
+    smoothTime: 0
+    velocity: {x: 0, y: 0, z: 0}
+    allowScale: 0
   - category: 6
     instance: {fileID: 0}
-    localOffset: {x: 0, y: -0.005, z: 0.035}
+    localOffset: {x: 0, y: 0.12, z: 0.1}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
@@ -33939,6 +33960,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1275183407}
   m_CullTransparentMesh: 1
+--- !u!115 &1278744233
+MonoScript:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 7
+  m_DefaultReferences: {}
+  m_Icon: {fileID: 0}
+  m_Type: 0
+  m_ExecutionOrder: 0
+  m_ClassName: UModelerXEditableMeshCache
+  m_Namespace: Tripolygon.UModelerX.Runtime
+  m_AssemblyName: Tripolygon.UModelerX.Runtime
 --- !u!1 &1280480112
 GameObject:
   m_ObjectHideFlags: 0
@@ -34533,6 +34569,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1312979011}
   m_CullTransparentMesh: 1
+--- !u!1 &1317297566
+GameObject:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1317297568}
+  - component: {fileID: 1317297567}
+  m_Layer: 0
+  m_Name: UModelerXEditableMeshCache_1e9d5957-cd3e-49f1-84e2-aef194d61ce0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1317297567
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1317297566}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1278744233}
+  m_Name: 
+  m_EditorClassIdentifier: Tripolygon.UModelerX.Runtime::Tripolygon.UModelerX.Runtime.UModelerXEditableMeshCache
+--- !u!4 &1317297568
+Transform:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1317297566}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1319623844
 GameObject:
   m_ObjectHideFlags: 0
@@ -39049,6 +39129,67 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1476354701}
   m_CullTransparentMesh: 1
+--- !u!1001 &1481570661
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 609389191693322153, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_Name
+      value: AR Face Prefab
+      objectReference: {fileID: 0}
+    - target: {fileID: 609389191693322153, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2975513629656471586, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 81e8620de49e4c34d91083cc20daa7ff, type: 3}
 --- !u!1 &1481999333
 GameObject:
   m_ObjectHideFlags: 0
@@ -42573,6 +42714,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1658234598
+GameObject:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1658234600}
+  - component: {fileID: 1658234599}
+  m_Layer: 0
+  m_Name: 4ed270a1-acbe-4eba-9348-8aa3cd52fcad
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1658234599
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658234598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 342871675}
+  m_Name: 
+  m_EditorClassIdentifier: Tripolygon.UModelerX.Runtime::Tripolygon.UModelerX.Runtime.UModelerXCurveCache
+--- !u!4 &1658234600
+Transform:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658234598}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1665338723
 GameObject:
   m_ObjectHideFlags: 0
@@ -43035,6 +43220,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1690386557}
   m_CullTransparentMesh: 1
+--- !u!1 &1698160840
+GameObject:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1698160842}
+  - component: {fileID: 1698160841}
+  m_Layer: 0
+  m_Name: UMXCommandServiceCache_04e01a8c-d98b-4611-9c0f-edb94e00f611
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1698160841
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1698160840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1998500875}
+  m_Name: 
+  m_EditorClassIdentifier: Tripolygon.UModelerX.Runtime::Tripolygon.UModelerX.Runtime.UMXCommandServiceCache
+--- !u!4 &1698160842
+Transform:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1698160840}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1699989741
 GameObject:
   m_ObjectHideFlags: 0
@@ -50979,6 +51208,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1992384149}
   m_CullTransparentMesh: 1
+--- !u!115 &1998500875
+MonoScript:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 7
+  m_DefaultReferences: {}
+  m_Icon: {fileID: 0}
+  m_Type: 0
+  m_ExecutionOrder: 0
+  m_ClassName: UMXCommandServiceCache
+  m_Namespace: Tripolygon.UModelerX.Runtime
+  m_AssemblyName: Tripolygon.UModelerX.Runtime
 --- !u!1 &2001179613
 GameObject:
   m_ObjectHideFlags: 0
@@ -54330,3 +54574,7 @@ SceneRoots:
   - {fileID: 234504258}
   - {fileID: 1163647513}
   - {fileID: 502346316}
+  - {fileID: 1481570661}
+  - {fileID: 1317297568}
+  - {fileID: 1658234600}
+  - {fileID: 1698160842}

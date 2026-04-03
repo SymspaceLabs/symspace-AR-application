@@ -37,7 +37,7 @@ public class BodyMeasurement : MonoBehaviour
         // Classify
         BodySize size = Classify(shoulderRatio);
 
-        Debug.Log($"ShoulderWidth: {shoulderWidth}, Height: {height}, Ratio: {shoulderRatio}, Size: {size}");
+        //Debug.Log($"ShoulderWidth: {shoulderWidth}, Height: {height}, Ratio: {shoulderRatio}, Size: {size}");
     }
 
     BodySize Classify(float ratio)
