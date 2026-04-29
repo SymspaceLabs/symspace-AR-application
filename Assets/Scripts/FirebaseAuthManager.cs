@@ -62,10 +62,10 @@ public class FirebaseAuthManager : MonoBehaviour
             AuthResult credential = await auth.SignInWithProviderAsync(provider);
 
             var tokenResult = await credential.User.TokenAsync(true);
-            Debug.Log("ID TOKEN : " + tokenResult);
-            Debug.Log("Google sign-in successful!");
-            Debug.Log("User: " + credential.User.DisplayName);
-            Debug.Log("Email: " + credential.User.Email);
+            //Debug.Log("ID TOKEN : " + tokenResult);
+            //Debug.Log("Google sign-in successful!");
+            //Debug.Log("User: " + credential.User.DisplayName);
+            //Debug.Log("Email: " + credential.User.Email);
 
             PlayerPrefs.SetString("myuserid", credential.User.UserId);
 
@@ -82,13 +82,13 @@ public class FirebaseAuthManager : MonoBehaviour
                     Response responseData = JsonUtility.FromJson<Response>(response);
                     Debug.Log("Google Sign In Success: " + responseData.user.firstName);
 
-                    Debug.Log("Email: " + responseData.user.email);
-                    Debug.Log("token: " + responseData.accessToken);
+                    //Debug.Log("Email: " + responseData.user.email);
+                    //Debug.Log("token: " + responseData.accessToken);
                     PlayerPrefs.SetString("Email", responseData.user.email);
 
                     PlayerPrefs.SetString("id", responseData.user.id);
                     PlayerPrefs.SetInt("RememberMe", 1);
-                    SceneManager.LoadScene("Blogs");
+                    SceneManager.LoadScene(SceneNames.Home);
 
                     // MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
                     // MenuManager.Instance.loadingPanel.SetActive(false);
@@ -115,7 +115,7 @@ public class FirebaseAuthManager : MonoBehaviour
 
     #endregion
 
-    public async void SingInWithApple()
+    public async void SignInWithApple()
     {
         if (auth == null)
         {
@@ -123,10 +123,10 @@ public class FirebaseAuthManager : MonoBehaviour
             return;
         }
 
-        // Configure Google OAuth using FederatedOAuthProviderData
+        // Configure Apple OAuth using FederatedOAuthProviderData
         var providerData = new FederatedOAuthProviderData
         {
-            ProviderId = "apple.com", // Fixed provider ID for Google
+            ProviderId = "apple.com", // Fixed provider ID for Apple
             Scopes = new List<string> { "profile", "email" } // Requested scopes
         };
 
@@ -134,12 +134,12 @@ public class FirebaseAuthManager : MonoBehaviour
 
         try
         {
-            // Sign in with Google
+            // Sign in with Apple
             AuthResult credential = await auth.SignInWithProviderAsync(provider);
             Debug.Log("Apple sign-in successful!");
-            Debug.Log("User: " + credential.User.DisplayName);
-            Debug.Log("User: " + credential.User.ProviderId);
-            Debug.Log("Email: " + credential.User.Email);
+            //Debug.Log("User: " + credential.User.DisplayName);
+            //Debug.Log("User: " + credential.User.ProviderId);
+            //Debug.Log("Email: " + credential.User.Email);
 
             PlayerPrefs.SetString("myuserid", credential.User.UserId);
 
@@ -154,13 +154,13 @@ public class FirebaseAuthManager : MonoBehaviour
                     Response responseData = JsonUtility.FromJson<Response>(response);
                     Debug.Log("Sign Up Success: " + responseData.user.firstName);
 
-                    Debug.Log("Email: " + responseData.user.email);
-                    Debug.Log("token: " + responseData.accessToken);
+                    //Debug.Log("Email: " + responseData.user.email);
+                    //Debug.Log("token: " + responseData.accessToken);
                     PlayerPrefs.SetString("Email", responseData.user.email);
 
                     PlayerPrefs.SetString("id", responseData.user.id);
                     PlayerPrefs.SetInt("RememberMe", 1);
-                    SceneManager.LoadScene("Blogs");
+                    SceneManager.LoadScene(SceneNames.Home);
 
                     // MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
                     // MenuManager.Instance.loadingPanel.SetActive(false);
@@ -199,13 +199,13 @@ public class FirebaseAuthManager : MonoBehaviour
                 Response responseData = JsonUtility.FromJson<Response>(response);
                 Debug.Log("Sign Up Success: " + responseData.user.firstName);
 
-                Debug.Log("Email: " + responseData.user.email);
-                Debug.Log("token: " + responseData.accessToken);
+                //Debug.Log("Email: " + responseData.user.email);
+                //Debug.Log("token: " + responseData.accessToken);
                 PlayerPrefs.SetString("Email", responseData.user.email);
 
                 PlayerPrefs.SetString("id", responseData.user.id);
                 PlayerPrefs.SetInt("RememberMe", 1);
-                SceneManager.LoadScene("Blogs");
+                SceneManager.LoadScene(SceneNames.Home);
 
                 // MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
                 // MenuManager.Instance.loadingPanel.SetActive(false);

@@ -3,6 +3,7 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using Unity.Collections;
 using System.Collections.Generic;
+using Unity.Collections.LowLevel.Unsafe;
 
 public class RingPlacer : MonoBehaviour
 {
@@ -250,7 +251,10 @@ public class RingPlacer : MonoBehaviour
             float depthValue = 0f;
             if (buffer.Length >= 4)
             {
-                depthValue = System.BitConverter.ToSingle(buffer.ToArray(), 0);
+                unsafe
+                {
+                    depthValue = *(float*)buffer.GetUnsafeReadOnlyPtr();
+                }
             }
 
             buffer.Dispose();
@@ -449,13 +453,17 @@ public class RingPlacer : MonoBehaviour
         // Smooth rotation
         smoothedRotation = SmoothDampQuaternion(smoothedRotation, targetRotation, ref rotationVelocity, rotationSmoothTime);
 
-        // Smooth scale
-        float targetScale = targetFingerWidth * ringSizeMultiplier;
+        float ringInnerDiameter = 0.018f; // your ring's inner diameter in meters
+        float fitFactor = 2.5f;          // optional buffer to avoid clipping
+
+        float targetScale = (targetFingerWidth / ringInnerDiameter) * fitFactor;
         smoothedScale = Mathf.SmoothDamp(smoothedScale, targetScale, ref scaleVelocity, scaleSmoothTime);
+
+        currentRing.transform.localScale = Vector3.one * smoothedScale;
 
         currentRing.transform.position = smoothedPosition;
         currentRing.transform.rotation = smoothedRotation;
-        currentRing.transform.localScale = Vector3.one * smoothedScale * 250 * 2f;
+        //currentRing.transform.localScale = Vector3.one * smoothedScale * 250 * 2f;
         Debug.Log($"Ring Pos: {currentRing.transform.position:F3}m, Rotation: {currentRing.transform.eulerAngles:F2}m, Scale: {currentRing.transform.localScale:F3}");
     }
 

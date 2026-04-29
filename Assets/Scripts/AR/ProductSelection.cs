@@ -30,8 +30,12 @@ public static class ProductSelection
         modelURL = url;
         productData = productName;
         IsForFace = isForFace;
-        if(objectType.Length > 0)
-            TryParseObjectType(objectType, out CategoryType SelectedObjectType);
+        if (objectType.Length > 0)
+        {
+            CategoryType parsed;
+            TryParseObjectType(objectType, out parsed);
+            SelectedObjectType = parsed;
+        }
 
         isHorizontalPlane = isHorizontal;
 

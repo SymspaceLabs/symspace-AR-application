@@ -60,22 +60,22 @@ public class SignInUI : MonoBehaviour
             (response) =>
             {
 
-                Debug.Log($"Responseeee: {response}");
+                //Debug.Log($"Responseeee: {response}");
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
                 Debug.Log("Sign IN Success");
 
-                Debug.Log("Access Token: " + responseData.accessToken);
-                Debug.Log("User : " + responseData);
-                Debug.Log("ID : " + responseData.user.id);
-                Debug.Log("Email: " + responseData.user.email);
-                Debug.Log("First Name : " + responseData.user.firstName);
-                Debug.Log("Last Name : " + responseData.user.lastName);
-                Debug.Log("Role : " + responseData.user.role);
-                Debug.Log("isOnboardingFormFilled : " + responseData.user.isOnboardingFormFilled);
+                //Debug.Log("Access Token: " + responseData.accessToken);
+                //Debug.Log("User : " + responseData);
+                //Debug.Log("ID : " + responseData.user.id);
+                //Debug.Log("Email: " + responseData.user.email);
+                //Debug.Log("First Name : " + responseData.user.firstName);
+                //Debug.Log("Last Name : " + responseData.user.lastName);
+                //Debug.Log("Role : " + responseData.user.role);
+                //Debug.Log("isOnboardingFormFilled : " + responseData.user.isOnboardingFormFilled);
 
                 PlayerPrefs.SetString("id", responseData.user.id);
                 PlayerPrefs.SetInt("RememberMe", 1);
-                SceneManager.LoadScene("Blogs");
+                SceneManager.LoadScene(SceneNames.Home);
 
                 //MenuManager.Instance.EnablePanel(MenuManager.Instance.homePanel);
                 MenuManager.Instance.loadingPanel.SetActive(false);
@@ -84,7 +84,7 @@ public class SignInUI : MonoBehaviour
             {
                 Debug.LogError("Sign In Failed: " + error);
 
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
 
                 if(errorResponse.message.Contains("not verified"))
                 {
@@ -204,13 +204,6 @@ public class SignInUI : MonoBehaviour
         public string role;
         public bool isOnboardingFormFilled;
         public string company;
-    }
-
-    private class ErrorResponse
-    {
-        public string message;
-        //public string error { get; set; }
-        //public string statusCode { get; set; }
     }
     #endregion
 }

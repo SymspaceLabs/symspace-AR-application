@@ -229,55 +229,35 @@ public class HandItemSelector : MonoBehaviour
         string url = ProductSelection.modelURL;
         string localPath = Path.Combine(Application.persistentDataPath, $"{name}.glb");
 
-        using (UnityWebRequest www = UnityWebRequest.Get(url))
-        {
-            www.downloadHandler = new DownloadHandlerFile(localPath);
-            www.SendWebRequest();
+        GameObject model = null;
+
+        yield return StartCoroutine(ModelLoaderService.DownloadAndLoad(url, (glbModel) => { model = glbModel; }, onProgress, onFailed));
+
+        //using (UnityWebRequest www = UnityWebRequest.Get(url))
+        //{
+        //    www.downloadHandler = new DownloadHandlerFile(localPath);
+        //    www.SendWebRequest();
 
 
-            while (!www.isDone)
-            {
-                onProgress?.Invoke(www.downloadProgress);
-                yield return null;
-            }
+        //    while (!www.isDone)
+        //    {
+        //        onProgress?.Invoke(www.downloadProgress);
+        //        yield return null;
+        //    }
 
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError("Download failed: " + www.error);
-                onFailed?.Invoke();
-                yield break;
-            }
+        //    if (www.result != UnityWebRequest.Result.Success)
+        //    {
+        //        Debug.LogError("Download failed: " + www.error);
+        //        onFailed?.Invoke();
+        //        yield break;
+        //    }
 
-            onProgress?.Invoke(1f);
-            Debug.Log("total size : " + www.downloadedBytes);
-        }
-
-        yield return StartCoroutine(LoadAndSpawnGLB(localPath, category));
-
-    }
-
-    #endregion
-
-
-    #region GLB Loading
-
-    IEnumerator LoadAndSpawnGLB(string path, CategoryType category)
-    {
-        using FileStream stream = new(path, FileMode.Open, FileAccess.Read);
-
-        var importer = new GLTFSceneImporter(stream, new ImportOptions());
-
-        yield return importer.LoadSceneAsync();
-
-        GameObject model = importer.LastLoadedScene;
+        //    onProgress?.Invoke(1f);
+        //    Debug.Log("total size : " + www.downloadedBytes);
+        //}
 
         if (model == null)
-        {
-            Debug.LogError("GLB failed to load.");
             yield break;
-        }
-
-        string name = ProductSelection.productData.name;
 
         model.name = name;
 
@@ -294,7 +274,23 @@ public class HandItemSelector : MonoBehaviour
 
         // Reset transform
         model.transform.localRotation = Quaternion.identity;
-        model.transform.localScale = Vector3.one;
+
+        if (category == CategoryType.Rings)
+        {
+            float scaleFactor = HandItemsScaler.RingScaleFromBounds(model.GetComponentInChildren<Renderer>());
+            Debug.Log("Ring Mesh true size: " + scaleFactor);
+
+            model.transform.localScale = Vector3.one * scaleFactor;
+        }
+        else
+        {
+            float scaleFactor = HandItemsScaler.WatchScaleFromBounds(model.GetComponentInChildren<Renderer>());
+            Debug.Log("Watch Mesh true size: " + scaleFactor);
+
+            model.transform.localScale = Vector3.one * scaleFactor;
+            //model.transform.localScale = Vector3.one;
+        }
+
         model.transform.localEulerAngles = new Vector3(0, 180, 0);
 
 
@@ -359,6 +355,94 @@ public class HandItemSelector : MonoBehaviour
         //SelectItem(name, category.ToString());
 
         CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
+
+        //yield return StartCoroutine(LoadAndSpawnGLB(localPath, category));
+
+    }
+
+    #endregion
+
+
+    #region GLB Loading
+
+    //IEnumerator LoadAndSpawnGLB(string path, CategoryType category)
+    //{
+    //    //using FileStream stream = new(path, FileMode.Open, FileAccess.Read);
+
+    //    //var importer = new GLTFSceneImporter(stream, new ImportOptions());
+
+    //    //yield return importer.LoadSceneAsync();
+
+    //    //GameObject model = importer.LastLoadedScene;
+
+    //    //if (model == null)
+    //    //{
+    //    //    Debug.LogError("GLB failed to load.");
+    //    //    yield break;
+    //    //}
+
+        
+    //}
+
+
+    private Vector3 GetTrueSize(GameObject obj)
+    {
+        MeshFilter[] meshFilters = obj.GetComponentsInChildren<MeshFilter>();
+        if (meshFilters.Length == 0)
+            return Vector3.zero;
+
+        Bounds total = new Bounds();
+
+        bool initialized = false;
+
+        foreach (MeshFilter mf in meshFilters)
+        {
+            Mesh mesh = mf.sharedMesh;
+            if (!mesh) continue;
+
+            // Mesh.bounds is in local mesh space
+            Bounds meshBounds = mesh.bounds;
+
+            // Convert mesh bounds to world space
+            Matrix4x4 localToWorld = mf.transform.localToWorldMatrix;
+
+            // Transform the bounds
+            Bounds worldBounds = TransformBounds(localToWorld, meshBounds);
+
+            if (!initialized)
+            {
+                total = worldBounds;
+                initialized = true;
+            }
+            else
+            {
+                total.Encapsulate(worldBounds);
+            }
+        }
+
+        // Convert world bounds to the root object's LOCAL space
+        Vector3 localSize = obj.transform.InverseTransformVector(total.size);
+
+        return new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
+    }
+
+    // Transform a bounds by a matrix (Unity safe method)
+    private Bounds TransformBounds(Matrix4x4 matrix, Bounds bounds)
+    {
+        var center = matrix.MultiplyPoint(bounds.center);
+
+        Vector3 extents = bounds.extents;
+        Vector3 axisX = matrix.MultiplyVector(new Vector3(extents.x, 0, 0));
+        Vector3 axisY = matrix.MultiplyVector(new Vector3(0, extents.y, 0));
+        Vector3 axisZ = matrix.MultiplyVector(new Vector3(0, 0, extents.z));
+
+        extents = new Vector3(
+            Mathf.Abs(axisX.x) + Mathf.Abs(axisY.x) + Mathf.Abs(axisZ.x),
+            Mathf.Abs(axisX.y) + Mathf.Abs(axisY.y) + Mathf.Abs(axisZ.y),
+            Mathf.Abs(axisX.z) + Mathf.Abs(axisY.z) + Mathf.Abs(axisZ.z)
+        );
+
+        return new Bounds(center, extents * 2);
     }
 
     #endregion
@@ -402,10 +486,11 @@ public class HandItemSelector : MonoBehaviour
         foreach (var parent in spawnParents.Values)
         {
             foreach (Transform t in parent)
-                Destroy(t.gameObject);
+                t.gameObject.SetActive(false);
+                //Destroy(t.gameObject);
         }
 
-        ClearDownloadedModels();
+        //ClearDownloadedModels();
     }
 
     public void PreDownloadModel(CategoryType category)
@@ -415,11 +500,4 @@ public class HandItemSelector : MonoBehaviour
     }
 
     #endregion
-}
-
-
-public class DownloadState : MonoBehaviour
-{
-    public bool isDownloading;
-    public bool isReady;
 }

@@ -10,6 +10,7 @@ public class ProductDetails : MonoBehaviour
     public CategoryManager.Products product;
 
     public int selectedColorIndex = 0;
+    public int selectedSizeIndex = 0;
 
     public List<Color> colors = new List<Color>();
 

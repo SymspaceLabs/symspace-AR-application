@@ -70,7 +70,7 @@ public class SignUpOTPVerifyUI : MonoBehaviour
 
                 //MenuManager.Instance.EnablePanel(MenuManager.Instance.homePanel);
                 PlayerPrefs.SetInt("RememberMe", 1);
-                SceneManager.LoadScene("Blogs");
+                SceneManager.LoadScene(SceneNames.Home);
 
                 PlayerPrefs.SetString("OTP", otpInput.text);
                 MenuManager.Instance.loadingPanel.SetActive(false);

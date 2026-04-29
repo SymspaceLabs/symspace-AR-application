@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class SafeParentMatrix : MonoBehaviour
+public class SafeParent : MonoBehaviour
 {
     public Transform child;  // Cube1
     public Transform parent; // Cube2

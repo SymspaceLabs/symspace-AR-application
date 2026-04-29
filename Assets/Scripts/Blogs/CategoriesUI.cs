@@ -102,6 +102,10 @@ public class CategoriesUI : MonoBehaviour
 
     public TextMeshProUGUI stocksSelected;
 
+    public Coroutine tempCoroutine;
+
+    public string currentProductID;
+
     private void Awake()
     {
         Instance = this;
@@ -175,7 +179,10 @@ public class CategoriesUI : MonoBehaviour
         //MenuManager.Instance.loadingPanel.SetActive(true);
         ClearCategories();
 
-        StartCoroutine(AuthAPI.PostRequest(getProductsURL + categoryURL, "", // Empty string for no body
+        if (tempCoroutine != null)
+            StopCoroutine(tempCoroutine);
+
+        tempCoroutine = StartCoroutine(AuthAPI.PostRequest(getProductsURL + categoryURL, "", // Empty string for no body
             (response) =>
             {
                 Debug.Log("Categories loaded: " + response);
@@ -213,38 +220,40 @@ public class CategoriesUI : MonoBehaviour
         var state = targetObject.GetComponent<DownloadState>();
         state.isDownloading = true;
         state.isReady = false;
+        GameObject loadedRoot = null;
+        yield return StartCoroutine(ModelLoaderService.DownloadAndLoad(url, (model) => { loadedRoot = model; }));
 
-        string localPath = Path.Combine(Application.persistentDataPath, p.id + ".glb");
+        //string localPath = Path.Combine(Application.persistentDataPath, p.id + ".glb");
 
-        using (UnityWebRequest www = UnityWebRequest.Get(url))
-        {
-            currentRequest = www;
-            www.downloadHandler = new DownloadHandlerFile(localPath);
-            yield return www.SendWebRequest();
+        //using (UnityWebRequest www = UnityWebRequest.Get(url))
+        //{
+        //    currentRequest = www;
+        //    www.downloadHandler = new DownloadHandlerFile(localPath);
+        //    yield return www.SendWebRequest();
 
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError("Download failed: " + www.error);
-                state.isDownloading = false; // allow retry
-                yield break;
-            }
-        }
+        //    if (www.result != UnityWebRequest.Result.Success)
+        //    {
+        //        Debug.LogError("Download failed: " + www.error);
+        //        state.isDownloading = false; // allow retry
+        //        yield break;
+        //    }
+        //}
 
-        // --- Step 2: Load GLB with UnityGLTF ---
-        using (FileStream stream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
-        {
-            var importOptions = new ImportOptions();
-            var importer = new GLTFSceneImporter(stream, importOptions);
-            yield return importer.LoadSceneAsync();
+        //// --- Step 2: Load GLB with UnityGLTF ---
+        //using (FileStream stream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
+        //{
+        //    var importOptions = new ImportOptions();
+        //    var importer = new GLTFSceneImporter(stream, importOptions);
+        //    yield return importer.LoadSceneAsync();
 
-            GameObject loadedRoot = importer.LastLoadedScene;
+        //    GameObject loadedRoot = importer.LastLoadedScene;
 
-            if (loadedRoot == null)
-            {
-                Debug.LogError("Failed to load GLB: no root GameObject returned");
-                state.isDownloading = false;
-                yield break;
-            }
+        //    if (loadedRoot == null)
+        //    {
+        //        Debug.LogError("Failed to load GLB: no root GameObject returned");
+        //        state.isDownloading = false;
+        //        yield break;
+        //    }
 
             MeshFilter srcMF = loadedRoot.GetComponentInChildren<MeshFilter>();
             MeshRenderer srcMR = loadedRoot.GetComponentInChildren<MeshRenderer>();
@@ -296,7 +305,10 @@ public class CategoriesUI : MonoBehaviour
 
             Debug.Log("Mesh and materials assigned!");
 
-            targetObject.SetActive(true);
+            if (currentProductID == p.id)
+                targetObject.SetActive(true);
+            else
+                targetObject.SetActive(false);
 
             if (!downloadedModels.Contains(targetObject))
                 downloadedModels.Add(targetObject);
@@ -306,8 +318,8 @@ public class CategoriesUI : MonoBehaviour
 
             mv.FrameObject(targetObject);
 
-            Destroy(loadedRoot);
-        }
+        Destroy(loadedRoot);
+        //}
     }
 
 
@@ -421,8 +433,12 @@ public class CategoriesUI : MonoBehaviour
                 Sprite sprite = Sprite.Create(texture,
                     new Rect(0, 0, texture.width, texture.height),
                     new Vector2(0.5f, 0.5f));
-                imageComponent.sprite = sprite;
-                imageComponent.enabled = true;
+
+                if (imageComponent != null)
+                {
+                    imageComponent.sprite = sprite;
+                    imageComponent.enabled = true;
+                }
             }
             else
             {
@@ -434,7 +450,8 @@ public class CategoriesUI : MonoBehaviour
             Debug.LogError($"Failed to download image: {request.error}");
         }
 
-        loadingIcon.SetActive(false);
+        if(loadingIcon != null)
+            loadingIcon.SetActive(false);
     }
 
     public void ShowItemDetail(CategoryManager.Products product)
@@ -458,7 +475,7 @@ public class CategoriesUI : MonoBehaviour
                     foreach (Transform obj in UI_3D_Models_Parent.transform)
                         obj.gameObject.SetActive(false);
                     //Destroy(obj.gameObject);
-
+                    currentProductID = products.id;
                     GameObject downloaded = downloadedModels.Find(m => m.GetComponent<ProductDetails>().product.id == products.id);
 
 
@@ -719,52 +736,60 @@ public class CategoriesUI : MonoBehaviour
 
     public void NextPreviousImage(int index)
     {
-        string id = selectedProduct.product.colors[selectedMatIndex].id;
+        string code = selectedProduct.product.colors[selectedMatIndex].code;
+
         currentImage += index;
         Debug.Log("current Index Before : " + currentImage);
 
-        if (currentImage < 0)
-            currentImage = selectedProduct.sprites.Count - 1;
-        if (currentImage >= selectedProduct.sprites.Count)
+        int count = selectedProduct.sprites.Count;
+
+        // Wrap including model index (-1)
+        if (currentImage < -1)
+            currentImage = count - 1;
+
+        if (currentImage >= count)
+            currentImage = -1;
+
+        Debug.Log("Selected sprites Count : " + count);
+
+        // Only filter when we're on an image (not model)
+        if (currentImage != -1)
         {
-            currentImage = 0;
-        }
+            int startIndex = currentImage;
 
-        Debug.Log("Selected sprites Count : " + selectedProduct.sprites.Count);
-
-        if (currentImage != 0)
-            while (selectedProduct.product.images[currentImage].colorId != id)
+            while (selectedProduct.product.images[currentImage].colorCode != code)
             {
                 currentImage += index;
 
-                if (currentImage == 0)
-                    break;
+                // Wrap again
+                if (currentImage < -1)
+                    currentImage = count - 1;
 
-                if (currentImage < 0)
-                    currentImage = selectedProduct.sprites.Count - 1;
-                if (currentImage >= selectedProduct.sprites.Count)
-                {
-                    currentImage = 0;
+                if (currentImage >= count)
+                    currentImage = -1;
+
+                // Stop if we loop back to model or full cycle
+                if (currentImage == -1 || currentImage == startIndex)
                     break;
-                }
             }
+        }
 
         Debug.Log("current Index : " + currentImage);
 
-        if (currentImage == 0)
+        // Display logic
+        if (currentImage == -1)
         {
             modelViewerImage.enabled = false;
             modelViewer3D.enabled = true;
-            //txt360View.SetActive(true);
         }
         else
         {
             modelViewer3D.enabled = false;
-            //txt360View.SetActive(false);
             modelViewerImage.enabled = true;
-            modelViewerImage.sprite = selectedProduct.sprites[currentImage];
-        }
 
+            if (selectedProduct.sprites[currentImage] != null)
+                modelViewerImage.sprite = selectedProduct.sprites[currentImage];
+        }
     }
 
     public void BackToShop()
@@ -1003,7 +1028,7 @@ public class CategoriesUI : MonoBehaviour
         {
             ProductSelection.ClearSelection();
             ProductSelection.SetSelection(p, false, "", p.ar_type.Equals("horizontal-plane detection"), p.threeDModels[0].url);
-            SceneManager.LoadScene("AR Scene");
+            SceneManager.LoadScene(SceneNames.ARScene);
         }
         else if (p.ar_type.Equals("face-tracking"))
         {
@@ -1011,7 +1036,7 @@ public class CategoriesUI : MonoBehaviour
             ProductSelection.TryParseObjectType(p.name, out category);
             ProductSelection.ClearSelection();
             ProductSelection.SetSelection(p, true, p.category.name, false, p.threeDModels[0].url);
-            SceneManager.LoadScene("AR Face");
+            SceneManager.LoadScene(SceneNames.ARFace);
         }
 #if UNITY_IOS
         else if(p.ar_type.Equals("hand-tracking"))
@@ -1020,11 +1045,11 @@ public class CategoriesUI : MonoBehaviour
             ProductSelection.TryParseObjectType(p.name, out category);
             ProductSelection.ClearSelection();
             ProductSelection.SetSelection(p, true, p.category.name, false, p.threeDModels[0].url);
-            SceneManager.LoadScene("Hand Tracking");
+            SceneManager.LoadScene(SceneNames.HandTracking);
         }
         else if (p.ar_type.Equals("body-tracking"))
         {
-            if (!SceneManager.GetActiveScene().name.Equals("AR Body Tracking With Mars"))
+            if (!SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
             {
                 CategoryType category;
                 ProductSelection.TryParseObjectType(p.name, out category);
@@ -1033,7 +1058,7 @@ public class CategoriesUI : MonoBehaviour
 
                 LoaderUtility.Deinitialize();
 
-                SceneManager.LoadScene("AR Body Tracking With Mars");
+                SceneManager.LoadScene(SceneNames.ARBodyTrackingMars);
             }
         }
 #endif

@@ -36,7 +36,7 @@ public class MenuManager : MonoBehaviour
         if(PlayerPrefs.GetInt("RememberMe", 0) == 1)
         {
             loadingPanel.SetActive(true);
-            SceneManager.LoadSceneAsync("Blogs");
+            SceneManager.LoadSceneAsync(SceneNames.Blogs);
         }
     }
 

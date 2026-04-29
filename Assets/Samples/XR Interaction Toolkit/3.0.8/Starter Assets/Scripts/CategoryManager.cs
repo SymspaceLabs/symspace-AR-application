@@ -11,7 +11,6 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.XR.Interaction.Toolkit.Transformers;
 using UnityGLTF;
-using static UnityEngine.UI.Image;
 
 public class CategoryManager : MonoBehaviour
 {
@@ -94,7 +93,7 @@ public class CategoryManager : MonoBehaviour
         yield return null;
         if (ProductSelection.productData != null)
         {
-            if (SceneManager.GetActiveScene().name == "AR Scene")
+            if (SceneManager.GetActiveScene().name == SceneNames.ARScene)
                 yield return StartCoroutine(DownloadImage(ProductSelection.productData.images[0].url));
             StartCoroutine(ProductSelectedFunction(ProductSelection.productData,
                 ProductSelection.productData.threeDModels[0].url,
@@ -205,7 +204,8 @@ public class CategoryManager : MonoBehaviour
             Sprite sprite = Sprite.Create(texture,
                 new Rect(0, 0, texture.width, texture.height),
                 new Vector2(0.5f, 0.5f));
-            spritesList[index] = sprite;
+            if(spritesList != null)
+                spritesList[index] = sprite;
         }
         else
         {
@@ -230,7 +230,8 @@ public class CategoryManager : MonoBehaviour
 
         if (texture.LoadImage(imageData))
         {
-            texturesList[index] = texture;
+            if(texturesList != null)
+                texturesList[index] = texture;
         }
         else
         {
@@ -244,12 +245,13 @@ public class CategoryManager : MonoBehaviour
     {
         if (CheckObjectScene(p))
         {
-            if (SceneManager.GetActiveScene().name == "AR Face")
+            if (SceneManager.GetActiveScene().name == SceneNames.ARFace)
             {
                 StartCoroutine(arJewelryManager.JewelrySelected(p, p.threeDModels[0].url, p.category.name, pid ? pid : null));
             }
-            else if (SceneManager.GetActiveScene().name == "AR Scene")
+            else if (SceneManager.GetActiveScene().name == SceneNames.ARScene)
             {
+                yield return null;
                 #region plane Detection Scene Code
                 string type = null;
 
@@ -258,50 +260,107 @@ public class CategoryManager : MonoBehaviour
                 else
                     type = p.ar_type;
 
-                GameObject newObject;
+                GameObject newObject = null;
 
-                GameObject downloadedModel = FindExistingModel(p.id);
+                var downloaded = FindExistingModel(p.id);
+                //var downloaded = downloadedModels.Find(m =>
+                //    m.GetComponent<ProductDetails>().product.id == p.id);
 
-                if (downloadedModel != null)
-                    newObject = downloadedModel;
-                else
+                if(downloaded == null)
                 {
+                    foreach (var obj in FindObjectsByType<DownloadState>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                    {
+                        var tempPd = obj.GetComponent<ProductDetails>();
+                        Debug.Log("download state found");
+                        if (tempPd != null && tempPd.product.id == p.id && obj.isDownloading)
+                        {
+                            yield break;
+                        }
+                    }
+
+                }
+
+                if (downloaded == null)
+                {
+                    // ALWAYS instantiate from prefab first
                     if (type.Equals("horizontal-plane detection"))
                         newObject = Instantiate(glbPrafabHorizontal);
                     else
                         newObject = Instantiate(glbPrafabVertical);
-
-                    var state = newObject.GetComponent<DownloadState>() ?? newObject.AddComponent<DownloadState>();
-                    state.isDownloading = false;
-                    state.isReady = false;
-
-                    newObject.GetComponent<ProductDetails>().product.id = p.id;
                 }
+                else
+                    newObject = downloaded;
 
+                var state = newObject.GetComponent<DownloadState>() ?? newObject.AddComponent<DownloadState>();
+/*                state.isDownloading = false;
+                state.isReady = false;
+
+                // ONLY set ID if prefab instance (safe)
+                var pd = newObject.GetComponent<ProductDetails>();
+                pd.product.id = p.id;
+
+                // apply cached downloaded data (safe copy)
+                if (downloaded != null)
+                {
+                    var dlState = downloaded.GetComponent<DownloadState>();
+                    if (dlState != null && dlState.isReady)
+                    {
+                        CopyDownloadedData(downloaded, newObject);
+                    }
+                }*/
 
                 newObject.transform.localPosition = Vector3.zero;
                 newObject.SetActive(false);
-                newObject.name = GetUniqueName(p.name, spawner.objectsSpawned);
 
-                spawner.objectPrefabs.Clear();
-                spawner.objectPrefabs.Add(newObject);
+                newObject.name = GetUniqueName(p.name, GhostPlacementController.Instance.spawnedObjects);
 
-                //UIManagerAR.instance.eventSystem.gameObject.SetActive(false);
-                var stateCheck = newObject.GetComponent<DownloadState>();
+                GhostPlacementController.Instance.objectToSpawn = newObject;
 
+                SpawnCanvas(newObject);
 
-                //p.colors.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
-                //p.images.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
-                //p.sizes.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
-                //p.threeDModels.Sort((a, b) =>
-                //{
-                //    int indexA = p.colors.FindIndex(c => c.code == a.colorCode);
-                //    int indexB = p.colors.FindIndex(c => c.code == b.colorCode);
+                if (state == null)
+                    Debug.Log("statecheck is null");
+                else
+                    Debug.Log("statecheck is not null");
+                if (state.isReady)
+                {
+                    GhostPlacementController.Instance.objectToSpawn = newObject;
+                    Debug.Log("product is already downloading or ready : " + state.isReady);
 
-                //    return indexA.CompareTo(indexB);
-                //});
+                    GhostPlacementController.Instance.unit =
+                                (p.sizes != null && p.sizes.Count > 0)
+                                    ? p.sizes[0].dimensions.unit
+                                    : GhostPlacementController.Instance.unit;
 
-                if (!stateCheck.isReady && !stateCheck.isDownloading)
+                    GhostPlacementController.Instance.BeginPlacement(
+                        type.Equals("horizontal-plane detection") ? false : true
+                    );
+
+                    UIManagerAR.instance.TogglePlaneVisuals(true);
+
+                    
+                    GetComponent<SlideUpPanel>().HidePanel();
+
+                    foreach (var model in UIManagerAR.instance.UI_3D_Models)
+                    {
+                        if(model.GetComponent<ProductDetails>().product.id == p.id)
+                            yield break;
+                    }
+                    GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
+                    modelToView.transform.parent = UIManagerAR.instance.UI_3D_Models_Parent.transform;
+                    modelToView.transform.localPosition = Vector3.zero;
+                    modelToView.GetComponent<ProductDetails>().product.id = p.id;
+
+                    modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = newObject.GetComponentInChildren<MeshFilter>().mesh;
+
+                    CopyDownloadedData(newObject, modelToView);
+                    mv.FrameObject(modelToView);
+                    UIManagerAR.instance.UI_3D_Models.Add(modelToView);
+
+                    yield break;
+                }
+
+                if (!state.isReady && !state.isDownloading)
                 {
                     if (pid != null)
                         yield return StartCoroutine(DownloadAndAssign(url, newObject, p, pid.ProductProgress, pid.DownloadFailed));
@@ -314,77 +373,106 @@ public class CategoryManager : MonoBehaviour
                         tempModels.Add(newObject);
                 }
 
-                WorldCanvasFaceCamera btnCanvas = Instantiate(plusBtnCanvas).GetComponent<WorldCanvasFaceCamera>();
-                btnCanvas.targetModel = newObject.GetComponentInChildren<MeshRenderer>().transform;
-                btnCanvas.pd = newObject.GetComponent<ProductDetails>();
-                btnCanvas.objDetail = newObject.GetComponent<ObjectDetail>();
+                // ---------------- WORLD CANVAS ----------------
+
+                
+
+                // ---------------- UI ENABLE ----------------
 
                 UIManagerAR.instance.eventSystem.gameObject.SetActive(true);
-
-                //EventSystem.current.gameObject.SetActive(true);
-                spawner.object1Spawned = false;
-                spawner.objectIndex = 0;
-                //spawner.objectsSize[0].length = p.sizes[0].dimensions.length;
-                //spawner.objectsSize[0].width = p.sizes[0].dimensions.width;
-                //spawner.objectsSize[0].height = p.sizes[0].dimensions.height;
-                spawner.unit = p.sizes[0].dimensions.unit;
                 UIManagerAR.instance.itemsToPlaceParent.SetActive(true);
 
-                spawner.objectColors.Clear();
                 foreach (Transform obj in modelVariantParent)
                     Destroy(obj.gameObject);
 
-                //if (downloadedModel == null)
+                // ---------------- VARIANTS ----------------
 
+                GhostPlacementController.Instance.unit =
+                    (p.sizes != null && p.sizes.Count > 0)
+                        ? p.sizes[0].dimensions.unit
+                        : GhostPlacementController.Instance.unit;
+
+                GhostPlacementController.Instance.objectColors.Clear();
 
                 for (int i = 0; i < p.colors.Count; i++)
                 {
                     UnityEngine.Color newColor1;
-                    ColorUtility.TryParseHtmlString(p.colors[i].code, out newColor1);
-                    spawner.objectColors.Add(newColor1);
-                    ModelVariant mv = Instantiate(modelVariantPrefab, modelVariantParent).GetComponent<ModelVariant>();
-                    mv.index = i;
-                    mv.colorImg.color = newColor1;
-                    mv.colorName.text = p.colors[i].name;
-                }
 
-
-                UIManagerAR.instance.spawner.ChangeTextureByIndex(0);
-
-                if (downloadedModel != null)
-                {
-                    foreach (var obj in UIManagerAR.instance.UI_3D_Models)
+                    if (ColorUtility.TryParseHtmlString(p.colors[i].code, out newColor1))
                     {
-                        if (obj.GetComponent<ProductDetails>().product.id == newObject.GetComponent<ProductDetails>().product.id)
-                        {
-                            newObject.GetComponentInChildren<MeshRenderer>().material.mainTexture = obj.GetComponent<ProductDetails>().textures[0];
-                            newObject.GetComponent<ProductDetails>().selectedColorIndex = 0;
-                        }
+                        GhostPlacementController.Instance.objectColors.Add(newColor1);
 
+                        ModelVariant mv =
+                            Instantiate(modelVariantPrefab, modelVariantParent)
+                            .GetComponent<ModelVariant>();
+
+                        mv.index = i;
+                        mv.colorImg.color = newColor1;
+                        mv.colorName.text = p.colors[i].name;
                     }
                 }
 
+                GhostPlacementController.Instance.BeginPlacement(
+                    type.Equals("horizontal-plane detection") ? false : true
+                );
+
+                GhostPlacementController.Instance.ChangeTextureByIndex(0);
+/*
+                // ---------------- APPLY PREVIEW TEXTURE ----------------
+
+                if (downloaded != null)
+                {
+                    var downloadedPd = downloaded.GetComponent<ProductDetails>();
+
+                    if (downloadedPd != null && downloadedPd.textures != null && downloadedPd.textures.Count > 0)
+                    {
+                        foreach (var obj in UIManagerAR.instance.UI_3D_Models)
+                        {
+                            var objPd = obj.GetComponent<ProductDetails>();
+
+                            if (objPd != null && objPd.product.id == newPd.product.id)
+                            {
+                                var renderer = newObject.GetComponentInChildren<MeshRenderer>();
+
+                                if (renderer != null)
+                                    renderer.material.mainTexture = downloadedPd.textures[0];
+
+                                newPd.selectedColorIndex = 0;
+                            }
+                        }
+                    }
+                }
+
+                // ---------------- CLEAN VARIANTS UI ----------------
+*/
                 foreach (Transform obj in modelVariantParent)
                     obj.gameObject.SetActive(false);
 
+                // ---------------- ORIENTATION ----------------
+
+                var transformer = newObject.GetComponent<ARTransformer>();
+                var manipulator = newObject.GetComponent<ARObjectManipulator>();
+
                 if (type.Equals("horizontal-plane detection"))
                 {
-                    newObject.GetComponent<ARTransformer>().objectPlaneTranslationMode = ARTransformer.PlaneTranslationMode.Horizontal;
-                    newObject.GetComponent<ARObjectManipulator>().orientation = ARObjectManipulator.Orientation.Horizontal;
+                    transformer.objectPlaneTranslationMode = ARTransformer.PlaneTranslationMode.Horizontal;
+                    manipulator.orientation = ARObjectManipulator.Orientation.Horizontal;
                 }
                 else if (type.Equals("vertical-plane detection"))
                 {
-                    newObject.GetComponent<ARTransformer>().objectPlaneTranslationMode = ARTransformer.PlaneTranslationMode.Vertical;
-                    newObject.GetComponent<ARObjectManipulator>().orientation = ARObjectManipulator.Orientation.Vertical;
+                    transformer.objectPlaneTranslationMode = ARTransformer.PlaneTranslationMode.Vertical;
+                    manipulator.orientation = ARObjectManipulator.Orientation.Vertical;
                 }
+
+                // ---------------- PLANE VISUAL ----------------
 
                 UIManagerAR.instance.TogglePlaneVisuals(true);
 
-                if (stateCheck.isReady)
+                if (state.isReady)
                     GetComponent<SlideUpPanel>().HidePanel();
                 #endregion
             }
-            else if (SceneManager.GetActiveScene().name == "Hand Tracking")
+            else if (SceneManager.GetActiveScene().name == SceneNames.HandTracking)
             {
                 if (HandItemSelector.Instance != null)
                 {
@@ -393,7 +481,7 @@ public class CategoryManager : MonoBehaviour
                     HandItemSelector.Instance.SelectItem(p.name, p.category.name, pid);
                 }
             }
-            else if (SceneManager.GetActiveScene().name.Equals("AR Body Tracking With Mars"))
+            else if (SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
             {
                 Debug.Log("Mars 1");
                 BodyTrackingWithMars.Instance.BodyModelSelected(p, url, p.category.name, pid);
@@ -402,49 +490,98 @@ public class CategoryManager : MonoBehaviour
         yield return null;
     }
 
+    void SpawnCanvas(GameObject newObject)
+    {
+        WorldCanvasFaceCamera[] allWorldCanvases =
+                    FindObjectsByType<WorldCanvasFaceCamera>(FindObjectsSortMode.None);
+
+        bool spawnCanvas = true;
+
+        var newPd = newObject.GetComponent<ProductDetails>();
+
+        foreach (var c in allWorldCanvases)
+        {
+            if (c.pd == newPd)
+            {
+                spawnCanvas = false;
+                break;
+            }
+        }
+
+        if (spawnCanvas)
+        {
+            WorldCanvasFaceCamera btnCanvas =
+                Instantiate(plusBtnCanvas).GetComponent<WorldCanvasFaceCamera>();
+
+            if (!btnCanvas.GetComponent<ObjectDetail>())
+                btnCanvas.gameObject.AddComponent<ObjectDetail>();
+            btnCanvas.GetComponent<ObjectDetail>().index = GhostPlacementController.Instance.spawnObjectCount;
+            GhostPlacementController.Instance.spawnObjectCount++;
+
+            btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Top;
+            btnCanvas.targetModel = newObject.GetComponentInChildren<MeshRenderer>()?.transform;
+            btnCanvas.pd = newPd;
+            btnCanvas.objDetail = newObject.GetComponent<ObjectDetail>();
+        }
+    }
+
+    void CopyDownloadedData(GameObject source, GameObject target)
+    {
+        var srcMR = source.GetComponentInChildren<MeshRenderer>();
+        var tgtMR = target.GetComponentInChildren<MeshRenderer>();
+
+        if (srcMR != null && tgtMR != null)
+        {
+            Material[] mats = new Material[srcMR.sharedMaterials.Length];
+
+            for (int i = 0; i < mats.Length; i++)
+                mats[i] = new Material(srcMR.sharedMaterials[i]);
+
+            tgtMR.materials = mats;
+        }
+    }
 
     GameObject FindExistingModel(string productId)
     {
-        // 1. Downloaded
+        // 1. Check downloaded templates
         var downloaded = downloadedModels.Find(m =>
             m.GetComponent<ProductDetails>().product.id == productId);
-        GameObject go = null;
 
         if (downloaded != null)
         {
-            var temp1 = tempModels.Find(m =>
-            m.GetComponent<ProductDetails>().product.id == productId);
-            if (temp1 != null)
-                return temp1;
+            var temp = tempModels.Find(m =>
+                m.GetComponent<ProductDetails>().product.id == productId);
 
-            go = Instantiate(downloaded);
-            Renderer[] renderers = go.GetComponentsInChildren<Renderer>();
+            if (temp != null)
+                return temp;
 
-            foreach (var r in renderers)
+            // IMPORTANT: clone safely (break material sharing)
+            GameObject go = Instantiate(downloaded);
+
+            foreach (var r in go.GetComponentsInChildren<Renderer>())
             {
-                r.material = new Material(r.sharedMaterial);
+                Material[] mats = r.sharedMaterials;
+
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    mats[i] = new Material(mats[i]);
+                }
+
+                r.materials = mats;
             }
-            //return go;
+
+            return go;
         }
 
-        // 2. Temp models (downloaded but not placed)
-        var temp = tempModels.Find(m =>
+        // 2. Already created temp model
+        var existingTemp = tempModels.Find(m =>
             m.GetComponent<ProductDetails>().product.id == productId);
 
-        if (temp != null)
-            return temp;
+        if (existingTemp != null)
+            return existingTemp;
 
-        if (go != null)
-            return go;
-
-        // 3. Currently downloading (NOT in tempModels yet)
-        foreach (var obj in FindObjectsByType<DownloadState>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-        {
-            var dk = obj.GetComponent<ProductDetails>();
-            if (dk != null && dk.product.id == productId && obj.isDownloading)
-                return obj.gameObject;
-        }
-
+        // 3. Downloading in progress
+        
         return null;
     }
 
@@ -623,47 +760,47 @@ public class CategoryManager : MonoBehaviour
             {
                 ProductSelection.ClearSelection();
                 ProductSelection.SetSelection(p, false, "", p.ar_type.Equals("horizontal-plane detection"), p.threeDModels[0].url);
-                UIManagerAR.instance.ChangeARScene("AR Scene");
+                UIManagerAR.instance.ChangeARScene(SceneNames.ARScene);
                 return false;
             }
             return true;
         }
         else if (p.ar_type.Equals("face-tracking"))
         {
-            if (SceneManager.GetActiveScene().name != "AR Face")
+            if (SceneManager.GetActiveScene().name != SceneNames.ARFace)
             {
                 CategoryType category;
                 ProductSelection.TryParseObjectType(p.name, out category);
                 ProductSelection.ClearSelection();
                 ProductSelection.SetSelection(p, true, p.category.name, false, p.threeDModels[0].url);
-                UIManagerAR.instance.ChangeARScene("AR Face");
+                UIManagerAR.instance.ChangeARScene(SceneNames.ARFace);
                 return false;
             }
             return true;
         }
         else if (p.ar_type.Equals("hand-tracking"))
         {
-            if (SceneManager.GetActiveScene().name != "Hand Tracking")
+            if (SceneManager.GetActiveScene().name != SceneNames.HandTracking)
             {
                 CategoryType category;
                 ProductSelection.TryParseObjectType(p.name, out category);
                 ProductSelection.ClearSelection();
                 ProductSelection.SetSelection(p, false, p.category.name, false, p.threeDModels[0].url);
-                UIManagerAR.instance.ChangeARScene("Hand Tracking");
+                UIManagerAR.instance.ChangeARScene(SceneNames.HandTracking);
                 return false;
             }
             return true;
         }
         else if (p.ar_type.Equals("body-tracking"))
         {
-            if (!SceneManager.GetActiveScene().name.Equals("AR Body Tracking With Mars"))
+            if (!SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
             {
                 Debug.Log("not Mars");
                 CategoryType category;
                 ProductSelection.TryParseObjectType(p.name, out category);
                 ProductSelection.ClearSelection();
                 ProductSelection.SetSelection(p, false, p.category.name, false, p.threeDModels[0].url);
-                UIManagerAR.instance.ChangeARScene("AR Body Tracking With Mars");
+                UIManagerAR.instance.ChangeARScene(SceneNames.ARBodyTrackingMars);
                 return false;
             }
                 Debug.Log("Mars");
@@ -688,7 +825,8 @@ public class CategoryManager : MonoBehaviour
     #endregion
 
     #region 3D Model Download & Assignment
-    IEnumerator DownloadAndAssign(string url, GameObject targetObject, Products p, Action<float> onProgress = null, Action onFailed = null)
+    IEnumerator DownloadAndAssign(string url, GameObject targetObject, Products p,
+    Action<float> onProgress = null, Action onFailed = null)
     {
         yield return null;
 
@@ -696,165 +834,137 @@ public class CategoryManager : MonoBehaviour
         state.isDownloading = true;
         state.isReady = false;
 
-        using (UnityWebRequest www = UnityWebRequest.Get(url))
+
+        GameObject loadedRoot = null;
+        yield return StartCoroutine(ModelLoaderService.DownloadAndLoad(url, (model) => { loadedRoot = model; } ,onProgress, onFailed));
+        if (loadedRoot == null)
         {
-
-            www.downloadHandler = new DownloadHandlerFile(localPath);
-            www.SendWebRequest();
-
-            while (!www.isDone)
-            {
-                // Progress value (0..1)
-                float progress = www.downloadProgress;
-
-                onProgress?.Invoke(progress);
-
-                yield return null; // wait one frame
-            }
-
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError("Download failed: " + www.error);
-                onFailed?.Invoke();
-                yield break;
-            }
-
-            onProgress?.Invoke(1f); // ensure 100%
+            Debug.LogError("download failed");
+            yield break;
         }
 
-        // Load GLB with UnityGLTF
-        using (FileStream stream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
+        MeshFilter srcMF = loadedRoot.GetComponentInChildren<MeshFilter>();
+        MeshRenderer srcMR = loadedRoot.GetComponentInChildren<MeshRenderer>();
+
+        if (srcMF == null || srcMR == null)
         {
-            var importOptions = new ImportOptions();
-            var importer = new GLTFSceneImporter(stream, importOptions);
-            yield return importer.LoadSceneAsync();
+            Debug.LogError("GLB missing mesh");
+            yield break;
+        }
 
-            GameObject loadedRoot = importer.LastLoadedScene;
+        Transform visual = targetObject.transform.Find("Visual");
 
-            if (loadedRoot == null)
+        MeshFilter targetMF = visual.GetComponent<MeshFilter>() ?? visual.gameObject.AddComponent<MeshFilter>();
+        MeshRenderer targetMR = visual.GetComponent<MeshRenderer>() ?? visual.gameObject.AddComponent<MeshRenderer>();
+        MeshCollider targetMC = visual.GetComponent<MeshCollider>() ?? visual.gameObject.AddComponent<MeshCollider>();
+
+        // ---------------- MESH ----------------
+        targetMF.mesh = Instantiate(srcMF.sharedMesh);
+
+        targetMR.materials = srcMR.materials.Clone() as Material[];
+
+        //Material[] newMaterials = new Material[srcMR.materials.Length];
+        for (int matIdx = 0; matIdx < targetMR.materials.Length; matIdx++)
+        {
+            Material mat = targetMR.materials[matIdx];
+            Material srcMat = srcMR.materials[matIdx];
+            mat.SetFloat("normalScale", 0);
+
+            foreach (string prop in srcMat.GetTexturePropertyNames())
+
             {
-                Debug.LogError("❌ Failed to load GLB: no root GameObject returned");
-                yield return null;
-            }
+                Texture tex = srcMat.GetTexture(prop);
+                if (tex == null) continue;
 
-            MeshFilter srcMF = loadedRoot.GetComponentInChildren<MeshFilter>();
-            MeshRenderer srcMR = loadedRoot.GetComponentInChildren<MeshRenderer>();
-
-            if (srcMF == null || srcMR == null)
-            {
-                Debug.LogError("Loaded model has no MeshFilter or MeshRenderer!");
-                yield return null;
-            }
-
-            MeshFilter targetMF = targetObject.transform.Find("Visual").GetComponent<MeshFilter>() ?? targetObject.transform.Find("Visual").gameObject.AddComponent<MeshFilter>();
-            MeshRenderer targetMR = targetObject.transform.Find("Visual").GetComponent<MeshRenderer>() ?? targetObject.transform.Find("Visual").gameObject.AddComponent<MeshRenderer>();
-            MeshCollider targetMC = targetObject.transform.Find("Visual").GetComponent<MeshCollider>() ?? targetObject.transform.Find("Visual").gameObject.AddComponent<MeshCollider>();
-
-            targetMF.mesh = Instantiate(srcMF.sharedMesh);
-            targetMR.materials = srcMR.materials.Clone() as Material[];
-
-            //Material[] newMaterials = new Material[srcMR.materials.Length];
-            for (int matIdx = 0; matIdx < targetMR.materials.Length; matIdx++)
-            {
-                Material mat = targetMR.materials[matIdx];
-                Material srcMat = srcMR.materials[matIdx];
-                mat.SetFloat("normalScale", 0);
-
-                foreach (string prop in srcMat.GetTexturePropertyNames())
+                if (tex is Texture2D srcTex)
                 {
-                    Texture tex = srcMat.GetTexture(prop);
-                    if (tex == null) continue;
+                    Texture2D copy = new Texture2D(srcTex.width, srcTex.height, srcTex.format, srcTex.mipmapCount > 1);
+                    Graphics.CopyTexture(srcTex, copy);     // fast GPU copy
 
-                    if (tex is Texture2D srcTex)
-                    {
-                        Texture2D copy = new Texture2D(srcTex.width, srcTex.height, srcTex.format, srcTex.mipmapCount > 1);
-                        Graphics.CopyTexture(srcTex, copy);     // fast GPU copy
+                    // or slower but more compatible:
+                    // copy.LoadImage(srcTex.EncodeToPNG());
 
-                        // or slower but more compatible:
-                        // copy.LoadImage(srcTex.EncodeToPNG());
+                    copy.wrapMode = srcTex.wrapMode;
+                    copy.filterMode = srcTex.filterMode;
+                    copy.anisoLevel = srcTex.anisoLevel;
+                    copy.Apply();
 
-                        copy.wrapMode = srcTex.wrapMode;
-                        copy.filterMode = srcTex.filterMode;
-                        copy.anisoLevel = srcTex.anisoLevel;
-                        copy.Apply();
-
-                        mat.SetTexture(prop, copy);
-                    }
+                    mat.SetTexture(prop, copy);
                 }
             }
-            //targetMR.materials = newMaterials;
-            targetMC.sharedMesh = targetMF.mesh;
-
-            targetMF.GetComponent<ARDimensionVisualizer>().enabled = true;
-
-            targetObject.GetComponent<ProductDetails>().product = p;
-
-            targetObject.GetComponent<ProductDetails>().colors.Clear();
-            foreach(var c in p.colors)
-            {
-                UnityEngine.Color newColor;
-                ColorUtility.TryParseHtmlString(c.code, out newColor);
-                targetObject.GetComponent<ProductDetails>().colors.Add(newColor);
-            }
-
-            //if (p.ar_type.Equals("horizontal-plane detection"))
-            //{
-                UpdateObjectScale(targetObject.GetComponent<ProductDetails>(), targetObject, !p.ar_type.Equals("horizontal-plane detection"));
-            yield return new WaitForSeconds(0.2f);
-            //}
-            //else
-            //{
-            //    UpdateObjectScale(p, targetObject, true);
-            //}
-
-            state.isDownloading = false;
-            state.isReady = true;
-
-            if (!downloadedModels.Contains(targetObject))
-                downloadedModels.Add(targetObject);
-
-            if (!tempModels.Contains(targetObject))
-                tempModels.Add(targetObject);
-
-            GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
-            modelToView.transform.parent = UIManagerAR.instance.UI_3D_Models_Parent.transform;
-            modelToView.transform.localPosition = Vector3.zero;
-            UIManagerAR.instance.UI_3D_Models.Add(modelToView);
-
-
-            ProductDetails pd = modelToView.GetComponent<ProductDetails>();
-            pd.imagesUrl.Clear();
-            foreach (var img in p.images)
-                pd.imagesUrl.Add(img.url);
-
-            pd.texturesUrl.Clear();
-            foreach (var model in p.threeDModels)
-                pd.texturesUrl.Add(model.texture);
-
-            pd.product = p;
-
-            ProductDetails target_pd = targetObject.GetComponent<ProductDetails>();
-            target_pd.imagesUrl = pd.imagesUrl;
-            target_pd.texturesUrl = pd.texturesUrl;
-            target_pd.sprites = pd.sprites;
-            target_pd.product  = pd.product;
-            target_pd.colors  = pd.colors;
-            target_pd.textures  = pd.textures;
-
-
-            StartCoroutine(SetProductImages(pd));
-
-            modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = targetMF.mesh;
-            modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = targetMR.materials;
-            modelToView.name = targetObject.name;
-
-            mv.FrameObject(modelToView);
-
-            GetComponent<SlideUpPanel>().HidePanel();
-
-            Debug.Log("✅ Mesh and materials assigned (instantiated copies)!");
-            Destroy(loadedRoot);
         }
+
+        //targetMR.materials = newMats;
+        targetMC.sharedMesh = targetMF.mesh;
+
+        targetMF.GetComponent<ARDimensionVisualizer>().enabled = true;
+
+        targetObject.GetComponent<ProductDetails>().product = p;
+
+        targetObject.GetComponent<ProductDetails>().colors.Clear();
+        foreach (var c in p.colors)
+        {
+            UnityEngine.Color newColor;
+            ColorUtility.TryParseHtmlString(c.code, out newColor);
+            targetObject.GetComponent<ProductDetails>().colors.Add(newColor);
+        }
+
+        UpdateObjectScale(targetObject.GetComponent<ProductDetails>(), targetObject,
+            !p.ar_type.Equals("horizontal-plane detection"));
+
+        yield return new WaitForSeconds(0.2f);
+
+        state.isDownloading = false;
+        state.isReady = true;
+
+        ProductDetails pd = targetObject.GetComponent<ProductDetails>();
+        pd.imagesUrl.Clear();
+
+        foreach (var img in pd.product.images)
+            pd.imagesUrl.Add(img.url);
+
+        pd.texturesUrl.Clear();
+
+        foreach (var t in pd.product.threeDModels)
+            if (t.texture.Length > 0)
+                pd.texturesUrl.Add(t.texture);
+
+        // ---------------- CACHE (UNCHANGED LOGIC) ----------------
+
+        GameObject downloadedModel = Instantiate(targetObject);
+
+        CopyDownloadedData(targetObject, downloadedModel);
+
+        if (!downloadedModels.Contains(downloadedModel))
+            downloadedModels.Add(downloadedModel);
+
+        if (!tempModels.Contains(targetObject))
+            tempModels.Add(targetObject);
+
+        // ---------------- UI MODEL PREVIEW (UNCHANGED) ----------------
+        GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
+        modelToView.transform.parent = UIManagerAR.instance.UI_3D_Models_Parent.transform;
+        modelToView.transform.localPosition = Vector3.zero;
+
+        UIManagerAR.instance.UI_3D_Models.Add(modelToView);
+
+        StartCoroutine(SetProductImages(downloadedModel.GetComponent<ProductDetails>()));
+        StartCoroutine(SetProductImages(targetObject.GetComponent<ProductDetails>()));
+
+        modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = targetMF.mesh;
+        modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = targetMR.materials;
+        modelToView.name = targetObject.name;
+
+        modelToView.GetComponent<ProductDetails>().product.id = pd.product.id;
+
+        mv.FrameObject(modelToView);
+
+        GetComponent<SlideUpPanel>().HidePanel();
+
+        Destroy(loadedRoot);
+
+        Debug.Log("✅ Download + Assign complete");
+        
     }
 
     #endregion
@@ -1125,7 +1235,8 @@ public class CategoryManager : MonoBehaviour
                     });
 
                     //product.isSorted = true;
-                    card.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(ProductSelectedFunction(product, product.threeDModels[0].url, product.ar_type, pid.productImage.sprite, pid)));
+                    if(pid != null && pid.productImage != null)
+                        card.GetComponent<Button>().onClick.AddListener(() => StartCoroutine(ProductSelectedFunction(product, product.threeDModels[0].url, product.ar_type, pid.productImage.sprite, pid)));
                 }
             },
             (error) =>
@@ -1674,10 +1785,5 @@ public class CategoryManager : MonoBehaviour
     }
     #endregion
 
-    public class DownloadState : MonoBehaviour
-    {
-        public bool isDownloading;
-        public bool isReady;
-    }
     #endregion
 }

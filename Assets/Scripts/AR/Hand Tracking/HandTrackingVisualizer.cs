@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
@@ -19,6 +20,7 @@ public class HandTrackingVisualizer : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private float smoothTime = 0.1f;
     [SerializeField] private Vector3 wristOffset = new Vector3(0f, 0.02f, 0f);
+    [SerializeField] private Vector3 rotationOffsetEuler = new Vector3(0f, 0f, 0f);
     [SerializeField] private float baseWatchScale = 0.1f; // Base scale at 0.5m distance
 
     public GameObject currentWristAnchor;
@@ -32,6 +34,8 @@ public class HandTrackingVisualizer : MonoBehaviour
     private float currentScale = 1.0f;
     private float scaleVelocity = 0f;
     private float scaleSmoothTime = 0.2f;
+
+    bool isBackHand = false;
 
     [Header("Ring Settings")]
     [SerializeField] private RingPlacer ringPlacer;
@@ -108,17 +112,21 @@ public class HandTrackingVisualizer : MonoBehaviour
 
     private void UpdateRingPosition(float[] landmarks, int imageWidth, int imageHeight, string handness)
     {
-        if (ringPlacer != null)
+        if (ringPlacer == null || ringPlacer.currentRing == null) return;
+
+        Transform ringTransform = ringPlacer.currentRing.transform;
+        if (ringTransform.childCount == 0) return;
+
+        Transform firstChild = ringTransform.GetChild(0);
+        if (firstChild.childCount == 0) return;
+
+        foreach (Transform obj in firstChild)
         {
-            if(ringPlacer.currentRing.transform.GetChild(0).transform.childCount != 0)
+            if (obj.gameObject.activeInHierarchy)
             {
-                foreach(Transform obj in ringPlacer.currentRing.transform.GetChild(0).transform)
-                    if(obj.gameObject.activeInHierarchy)
-                    {
-                        ringPlacer.ProcessHandLandmarks(landmarks, imageWidth, imageHeight, handness);
-                        GetComponent<IOSHandDetector>().StopTutorial();
-                        break;
-                    }
+                ringPlacer.ProcessHandLandmarks(landmarks, imageWidth, imageHeight, handness);
+                GetComponent<IOSHandDetector>().StopTutorial();
+                break;
             }
         }
     }
@@ -128,25 +136,17 @@ public class HandTrackingVisualizer : MonoBehaviour
         if (Camera.main == null)
             return baseWatchScale;
 
-        float handWidth = Vector3.Distance(indexWorld, pinkyWorld);
+        // Wrist width from hand tracking
+        float wristWidth = Vector3.Distance(indexWorld, pinkyWorld);
 
-        // Normalize: real object size vs real hand size
-        //Debug.Log("Watch Width : " + watchWidth);
-        //float widthScale = handWidth / watchWidth;
+        // MUST match your normalized watch size
+        float watchReferenceWidth = 0.04f; // <-- from your bounds (~0.03972)
 
-        // Distance fallback
-        float distance = Vector3.Distance(wristWorld, Camera.main.transform.position);
-        float distanceScale = baseWatchScale * (distance / 0.5f);
+        float fitFactor = 1.6f; // small buffer so it doesn't clip
 
-        float finalScale = handWidth > 0.01f ? handWidth : distanceScale;
+        float targetScale = (wristWidth / watchReferenceWidth) * fitFactor;
 
-        //finalScale = Mathf.Clamp(finalScale, 3f, 5f);
-
-        finalScale *= 36f;
-
-        //Debug.Log($"Hand Width: {handWidth:F3}m, Distance: {distance:F2}m, Scale: {finalScale:F3}");
-
-        return finalScale;
+        return targetScale;
     }
 
     private void UpdateWatchScale(float targetScale)
@@ -253,6 +253,11 @@ public class HandTrackingVisualizer : MonoBehaviour
         // Vector3 capsuleUp = -handForward;
         // Vector3 capsuleForward = -handUp; // or -handUp depending on palm direction
 
+        if (handUp.y > 0)
+            isBackHand = true;
+        else
+            isBackHand = false;
+            
         return Quaternion.LookRotation(handForward, handUp);
     }
 
@@ -332,15 +337,20 @@ public class HandTrackingVisualizer : MonoBehaviour
         // Smooth position
         Vector3 smoothedPosition = Vector3.SmoothDamp(
             currentWristAnchor.transform.position,
-            targetPosition,
+            targetPosition + wristOffset,
             ref currentVelocity,
             smoothTime
         );
 
+        Quaternion offsetRotation = Quaternion.Euler(rotationOffsetEuler);
+
+        if (!isBackHand)
+            offsetRotation = Quaternion.Euler(-rotationOffsetEuler);
+
         // Smooth rotation
         Quaternion smoothedRotation = SmoothDampQuaternion(
             currentWristAnchor.transform.localRotation,
-            targetRotation,
+            targetRotation * offsetRotation,
             ref rotationVelocity,
             smoothTime
         );

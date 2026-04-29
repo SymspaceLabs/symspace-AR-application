@@ -6902,8 +6902,6 @@ GameObject:
   m_Component:
   - component: {fileID: 553130975}
   - component: {fileID: 553130974}
-  - component: {fileID: 553130976}
-  - component: {fileID: 553130977}
   m_Layer: 0
   m_Name: MenuManager
   m_TagString: Untagged
@@ -6952,31 +6950,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &553130976
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 553130973}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dd45259c9f68d81439c5247e67d841e1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LoginWithGoogle
-  loginController: {fileID: 553130977}
---- !u!114 &553130977
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 553130973}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68bcc578cc104174c846eea177a02505, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LoginController
 --- !u!1 &562906548
 GameObject:
   m_ObjectHideFlags: 0

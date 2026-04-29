@@ -14,20 +14,20 @@ public class ModelVariant : MonoBehaviour
 
     public void OnButtonClick()
     {
-        if (UIManagerAR.instance.spawner != null)
-            UIManagerAR.instance.spawner.ChangeTextureByIndex(index);
+        if (GhostPlacementController.Instance != null)
+            GhostPlacementController.Instance.ChangeTextureByIndex(index);
         else if (BodyTrackingWithMars.Instance != null)
             BodyTrackingWithMars.Instance.ChangeModelTexture(index);
     }
 
     public void OnColorClicked()
     {
-        if (SceneManager.GetActiveScene().name == "AR Scene")
+        if (SceneManager.GetActiveScene().name == SceneNames.ARScene)
         {
-            UIManagerAR.instance.spawner.ChangeTextureByIndex(index);
+            GhostPlacementController.Instance.ChangeTextureByIndex(index);
             UIManagerAR.instance.ChangeModelVariant();
         }
-        else if (SceneManager.GetActiveScene().name == "Blogs")
+        else if (SceneManager.GetActiveScene().name == SceneNames.Blogs)
         {
             CategoriesUI.Instance.ChangeModelTexture(index);
             CategoriesUI.Instance.ChangeModelVariant();

@@ -9255,7 +9255,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 170406083}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.9270386
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -13110,110 +13110,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   faceManager: {fileID: 500942742}
-  jewelryItems:
-  - category: 3
-    prefab: {fileID: 0}
-    localOffset: {x: 0.014, y: -0.02, z: 0.05}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 2
-    prefab: {fileID: 0}
-    localOffset: {x: -0.014, y: -0.02, z: 0.05}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 3
-    prefab: {fileID: 0}
-    localOffset: {x: 0.017, y: -0.02, z: 0.05}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 2
-    prefab: {fileID: 0}
-    localOffset: {x: -0.017, y: -0.02, z: 0.05}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 6
-    prefab: {fileID: 0}
-    localOffset: {x: 0, y: -0.005, z: 0.025}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 6
-    prefab: {fileID: 0}
-    localOffset: {x: 0, y: -0.005, z: 0.025}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 6
-    prefab: {fileID: 0}
-    localOffset: {x: 0, y: -0.005, z: 0.025}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 6
-    prefab: {fileID: 0}
-    localOffset: {x: 0, y: -0.005, z: 0.025}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 0
-    prefab: {fileID: 0}
-    localOffset: {x: 0.005, y: -0.05, z: 0.1}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 0
-    prefab: {fileID: 0}
-    localOffset: {x: 0, y: -0.05, z: 0.1}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
-  - category: 0
-    prefab: {fileID: 0}
-    localOffset: {x: 0.005, y: -0.03, z: 0.1}
-    smoothTime: 0
-    instance: {fileID: 0}
-    velocity: {x: 0, y: 0, z: 0}
-    isSpawn: 0
   jewelries:
-  - category: 7
+  - id: 
+    category: 7
     instance: {fileID: 0}
-    localOffset: {x: 0, y: 0, z: 0.025}
+    localOffset: {x: 0, y: -0.01, z: 0.02}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
-  - category: 3
+  - id: 
+    category: 3
     instance: {fileID: 0}
     localOffset: {x: 0.014, y: 0, z: 0.05}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
-  - category: 2
+  - id: 
+    category: 2
     instance: {fileID: 0}
     localOffset: {x: -0.014, y: 0, z: 0.05}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
-  - category: 0
+  - id: 
+    category: 0
     instance: {fileID: 0}
     localOffset: {x: 0, y: 0.03, z: 0.2}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
-  - category: 6
+  - id: 
+    category: 6
     instance: {fileID: 0}
     localOffset: {x: 0, y: 0.12, z: 0.1}
     smoothTime: 0
@@ -42917,7 +42844,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1148049869}
   m_Direction: 0
   m_Value: 0
-  m_Size: 0.98345023
+  m_Size: 0.9834501
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:

@@ -15,12 +15,12 @@ MonoBehaviour:
   m_EnvironmentMode: 0
   m_EnvironmentPrefab: {fileID: 4033279824830409645, guid: 44ffecd288e7dab4bb4e5c1cd7c2d69f, type: 3}
   m_SyntheticModeEnvironmentGuid: 44ffecd288e7dab4bb4e5c1cd7c2d69f
-  m_IndependentRecording: {fileID: 604121681969238689, guid: 1d74ae577149fec479d10968d697b303, type: 2}
+  m_IndependentRecording: {fileID: 4410859653355543093, guid: d2671e1e7e470f04da58f5043cc61dce, type: 2}
   m_WebCamDeviceIndex: 1
   m_UseSyntheticRecording: 0
   m_FindAllMatchingDataPerQuery: 0
   m_AutoResetDevicePose: 0
-  m_AutoSyncWithSceneChanges: 1
+  m_AutoSyncWithSceneChanges: 0
   m_TimeToFinalizeSceneModification: 0.3
   m_ShowSimulatedEnvironment: 1
   m_ShowSimulatedData: 1
@@ -28,5 +28,5 @@ MonoBehaviour:
   - {fileID: 4033279824830409645, guid: 909f2ab63b9b4ea4b8fe717106d824ad, type: 3}
   m_SyntheticRecordings:
   - {fileID: 7451220477654342660, guid: 40566a2a3e4e2a74db0f68bd7b1eb11a, type: 2}
-  m_UserFacingEnvironmentMode: 0
+  m_UserFacingEnvironmentMode: 1
   m_WorldFacingEnvironmentMode: 0

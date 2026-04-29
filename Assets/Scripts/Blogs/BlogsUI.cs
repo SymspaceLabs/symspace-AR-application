@@ -246,7 +246,7 @@ public class BlogsUI : MonoBehaviour
         PlayerPrefs.SetInt("RememberMe", 0);
         PlayerPrefs.SetInt("OnBoarding", 0);
         PlayerPrefs.DeleteKey("id");
-        SceneManager.LoadScene("Home");
+        SceneManager.LoadScene(SceneNames.Home);
     }
 
     private void OnDisable()

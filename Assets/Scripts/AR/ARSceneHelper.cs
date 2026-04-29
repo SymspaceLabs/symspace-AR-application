@@ -17,7 +17,7 @@ public static class ARSceneHelper
             arSession.enabled = false;
         }
 
-        if(sceneName.Equals("AR Body Tracking With Mars"))
+        if(sceneName.Equals(SceneNames.ARBodyTrackingMars))
             LoaderUtility.Deinitialize();
         else
         {

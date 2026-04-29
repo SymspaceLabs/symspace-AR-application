@@ -116,7 +116,7 @@ public class UIManagerAR : MonoBehaviour
     {
         instance = this;
 
-        if(PlayerPrefs.GetInt("Restart") == 1 && !SceneManager.GetActiveScene().name.Equals("AR Body Tracking With Mars"))
+        if(PlayerPrefs.GetInt("Restart") == 1 && !SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
         {
             PlayerPrefs.SetInt("Restart", 0);
             StartCoroutine(RestartScene());
@@ -237,15 +237,15 @@ public class UIManagerAR : MonoBehaviour
 
     public void BlogScene()
     {
-        SceneManager.LoadScene("Blogs");
-        //ARSceneHelper.CleanLoad("Blogs");
+        SceneManager.LoadScene(SceneNames.Blogs);
+        //ARSceneHelper.CleanLoad(SceneNames.Home);
     }
 
     public void ChangeARScene(string sceneName)
     {
 
         StartCoroutine(SwitchScene(sceneName));
-        //SceneManager.LoadScene("AR Scene");
+        //SceneManager.LoadScene(SceneNames.ARScene);
     }
 
     private IEnumerator SwitchScene(string sceneName)
@@ -254,11 +254,11 @@ public class UIManagerAR : MonoBehaviour
 
         DisableOcclusion();
 #if UNITY_IOS
-        if (sceneName.Equals("AR Body Tracking With Mars"))
+        if (sceneName.Equals(SceneNames.ARBodyTrackingMars))
             LoaderUtility.Deinitialize();
 #endif
 #if UNITY_ANDROID
-        if(!sceneName.Equals("AR Body Tracking With Mars") && !sceneName.Equals("Hand Tracking"))
+        if (!sceneName.Equals(SceneNames.ARBodyTrackingMars) && !sceneName.Equals(SceneNames.HandTracking))
 #endif
             SceneManager.LoadScene(sceneName);
 
@@ -284,10 +284,10 @@ public class UIManagerAR : MonoBehaviour
         obj.SetActive(state);
     }
 
-    public void PlusBtn(string id, int textureIndex)
+    public void PlusBtn(ProductDetails pd/*string id, int textureIndex*/)
     {
         smallDetail.SetActive(true);
-        SelectModel(id, textureIndex);
+        SelectModel(pd/*id, textureIndex*/);
         //plusBtns[currentPlusBtn].SetActive(false);
     }
 
@@ -347,143 +347,169 @@ public class UIManagerAR : MonoBehaviour
     }
     #endregion
 
-    public void SelectModel(string id, int textureIndex)
+    public void SelectModel(ProductDetails pd/*string id, int textureIndex*/)
     {
         foreach (var model in UI_3D_Models)
             model.SetActive(false);
 
+        //selectedModelDetails = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
+
+        string id = pd.product.id;
+        int textureIndex = pd.selectedColorIndex;
+
+        selectedModelDetails = pd;
+        //foreach (var model in GhostPlacementController.Instance.spawnedObjects)
+        //    if (model.GetComponent<ProductDetails>().product.id == id)
+        //        selectedModelDetails = model.GetComponent<ProductDetails>();
+
+        GameObject UIModel = null;
         foreach (var model in UI_3D_Models)
+            if (model.GetComponent<ProductDetails>().product.id == id)
+                UIModel = model;
+
+        ProductDetails UIModelDetails = null;
+        if (UIModel != null)
+            UIModel.SetActive(true);
+            //UIModelDetails = UIModel.GetComponent<ProductDetails>();
+
+        //UIModelDetails = selectedModelDetails;
+
+        //foreach (var model in GhostPlacementController.Instance.spawnedObjects)
+        //{
+        //    selectedModelDetails = model.GetComponent<ProductDetails>();
+        //    if (selectedModelDetails.product.id == id)
+        //    {
+
+        CategoryManager.Products product = selectedModelDetails.product;
+
+
+        SD_CompanyName.text = product.company.entityName;
+        SD_ProductName.text = product.name;
+        SD_Price.text = "$" + product.displayPrice.price.ToString();
+
+        LD_CompanyName.text = product.company.entityName;
+        LD_ProductName.text = product.name;
+        LD_Price.text = "$" + product.displayPrice.price.ToString();
+
+        LD_sizes.ClearOptions();
+
+        SD_sizes.ClearOptions();
+
+        if (product.sizes.Count == 1)
         {
-            selectedModelDetails = model.GetComponent<ProductDetails>();
-            if (selectedModelDetails.product.id == id)
+            LD_sizes.options.Add(new TMP_Dropdown.OptionData(product.variants[0].size.size));
+            SD_sizes.options.Add(new TMP_Dropdown.OptionData(product.variants[0].size.size));
+        }
+        else
+        {
+            LD_sizes.options.Add(new TMP_Dropdown.OptionData("Size"));
+            foreach (var option in product.variants)
             {
-                model.SetActive(true);
-                CategoryManager.Products product = selectedModelDetails.product;
+                LD_sizes.options.Add(new TMP_Dropdown.OptionData(option.size.size));
+            }
 
-
-                SD_CompanyName.text = product.company.entityName;
-                SD_ProductName.text = product.name;
-                SD_Price.text = "$" + product.displayPrice.price.ToString();
-
-                LD_CompanyName.text = product.company.entityName;
-                LD_ProductName.text = product.name;
-                LD_Price.text = "$" + product.displayPrice.price.ToString();
-
-                LD_sizes.ClearOptions();
-
-                SD_sizes.ClearOptions();
-
-                if (product.sizes.Count == 1)
-                {
-                    LD_sizes.options.Add(new TMP_Dropdown.OptionData(product.variants[0].size.size));
-                    SD_sizes.options.Add(new TMP_Dropdown.OptionData(product.variants[0].size.size));
-                }
-                else
-                {
-                    LD_sizes.options.Add(new TMP_Dropdown.OptionData("Size"));
-                    foreach (var option in product.variants)
-                    {
-                        LD_sizes.options.Add(new TMP_Dropdown.OptionData(option.size.size));
-                    }
-
-                    SD_sizes.options.Add(new TMP_Dropdown.OptionData("Size"));
-                    foreach (var option in product.variants)
-                    {
-                        SD_sizes.options.Add(new TMP_Dropdown.OptionData(option.size.size));
-                    }
-                }
-
-                LD_sizes.value = 0;
-                if (product.sizes.Count == 1)
-                {
-                    ChangeSize_SD();
-                    ChangeSize_LD();
-                }
-
-                LD_sizes.RefreshShownValue();
-
-                SD_sizes.value = 0;
-                SD_sizes.RefreshShownValue();
-
-                if (product.displayPrice.salePrice < product.displayPrice.price)
-                {
-                    SD_SalePrice.text = "$" + product.displayPrice.salePrice.ToString();
-                    LD_SalePrice.text = "$" + product.displayPrice.salePrice.ToString();
-
-                    SD_Price.text = "<s>$" + product.displayPrice.price + "<s>";
-                    LD_Price.text = "<s>$" + product.displayPrice.price + "<s>";
-                    
-                }
-
-                foreach (Transform obj in colorParent_SD)
-                    Destroy(obj.gameObject);
-
-                for (int i = 0; i < product.colors.Count; i++)
-                {
-                    Color newColor1;
-                    ColorUtility.TryParseHtmlString(product.colors[i].code, out newColor1);
-                    ModelVariant mv = Instantiate(colorPrefab, colorParent_SD).GetComponent<ModelVariant>();
-                    mv.img.color = newColor1;
-                    mv.index = i;
-                }
-
-
-                foreach (Transform obj in colorParent_LD)
-                    Destroy(obj.gameObject);
-
-                for (int i = 0; i < product.colors.Count; i++)
-                {
-                    Color newColor1;
-                    ColorUtility.TryParseHtmlString(product.colors[i].code, out newColor1);
-                    ModelVariant mv = Instantiate(colorPrefab, colorParent_LD).GetComponent<ModelVariant>();
-                    mv.img.color = newColor1;
-                    mv.index = i;
-                }
-
-
-                //largeDetail.GetComponent<CategoryManager>().SetProductImages(selectedModelDetails);
-
-                if(spawner != null)
-                    spawner.objectColors.Clear();
-                foreach (Transform obj in CategoryManager.Instance.modelVariantParent)
-                    Destroy(obj.gameObject);
-
-                for (int i = 0; i < product.colors.Count; i++)
-                {
-                    UnityEngine.Color newColor1;
-                    ColorUtility.TryParseHtmlString(product.colors[i].code, out newColor1);
-                    if (spawner != null)
-                        spawner.objectColors.Add(newColor1);
-                    ModelVariant mv = Instantiate(CategoryManager.Instance.modelVariantPrefab, CategoryManager.Instance.modelVariantParent).GetComponent<ModelVariant>();
-                    mv.index = i;
-
-                    UnityEngine.Color newColor;
-                    if (ColorUtility.TryParseHtmlString(product.colors[i].code, out newColor))
-                    {
-                        mv.colorImg.color = newColor;
-                        //mv.colorName.text = product.colors[i].name;
-                    }
-                }
-                if (spawner != null)
-                {
-                    spawner.ChangeTextureByIndex(textureIndex);
-                    if (spawner.ChangeTextureByIndex(textureIndex))
-                    {
-                        UpdateDetailData();
-                    }
-                }
-
-                ChangeModelVariant();
-                model.GetComponentInChildren<MeshRenderer>().material.mainTexture = model.GetComponent<ProductDetails>().textures[textureIndex];
-                break;
+            SD_sizes.options.Add(new TMP_Dropdown.OptionData("Size"));
+            foreach (var option in product.variants)
+            {
+                SD_sizes.options.Add(new TMP_Dropdown.OptionData(option.size.size));
             }
         }
+
+        if (product.sizes.Count == 1)
+        {
+            ChangeSize_SD();
+            ChangeSize_LD();
+        }
+
+        LD_sizes.RefreshShownValue();
+
+        SD_sizes.value = 0;
+        SD_sizes.RefreshShownValue();
+
+        LD_sizes.value = selectedModelDetails.selectedSizeIndex;
+        SD_sizes.value = selectedModelDetails.selectedSizeIndex;
+        if (product.displayPrice.salePrice < product.displayPrice.price)
+        {
+            SD_SalePrice.text = "$" + product.displayPrice.salePrice.ToString();
+            LD_SalePrice.text = "$" + product.displayPrice.salePrice.ToString();
+
+            SD_Price.text = "<s>$" + product.displayPrice.price + "<s>";
+            LD_Price.text = "<s>$" + product.displayPrice.price + "<s>";
+                    
+        }
+
+        foreach (Transform obj in colorParent_SD)
+            Destroy(obj.gameObject);
+
+        for (int i = 0; i < product.colors.Count; i++)
+        {
+            Color newColor1;
+            ColorUtility.TryParseHtmlString(product.colors[i].code, out newColor1);
+            ModelVariant mv = Instantiate(colorPrefab, colorParent_SD).GetComponent<ModelVariant>();
+            mv.img.color = newColor1;
+            mv.index = i;
+        }
+
+
+        foreach (Transform obj in colorParent_LD)
+            Destroy(obj.gameObject);
+
+        for (int i = 0; i < product.colors.Count; i++)
+        {
+            Color newColor1;
+            ColorUtility.TryParseHtmlString(product.colors[i].code, out newColor1);
+            ModelVariant mv = Instantiate(colorPrefab, colorParent_LD).GetComponent<ModelVariant>();
+            mv.img.color = newColor1;
+            mv.index = i;
+        }
+
+
+        //largeDetail.GetComponent<CategoryManager>().SetProductImages(selectedModelDetails);
+
+        if(GhostPlacementController.Instance != null)
+            GhostPlacementController.Instance.objectColors.Clear();
+        foreach (Transform obj in CategoryManager.Instance.modelVariantParent)
+            Destroy(obj.gameObject);
+
+        for (int i = 0; i < product.colors.Count; i++)
+        {
+            UnityEngine.Color newColor1;
+            ColorUtility.TryParseHtmlString(product.colors[i].code, out newColor1);
+            if (GhostPlacementController.Instance != null)
+                GhostPlacementController.Instance.objectColors.Add(newColor1);
+            ModelVariant mv = Instantiate(CategoryManager.Instance.modelVariantPrefab, CategoryManager.Instance.modelVariantParent).GetComponent<ModelVariant>();
+            mv.index = i;
+
+            UnityEngine.Color newColor;
+            if (ColorUtility.TryParseHtmlString(product.colors[i].code, out newColor))
+            {
+                mv.colorImg.color = newColor;
+                //mv.colorName.text = product.colors[i].name;
+            }
+        }
+        if (GhostPlacementController.Instance != null)
+        {
+            GhostPlacementController.Instance.ChangeTextureByIndex(textureIndex);
+            //if (spawner.ChangeTextureByIndex(textureIndex))
+            //{
+                UpdateDetailData();
+            //}
+        }
+
+        ChangeModelVariant();
+        //UIModel.GetComponentInChildren<MeshRenderer>().material.mainTexture = model.GetComponent<ProductDetails>().textures[textureIndex];
+                //break;
+        //    }
+        //}
 
         //spawner.ObjectSelected(index);
     }
 
     public void UpdateDetailData()
     {
+        if (selectedModelDetails == null)
+            return;
+
         if (selectedModelDetails.isSizeSelected)
         {
             selectedSizeIndex = LD_sizes.value;
@@ -500,7 +526,8 @@ public class UIManagerAR : MonoBehaviour
 
             if (selectedModelDetails.product.variants[tempSizeIndex].salePrice > 0 && selectedModelDetails.product.variants[tempSizeIndex].price > selectedModelDetails.product.variants[tempSizeIndex].salePrice)
             {
-                //maxStocks = selectedModelDetails.product.variants[selectedSizeIndex - 1].stock;
+                //if(selectedModelDetails.product.variants.Count > selectedSizeIndex)
+                    //maxStocks = selectedModelDetails.product.variants[selectedSizeIndex].stock;
                 SD_Price.text = "<s>$" + selectedModelDetails.product.variants[tempSizeIndex].price + "<s>";
                 SD_Price.color = new Color(0.7f, 0.7f, 0.7f);
                 SD_SalePrice.text = "$" + selectedModelDetails.product.variants[tempSizeIndex].salePrice;
@@ -521,37 +548,37 @@ public class UIManagerAR : MonoBehaviour
                 LD_Price.color = new Color(1f, 1f, 1f);
                 LD_SalePrice.gameObject.SetActive(false);
             }
-
-            ProductDetails pd = spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
+            Debug.Log($"tempSizeIndex : {tempSizeIndex}");
+            ProductDetails pd = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
             foreach (var v in pd.product.variants)
             {
                 if (v.color.id == pd.product.colors[pd.selectedColorIndex].id)
                 {
                     maxStocks = v.stock;
                     Debug.Log("Max Stocks " + maxStocks);
-                    if (v.salePrice > 0 && v.salePrice < v.price)
-                    {
-                        SD_Price.text = "<s>$" + v.price + "<s>";
-                        SD_Price.color = new Color(0.7f, 0.7f, 0.7f);
-                        SD_SalePrice.text = v.salePrice.ToString();
-                        SD_SalePrice.gameObject.SetActive(true);
+                    //if (v.salePrice > 0 && v.salePrice < v.price)
+                    //{
+                    //    SD_Price.text = "<s>$" + v.price + "<s>";
+                    //    SD_Price.color = new Color(0.7f, 0.7f, 0.7f);
+                    //    SD_SalePrice.text = "$" + v.salePrice;
+                    //    SD_SalePrice.gameObject.SetActive(true);
 
-                        LD_Price.text = "<s>$" + v.price + "<s>";
-                        LD_Price.color = new Color(0.7f, 0.7f, 0.7f);
-                        LD_SalePrice.text = v.salePrice.ToString();
-                        LD_SalePrice.gameObject.SetActive(true);
-                    }
-                    else
-                    {
-                        SD_Price.text = v.price.ToString();
-                        SD_Price.color = new Color(1, 1, 1);
-                        SD_SalePrice.gameObject.SetActive(false);
+                    //    LD_Price.text = "<s>$" + v.price + "<s>";
+                    //    LD_Price.color = new Color(0.7f, 0.7f, 0.7f);
+                    //    LD_SalePrice.text = "$" + v.salePrice;
+                    //    LD_SalePrice.gameObject.SetActive(true);
+                    //}
+                    //else
+                    //{
+                    //    SD_Price.text = v.price.ToString();
+                    //    SD_Price.color = new Color(1, 1, 1);
+                    //    SD_SalePrice.gameObject.SetActive(false);
 
-                        LD_Price.text = v.price.ToString();
-                        LD_Price.color = new Color(1, 1, 1);
-                        LD_SalePrice.gameObject.SetActive(false);
+                    //    LD_Price.text = v.price.ToString();
+                    //    LD_Price.color = new Color(1, 1, 1);
+                    //    LD_SalePrice.gameObject.SetActive(false);
 
-                    }
+                    //}
                 }
             }
 
@@ -616,12 +643,12 @@ public class UIManagerAR : MonoBehaviour
         {
             SD_Price.text = "<s>$" + variant.price + "<s>";
             SD_Price.color = new Color(0.7f, 0.7f, 0.7f);
-            SD_SalePrice.text = variant.salePrice.ToString();
+            SD_SalePrice.text = "$" + variant.salePrice;
             SD_SalePrice.gameObject.SetActive(true);
 
             LD_Price.text = "<s>$" + variant.price + "<s>";
             LD_Price.color = new Color(0.7f, 0.7f, 0.7f);
-            LD_SalePrice.text = variant.salePrice.ToString();
+            LD_SalePrice.text = "$" + variant.salePrice;
             LD_SalePrice.gameObject.SetActive(true);
         }
         else
@@ -648,8 +675,8 @@ public class UIManagerAR : MonoBehaviour
         
         Debug.Log("LD size changed");
         ProductDetails pd = null;
-        if (spawner != null)
-            spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
+        if (GhostPlacementController.Instance != null)
+            pd = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
 
         UpdateDetailUI();
 
@@ -658,8 +685,8 @@ public class UIManagerAR : MonoBehaviour
         //else
         stocksSelected.text = "1";
 
-        if(spawner != null)
-            CategoryManager.Instance.UpdateObjectScale(pd, spawner.objectsSpawned[objectSelectedIndex], 
+        if(GhostPlacementController.Instance != null)
+            CategoryManager.Instance.UpdateObjectScale(pd, GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex], 
                 !pd.product.ar_type.Equals("horizontal-plane detection"), selectedModelDetails.product.sizes.Count == 1? selectedSizeIndex : selectedSizeIndex -1);
     }
 
@@ -673,9 +700,9 @@ public class UIManagerAR : MonoBehaviour
             return;
 
         Debug.Log("SD size changed");
-
-        if(spawner != null)
-            /*ProductDetails pd = */spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
+        selectedModelDetails.selectedSizeIndex = selectedSizeIndex;
+        if(GhostPlacementController.Instance != null)
+            /*ProductDetails pd = */GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
 
         UpdateDetailUI();
 
@@ -714,8 +741,8 @@ public class UIManagerAR : MonoBehaviour
     public void NextPreviousImage(int index)
     {
         ProductDetails pd = null;
-        if (spawner != null)
-            pd = spawner.objectsSpawned[objectSelectedIndex].GetComponent<ProductDetails>();
+        if (GhostPlacementController.Instance != null)
+            pd = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
         else
             pd = UI_3D_Models[objectSelectedIndex].GetComponent<ProductDetails>();
         string colorCode = pd.product.colors[pd.selectedColorIndex].code;
@@ -724,33 +751,33 @@ public class UIManagerAR : MonoBehaviour
         Debug.Log("current Index before : " + currentImage);
         currentImage += index;
 
-        if (currentImage < 0)
+        if (currentImage < -1)
             currentImage = selectedModelDetails.sprites.Count - 1;
         if (currentImage >= selectedModelDetails.sprites.Count)
         {
-            currentImage = 0;
+            currentImage = -1;
         }
         
-        if(currentImage != 0)
+        if(currentImage != -1)
             while (selectedModelDetails.product.images[currentImage].colorCode != colorCode)
             {
                 currentImage += index;
 
-                if (currentImage == 0)
+                if (currentImage == -1)
                     break;
 
-                if (currentImage < 0)
+                if (currentImage < -1)
                     currentImage = selectedModelDetails.sprites.Count - 1;
                 if (currentImage >= selectedModelDetails.sprites.Count)
                 {
-                    currentImage = 0;
+                    currentImage = -1;
                     break;
                 }
             }
 
         Debug.Log("current Index : " + currentImage);
 
-        if(currentImage == 0)
+        if(currentImage == -1)
         {
             modelViewerImage.enabled = false;
             modelViewer3D.enabled = true;
@@ -787,7 +814,7 @@ public class UIManagerAR : MonoBehaviour
 
         arController = !arController;
 
-        foreach(var obj in spawner.objectsSpawned)
+        foreach(var obj in GhostPlacementController.Instance.spawnedObjects)
         {
             obj.GetComponent<XRGrabInteractable>().enabled = arController;
             obj.GetComponent<ARTransformer>().enabled = arController;
@@ -797,9 +824,9 @@ public class UIManagerAR : MonoBehaviour
 
     public void DeleteAllSpawnedObjects()
     {
-        spawner.DeleteAllSpawnedObjects();
+        GhostPlacementController.Instance.DeleteAllSpawnedObjects();
         UI_3D_Models.Clear();
-        CategoryManager.Instance.downloadedModels.Clear();
+        //CategoryManager.Instance.downloadedModels.Clear();
         CategoryManager.Instance.tempModels.Clear();
         foreach (Transform obj in UI_3D_Models_Parent.transform)
             Destroy(obj.gameObject);

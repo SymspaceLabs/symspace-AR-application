@@ -135,7 +135,7 @@ public class ShopUIManager : MonoBehaviour
 
     public void LoadARScene()
     {
-        SceneManager.LoadScene("AR Scene");
+        SceneManager.LoadScene(SceneNames.ARScene);
     }
 
     [System.Serializable]

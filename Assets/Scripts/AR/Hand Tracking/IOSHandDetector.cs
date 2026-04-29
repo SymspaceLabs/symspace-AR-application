@@ -49,6 +49,9 @@ public class IOSHandDetector : MonoBehaviour
     public GameObject firstTutorialPage;
     public GameObject secondTutorialPage;
 
+    private static HandTrackingVisualizer cachedVisualizer;
+    private static float[] landmarks = new float[21 * 3];
+
 #if UNITY_IOS
     private void Start()
     {
@@ -109,22 +112,6 @@ public class IOSHandDetector : MonoBehaviour
         secondTutorialPage.SetActive(false);
     }
 
-    //IEnumerator HandleTutorials()
-    //{
-    //    firstTutorialPage.SetActive(true);
-    //    yield return new WaitForSeconds(2f);
-    //    firstTutorialPage.SetActive(false);
-    //    secondTutorialPage.SetActive(true);
-    //    yield return new WaitForSeconds(1f);
-    //    secondTutorialPage.SetActive(false);
-    //    yield return new WaitForSeconds(0.05f);
-    //    secondTutorialPage.SetActive(true);
-    //    yield return new WaitForSeconds(1f);
-    //    secondTutorialPage.SetActive(false);
-    //    yield return new WaitForSeconds(0.05f);
-    //    secondTutorialPage.SetActive(true);
-    //}
-
     void EnableObjects()
     {
         HTV.enabled = true;
@@ -141,19 +128,6 @@ public class IOSHandDetector : MonoBehaviour
         occlusionManager.requestedEnvironmentDepthMode = EnvironmentDepthMode.Disabled;
         occlusionManager.requestedHumanStencilMode = HumanSegmentationStencilMode.Disabled;
         occlusionManager.requestedHumanDepthMode = HumanSegmentationDepthMode.Disabled;
-
-        //Camera.main.depthTextureMode = DepthTextureMode.None;
-        //List<XROcclusionSubsystem> subsystems = new List<XROcclusionSubsystem>();
-        //SubsystemManager.GetSubsystems(subsystems);
-
-        //foreach (var subsystem in subsystems)
-        //{
-        //    if (subsystem != null && subsystem.running)
-        //    {
-        //        Debug.Log("Stopping XROcclusionSubsystem in this scene");
-        //        subsystem.Stop();
-        //    }
-        //}
     }
 
     private void OnDestroy()
@@ -183,54 +157,20 @@ public class IOSHandDetector : MonoBehaviour
     [AOT.MonoPInvokeCallback(typeof(HandPoseCallback))]
     private static void OnHandPoseDetected(IntPtr landmarksPtr, int landmarkCount, int width, int height, string handness)
     {
-        float[] landmarks = new float[landmarkCount * 3];
-        Marshal.Copy(landmarksPtr, landmarks, 0, landmarkCount * 3);
-
+        //float[] landmarks = new float[landmarkCount * 3];
+        int size = landmarkCount * 3;
+        Marshal.Copy(landmarksPtr, landmarks, 0, size);
+        
         UnityMainThreadDispatcher.Instance.Enqueue(() =>
         {
-            HandTrackingVisualizer visualizer = FindObjectOfType<HandTrackingVisualizer>();
-            if (visualizer != null)
-            {
-                visualizer.UpdateHandLandmarks(landmarks, width, height, handness);
-            }
+            if (cachedVisualizer == null)
+                cachedVisualizer = FindFirstObjectByType<HandTrackingVisualizer>();
+
+            if (cachedVisualizer != null)
+                cachedVisualizer.UpdateHandLandmarks(landmarks, width, height, handness);
         });
     }
 
-    //[AOT.MonoPInvokeCallback(typeof(HandPoseCallback))]
-    //private static void OnRingLandmarksDetected(IntPtr landmarksPtr, int landmarkCount, int width, int height, string handness)
-    //{
-    //    if (landmarkCount == 21) // Full hand landmarks for rings
-    //    {
-    //        float[] landmarks = new float[landmarkCount * 3];
-    //        Marshal.Copy(landmarksPtr, landmarks, 0, landmarkCount * 3);
-
-    //        UnityMainThreadDispatcher.Instance.Enqueue(() =>
-    //        {
-    //            RingPlacer ringDetector = FindObjectOfType<RingPlacer>();
-    //            if (ringDetector != null && ringDetector.enableRingDetection)
-    //            {
-    //                ringDetector.UpdateRingPosition(landmarks, width, height);
-    //            }
-    //        });
-    //    }
-    //}
-
-    //private void ProcessFrameForRings(IntPtr pixelData, int width, int height)
-    //{
-    //    if (!enableRingDetection) return;
-
-    //    try
-    //    {
-    //        // Just pass the pixelData directly - it's already the IntPtr we need!
-    //        ProcessFrameForRings(pixelData, width, height, OnRingLandmarksDetected);
-    //    }
-    //    catch (System.Exception e)
-    //    {
-    //        Debug.LogError($"Ring processing error: {e.Message}");
-    //    }
-    //}
-
-    // Add this field
     [SerializeField] private bool enableRingDetection = false;
 
     private void OnCameraFrameReceived(ARCameraFrameEventArgs args)
@@ -263,19 +203,6 @@ public class IOSHandDetector : MonoBehaviour
 
             // Process texture data for wrist tracking (EXISTING - DON'T CHANGE)
             ProcessTextureData(cameraTexture, image.width, image.height);
-
-            // ADDED: Process for rings using the same texture data
-            //byte[] ringPixelData = cameraTexture.GetRawTextureData(); // Renamed to avoid conflict
-            //GCHandle handle = GCHandle.Alloc(ringPixelData, GCHandleType.Pinned);
-            //try
-            //{
-            //    ProcessFrameForRings(handle.AddrOfPinnedObject(), image.width, image.height);
-            //}
-            //finally
-            //{
-            //    if (handle.IsAllocated)
-            //        handle.Free();
-            //}
         }
         finally
         {

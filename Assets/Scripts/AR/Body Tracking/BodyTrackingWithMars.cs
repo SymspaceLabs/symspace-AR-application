@@ -97,43 +97,49 @@ public class BodyTrackingWithMars : MonoBehaviour
 
     IEnumerator DownloadAndAssignBodyModel(Products p, string url, BodySlot slot, bool isRigged, Action<float> onProgress = null, Action onFailed = null)
     {
-        using (UnityWebRequest www = UnityWebRequest.Get(url))
-        {
-            string localPath = Path.Combine(Application.persistentDataPath, Path.GetFileName(url));
-            www.downloadHandler = new DownloadHandlerFile(localPath);
+        //using (UnityWebRequest www = UnityWebRequest.Get(url))
+        //{
+        //    string localPath = Path.Combine(Application.persistentDataPath, Path.GetFileName(url));
+        //    www.downloadHandler = new DownloadHandlerFile(localPath);
 
-            www.SendWebRequest();
+        //    www.SendWebRequest();
 
-            while (!www.isDone)
-            {
-                float progress = www.downloadProgress;
-                onProgress?.Invoke(progress);
-                yield return null;
-            }
+        //    while (!www.isDone)
+        //    {
+        //        float progress = www.downloadProgress;
+        //        onProgress?.Invoke(progress);
+        //        yield return null;
+        //    }
 
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError("Download failed: " + www.error);
-                onFailed?.Invoke();
-                yield break;
-            }
+        //    if (www.result != UnityWebRequest.Result.Success)
+        //    {
+        //        Debug.LogError("Download failed: " + www.error);
+        //        onFailed?.Invoke();
+        //        yield break;
+        //    }
 
-            onProgress?.Invoke(1f);
+        //    onProgress?.Invoke(1f);
 
-            using (FileStream stream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
-            {
-                var importOptions = new ImportOptions();
-                var importer = new GLTFSceneImporter(stream, importOptions);
+        //    using (FileStream stream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
+        //    {
+        //        var importOptions = new ImportOptions();
+        //        var importer = new GLTFSceneImporter(stream, importOptions);
 
-                yield return importer.LoadSceneAsync();
+        //        yield return importer.LoadSceneAsync();
 
-                GameObject loadedGLB = importer.LastLoadedScene;
+        //        GameObject loadedGLB = importer.LastLoadedScene;
 
-                if (loadedGLB == null)
-                {
-                    Debug.LogError("Failed to load GLB model!");
-                    yield break;
-                }
+        //        if (loadedGLB == null)
+        //        {
+        //            Debug.LogError("Failed to load GLB model!");
+        //            yield break;
+        //        }
+
+        GameObject loadedGLB = null;
+        yield return StartCoroutine(ModelLoaderService.DownloadAndLoad(url, (model) => { loadedGLB = model; }, onProgress, onFailed));
+
+        if (loadedGLB == null)
+            yield break;
 
                 // 🔹 CLEANUP
                 if (activeBodyModels.ContainsKey(slot))
@@ -204,7 +210,7 @@ public class BodyTrackingWithMars : MonoBehaviour
                 }
 
                 pd.product = p;
-                yield return StartCoroutine(CategoryManager.Instance.SetProductImages(pd));
+                StartCoroutine(CategoryManager.Instance.SetProductImages(pd));
 
                 WorldCanvasFaceCamera btnCanvas = Instantiate(plusBtnCanvas).GetComponent<WorldCanvasFaceCamera>();
 
@@ -283,8 +289,8 @@ public class BodyTrackingWithMars : MonoBehaviour
                 Debug.Log($"✅ {slot} attached as {(isRigged ? "Rigged" : "Static")}.");
 
                 CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
-            }
-        }
+        //    }
+        //}
     }
 
     public void EquipClothing(GameObject clothingModel)

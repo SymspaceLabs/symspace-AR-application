@@ -123,10 +123,10 @@ public class WorldCanvasFaceCamera : MonoBehaviour
 
     public void PlusButton()
     {
-        if (SceneManager.GetActiveScene().name.Equals("AR Scene"))
-            for (int i = 0; i < UIManagerAR.instance.spawner.objectsSpawned.Count; i++)
+        if (SceneManager.GetActiveScene().name.Equals(SceneNames.ARScene))
+            for (int i = 0; i < GhostPlacementController.Instance.spawnedObjects.Count; i++)
             {
-                if (UIManagerAR.instance.spawner.objectsSpawned[i].name == pd.gameObject.name)
+                if (GhostPlacementController.Instance.spawnedObjects[i].name == pd.gameObject.name)
                 {
                     UIManagerAR.instance.objectSelectedIndex = i;
                     break;
@@ -136,17 +136,17 @@ public class WorldCanvasFaceCamera : MonoBehaviour
         {
             BodyTrackingWithMars.Instance.productSelected = pd;
         }
-            //for (int i = 0; i < UIManagerAR.instance.UI_3D_Models.Count; i++)
-            //{
-            //    if (UIManagerAR.instance.UI_3D_Models[i].name == pd.gameObject.name)
-            //    {
-            //        UIManagerAR.instance.objectSelectedIndex = i;
-            //        break;
-            //    }
-            //}
-
+        //for (int i = 0; i < UIManagerAR.instance.UI_3D_Models.Count; i++)
+        //{
+        //    if (UIManagerAR.instance.UI_3D_Models[i].name == pd.gameObject.name)
+        //    {
+        //        UIManagerAR.instance.objectSelectedIndex = i;
+        //        break;
+        //    }
+        //}
+        //UIManagerAR.instance.objectSelectedIndex = GetComponent<ObjectDetail>().index;
         Debug.Log("Plus button clicked");
-        UIManagerAR.instance.PlusBtn(pd.product.id, pd.selectedColorIndex);
+        UIManagerAR.instance.PlusBtn(pd/*.product.id, pd.selectedColorIndex*/);
     }
 
     void DestroyItself()

@@ -12410,6 +12410,7 @@ MonoBehaviour:
   tempModels: []
   finalScale: {x: 0, y: 0, z: 0}
   firstTime: 0
+  plusBtnCanvas: {fileID: 0}
 --- !u!224 &461297249
 RectTransform:
   m_ObjectHideFlags: 0
@@ -18561,6 +18562,7 @@ MonoBehaviour:
   tempModels: []
   finalScale: {x: 0, y: 0, z: 0}
   firstTime: 0
+  plusBtnCanvas: {fileID: 0}
 --- !u!114 &729244259
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -51420,7 +51422,8 @@ MonoBehaviour:
   occlusionManager: {fileID: 956095477}
   wristAnchorPrefab: {fileID: 0}
   smoothTime: 0.1
-  wristOffset: {x: 0, y: 0.02, z: 0}
+  wristOffset: {x: 0, y: 0, z: -0.03}
+  rotationOffsetEuler: {x: 15, y: 10, z: 0}
   baseWatchScale: 0.1
   currentWristAnchor: {fileID: 7567028678315208778}
   watchMesh: {fileID: 0}
@@ -52783,7 +52786,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.034670334, y: 0.026982093, z: 0.031518485}
+  m_LocalScale: {x: 0.034670334, y: 0.026982091, z: 0.0315185}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3977350514511392983}
@@ -52938,8 +52941,8 @@ Transform:
   m_GameObject: {fileID: 4248668449725563265}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -0.00007, y: -0.00046, z: 0}
-  m_LocalScale: {x: 0.004694036, y: 0.003653121, z: 0.004267306}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.02, y: 0.02, z: 0.02}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 4482856218636027939}

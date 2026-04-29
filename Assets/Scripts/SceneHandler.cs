@@ -10,7 +10,7 @@ public class SceneHandler : MonoBehaviour
     {
         player.loopPointReached += ChangeScene;
 
-        scene = SceneManager.LoadSceneAsync("Home");
+        scene = SceneManager.LoadSceneAsync(SceneNames.Home);
         scene.allowSceneActivation = false;
     }
 

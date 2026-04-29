@@ -4146,7 +4146,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Item=Glasses
+          m_StringArgument: =eyewear
           m_BoolArgument: 1
         m_CallState: 2
 --- !u!1 &128035628
@@ -14350,7 +14350,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Item=Pants
+          m_StringArgument: Item=Bottoms
           m_BoolArgument: 1
         m_CallState: 2
 --- !u!1 &503210646
@@ -26967,7 +26967,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Item=Glasses
+          m_StringArgument: =eyewear
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &990353438
@@ -28912,7 +28912,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Item=Watches
+          m_StringArgument: Item=jewelry-watches
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &1053828321
@@ -30853,7 +30853,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Item=Jewelry
+          m_StringArgument: item=jewelry-watches
           m_BoolArgument: 1
         m_CallState: 2
 --- !u!1 &1141047759
@@ -32717,6 +32717,7 @@ MonoBehaviour:
   selectedSizeIndex: 0
   maxStocks: 0
   stocksSelected: {fileID: 1005553320}
+  currentProductID: 
 --- !u!4 &1213625633
 Transform:
   m_ObjectHideFlags: 0
@@ -35474,7 +35475,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Item=Caps
+          m_StringArgument: Item=headwear
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &1308291328
@@ -52161,7 +52162,7 @@ GameObject:
   - component: {fileID: 1881874180}
   - component: {fileID: 1881874179}
   m_Layer: 5
-  m_Name: Bottoms
+  m_Name: Frocks
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -52240,7 +52241,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Item=Bottoms
+          m_StringArgument: Item=Frocks
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &1881874180
@@ -53074,7 +53075,7 @@ GameObject:
   - component: {fileID: 1897910669}
   - component: {fileID: 1897910668}
   m_Layer: 5
-  m_Name: Pants
+  m_Name: Bottoms
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -53153,7 +53154,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: Item=Pants
+          m_StringArgument: =Bottoms
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &1897910669

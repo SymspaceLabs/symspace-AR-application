@@ -65,10 +65,10 @@ public class SignUpUI : MonoBehaviour
             (response) =>
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
-                Debug.Log("Sign Up Success: " + responseData.message);
+                Debug.Log("Sign Up Success: "/* + responseData.message*/);
 
-                Debug.Log("Email: " + emailInput.text);
-                Debug.Log("token: " + responseData.token);
+                //Debug.Log("Email: " + emailInput.text);
+                //Debug.Log("token: " + responseData.token);
                 PlayerPrefs.SetString("Email", emailInput.text);
 
                 //MenuManager.Instance.signUpOTPVerifyPanel.GetComponent<SignUpOTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
@@ -79,7 +79,7 @@ public class SignUpUI : MonoBehaviour
             {
                 Debug.LogError("Sign Up Failed: " + error);
 
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
 
                 //if(errorResponse.message.Contains("Email already exists"))
                 //{
@@ -232,13 +232,6 @@ public class SignUpUI : MonoBehaviour
     {
         public string message;
         public string token;
-    }
-
-    private class ErrorResponse
-    {
-        public string message;
-        public string error;
-        public string statusCode;
     }
     #endregion
 }

@@ -177,8 +177,8 @@ using static UnityEngine.XR.Interaction.Toolkit.Transformers.ARTransformer;
                     if (m_RequireHorizontalUpSurface && arPlane.alignment != PlaneAlignment.HorizontalUp)
                         return;
 
-                    if (IsValidPlaneForTranslation(arPlane.alignment, arPlane.classifications)/* && !m_ObjectSpawner.spawnedObject*/)
-                        m_ObjectSpawner.TrySpawnObject(arRaycastHit.pose.position, arPlane.normal);
+                    //if (IsValidPlaneForTranslation(arPlane.alignment, arPlane.classifications)/* && !m_ObjectSpawner.spawnedObject*/)
+                    //    m_ObjectSpawner.TrySpawnObject(arRaycastHit.pose.position, arPlane.normal);
 
                 }
 
