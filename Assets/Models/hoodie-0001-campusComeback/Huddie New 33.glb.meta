@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 672229f1ec8253842986a64e0212f51b
+guid: 1cc52103108a7a646b3483cb16852b18
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -9,7 +9,7 @@ ScriptedImporter:
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 804e1ce4c496647cfa3f1a1134187c71, type: 3}
   _removeEmptyRootObjects: 1
-  _scaleFactor: 1.25
+  _scaleFactor: 1
   _deduplicateResources: 0
   _maximumLod: 300
   _readWriteEnabled: 1
@@ -35,7 +35,7 @@ ScriptedImporter:
   _generateMipMaps: 1
   _useSceneNameIdentifier: 1
   _textureCompression: -50
-  _gltfAsset: '<b>Generator: </b>UnityGltf 2.18.5, Unity 6000.2.8f1, URP
+  _gltfAsset: '<b>Generator: </b>Khronos glTF Blender I/O v4.1.62
 
     <b>Version:
     </b>2.0
@@ -47,30 +47,26 @@ ScriptedImporter:
 '
   optimizeGameObjects: 0
   materials:
-  - {fileID: -3322656140023498987, guid: 672229f1ec8253842986a64e0212f51b, type: 3}
+  - {instanceID: 0}
   textures:
-  - {fileID: 6722742542242023506, guid: 672229f1ec8253842986a64e0212f51b, type: 3}
-  - {fileID: 8963715937030122909, guid: 672229f1ec8253842986a64e0212f51b, type: 3}
-  - {fileID: -5377201870254199976, guid: 672229f1ec8253842986a64e0212f51b, type: 3}
+  - {instanceID: 0}
+  - {instanceID: 0}
+  - {instanceID: 0}
   hasSceneData: 1
   hasAnimationData: 0
   hasMaterialData: 1
   hasTextureData: 1
   animations: []
-  _extensions:
-  - name: KHR_texture_transform
-    supported: 1
-    used: 1
-    required: 0
+  _extensions: []
   _textures:
-  - texture: {fileID: 6722742542242023506, guid: 672229f1ec8253842986a64e0212f51b, type: 3}
+  - texture: {instanceID: 0}
     shouldBeLinear: 1
     shouldBeNormalMap: 1
-  - texture: {fileID: 8963715937030122909, guid: 672229f1ec8253842986a64e0212f51b, type: 3}
+  - texture: {instanceID: 0}
     shouldBeLinear: 0
     shouldBeNormalMap: 0
-  - texture: {fileID: -5377201870254199976, guid: 672229f1ec8253842986a64e0212f51b, type: 3}
+  - texture: {instanceID: 0}
     shouldBeLinear: 1
     shouldBeNormalMap: 0
-  _mainAssetIdentifier: scenes/hoodie-0001-campusComeback_model
+  _mainAssetIdentifier: scenes/Scene
   _importPlugins: []

@@ -28519,9 +28519,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 234504259}
-        m_TargetAssemblyTypeName: UIManagerAR, Assembly-CSharp
-        m_MethodName: DeleteAllSpawnedObjects
+      - m_Target: {fileID: 372710061}
+        m_TargetAssemblyTypeName: BodyTrackingWithMars, Assembly-CSharp
+        m_MethodName: DeleteSpawnedModels
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -34616,7 +34616,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: 144.77672, y: 0}
+  m_AnchoredPosition: {x: 144.77669, y: 0}
   m_SizeDelta: {x: 235, y: 72}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &947293605

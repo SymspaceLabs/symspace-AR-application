@@ -122,7 +122,7 @@ public class GhostPlacementController : MonoBehaviour
 
             Vector3 spawnPoint = validPose.position;
             Vector3 spawnNormal = validPlane.normal;
-
+            //Debug.Log("Spawn rotation: " + spawnPoint);
             Vector3 projectedForward;
 
             Quaternion rotation;
@@ -154,11 +154,19 @@ public class GhostPlacementController : MonoBehaviour
                 up = Vector3.Cross(forward, right).normalized;
 
                 rotation = Quaternion.LookRotation(forward, up);
-
                 if (Vector3.Dot(rotation * Vector3.up, Vector3.up) < 0f)
                 {
                     rotation = Quaternion.AngleAxis(180f, spawnNormal) * rotation;
                 }
+
+                Vector3 rightAngle = rotation * Vector3.right;
+
+                float dot = Vector3.Dot(rightAngle, Vector3.down);
+                if (dot < 0)
+                {
+                    rotation = rotation * Quaternion.Euler(0f, 180f, 0f);
+                }
+
                 Vector3 euler = rotation.eulerAngles;
                 euler.x = 0f;
 

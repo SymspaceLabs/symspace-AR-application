@@ -326,6 +326,8 @@ public class UIManagerAR : MonoBehaviour
 
     public void TogglePlaneVisuals(bool state)
     {
+        if(planeManager == null)
+            return;
         planeManager.trackablesChanged.RemoveListener(OnPlanesChanged);
         visualsEnabled = state;
 
@@ -674,9 +676,15 @@ public class UIManagerAR : MonoBehaviour
             return;
         
         Debug.Log("LD size changed");
+
         ProductDetails pd = null;
         if (GhostPlacementController.Instance != null)
             pd = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
+        else if(SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
+            ClothingFitController.ApplySizeFromLabel(selectedModelDetails.product.variants[selectedSizeIndex - 1].size.size, 
+                BodyTrackingWithMars.Instance.activeBodyModels[BodyTrackingWithMars.Instance.GetBodySlot(selectedModelDetails.product.category.name)].RootObject.GetComponentInChildren<SkinnedMeshRenderer>());
+
+        //pd = UI_3D_Models[objectSelectedIndex].GetComponent<ProductDetails>();
 
         UpdateDetailUI();
 
@@ -703,6 +711,9 @@ public class UIManagerAR : MonoBehaviour
         selectedModelDetails.selectedSizeIndex = selectedSizeIndex;
         if(GhostPlacementController.Instance != null)
             /*ProductDetails pd = */GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
+        else if (SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
+            ClothingFitController.ApplySizeFromLabel(selectedModelDetails.product.variants[selectedSizeIndex - 1].size.size,
+                BodyTrackingWithMars.Instance.activeBodyModels[BodyTrackingWithMars.Instance.GetBodySlot(selectedModelDetails.product.category.name)].RootObject.GetComponentInChildren<SkinnedMeshRenderer>());
 
         UpdateDetailUI();
 
@@ -824,7 +835,11 @@ public class UIManagerAR : MonoBehaviour
 
     public void DeleteAllSpawnedObjects()
     {
-        GhostPlacementController.Instance.DeleteAllSpawnedObjects();
+        if(GhostPlacementController.Instance != null)
+            GhostPlacementController.Instance.DeleteAllSpawnedObjects();
+        //else if(BodyTrackingWithMars.Instance != null)
+        //    BodyTrackingWithMars.Instance.DeleteAllSpawnedObjects(); 
+
         UI_3D_Models.Clear();
         //CategoryManager.Instance.downloadedModels.Clear();
         CategoryManager.Instance.tempModels.Clear();

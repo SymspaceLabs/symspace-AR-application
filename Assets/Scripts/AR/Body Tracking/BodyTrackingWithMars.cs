@@ -87,7 +87,30 @@ public class BodyTrackingWithMars : MonoBehaviour
         StartCoroutine(DownloadAndAssignBodyModel(p, url, targetSlot, isRigged, pid? pid.ProductProgress: null, pid? pid.DownloadFailed: null));
     }
 
-    Dictionary<BodySlot, ModelTracker> activeBodyModels = new Dictionary<BodySlot, ModelTracker>();
+    public BodySlot GetBodySlot(string slotName)
+    {
+        switch (slotName.ToLower())
+        {
+            case "top":
+            case "hoodies":
+                return BodySlot.Top;
+            case "bottom":
+                return BodySlot.Bottom;
+            case "head":
+                return BodySlot.Head;
+            case "wrist":
+                return BodySlot.Wrist;
+            case "footwear":
+                return BodySlot.Footwear;
+            case "accessory":
+                return BodySlot.Accessory;
+            default:
+                Debug.LogError("Invalid body slot name! " + slotName);
+                return BodySlot.Accessory;
+        }
+    }
+
+    public Dictionary<BodySlot, ModelTracker> activeBodyModels = new Dictionary<BodySlot, ModelTracker>();
 
     public class ModelTracker
     {
@@ -283,12 +306,19 @@ public class BodyTrackingWithMars : MonoBehaviour
                 loadedGLB.name = CategoryManager.Instance.GetUniqueName(p.name, UIManagerAR.instance.UI_3D_Models);
 
                 modelToView.name = loadedGLB.name;
-
+        
                 mv.FrameObject(modelToView);
 
                 Debug.Log($"✅ {slot} attached as {(isRigged ? "Rigged" : "Static")}.");
 
                 CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
+                
+                //float sizeValue;
+                //if (float.TryParse(p.variants[0].size.size, out sizeValue))
+                //{
+                    ClothingFitController.ApplySizeFromLabel(p.variants[0].size.size, loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>());
+                //}
+
         //    }
         //}
     }
@@ -331,6 +361,13 @@ public class BodyTrackingWithMars : MonoBehaviour
         // 6. Assign the character's bones to the clothing renderer
         clothRenderer.bones = newBones;
         clothRenderer.rootBone = targetCharacter.GetComponentInChildren<SkinnedMeshRenderer>().rootBone;
+    }
+
+    public GameObject GetModel(BodySlot slot)
+    {
+        if (activeBodyModels.ContainsKey(slot))
+            return activeBodyModels[slot].RootObject;
+        return null;
     }
 
 
@@ -390,7 +427,7 @@ public class BodyTrackingWithMars : MonoBehaviour
             return;
 
         UIManagerAR.instance.selectedModelDetails.selectedColorIndex = index;
-        Material mat = UIManagerAR.instance.selectedModelDetails.transform.Find("Visual").GetComponent<MeshRenderer>().material;
+        Material mat = UIManagerAR.instance.selectedModelDetails.GetComponentInChildren<SkinnedMeshRenderer>().material;
 
         //Color newColor1;
         //ColorUtility.TryParseHtmlString(selectedProduct.product.colors[index].code, out newColor1);
@@ -399,6 +436,21 @@ public class BodyTrackingWithMars : MonoBehaviour
         mat.mainTexture = UIManagerAR.instance.selectedModelDetails.textures[index];
 
         productSelected.GetComponentInChildren<SkinnedMeshRenderer>().material = mat;
+    }
+
+    public void DeleteSpawnedModels()
+    {
+        foreach (var kvp in activeBodyModels)
+        {
+            foreach (var bone in kvp.Value.ReparentedBones)
+            {
+                if (bone != null) Destroy(bone);
+            }
+            Destroy(kvp.Value.RootObject);
+        }
+        activeBodyModels.Clear();
+
+        UIManagerAR.instance.DeleteAllSpawnedObjects();
     }
 
     public enum BodySlot
