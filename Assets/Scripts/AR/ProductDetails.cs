@@ -19,4 +19,6 @@ public class ProductDetails : MonoBehaviour
     public bool isSizeSelected = false;
 
     public CategoryType category;
+
+    public GameObject plusCanvas;
 }

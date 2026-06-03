@@ -72,7 +72,7 @@ public class GhostPlacementController : MonoBehaviour
         HologramPreview hp = ghostInstance.AddComponent<HologramPreview>();
         hp.transparentMat = transparentMat;
         ghostInstance.SetActive(false);
-        Debug.Log("Ghost item available", ghostInstance);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("Ghost item available", ghostInstance);
         if (tapToPlaceHint != null)
             tapToPlaceHint.SetActive(true);
     }
@@ -122,7 +122,7 @@ public class GhostPlacementController : MonoBehaviour
 
             Vector3 spawnPoint = validPose.position;
             Vector3 spawnNormal = validPlane.normal;
-            //Debug.Log("Spawn rotation: " + spawnPoint);
+            //if(CategoryManager.Instance.isDebugMode)Debug.Log("Spawn rotation: " + spawnPoint);
             Vector3 projectedForward;
 
             Quaternion rotation;
@@ -257,7 +257,7 @@ public class GhostPlacementController : MonoBehaviour
             var modelView = UIManagerAR.instance.UI_3D_Models.Find(m =>
             m.GetComponent<ProductDetails>().product.id == obj.GetComponent<ProductDetails>().product.id);
 
-            Debug.Log($"obj count {obj.GetComponent<ProductDetails>().textures.Count}, index {index}");
+            if(CategoryManager.Instance.isDebugMode)Debug.Log($"obj count {obj.GetComponent<ProductDetails>().textures.Count}, index {index}");
             if (obj.GetComponent<ProductDetails>().textures.Count > index)
                 tempMaterial.mainTexture = obj.GetComponent<ProductDetails>().textures[index];
 
@@ -279,7 +279,7 @@ public class GhostPlacementController : MonoBehaviour
         }
 
 
-        Debug.Log("index : " + index);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("index : " + index);
 
         Canvas.ForceUpdateCanvases();
         //return false;
@@ -297,5 +297,21 @@ public class GhostPlacementController : MonoBehaviour
 
         objectToSpawn = null;
         ghostInstance = null;
+        UIManagerAR.instance.OnResetClick?.Invoke();
+    }
+
+    public void DeleteSpawnedObject(GameObject obj)
+    {
+        if (obj != null)
+        {
+            var pd = obj.GetComponent<ProductDetails>();
+            if(pd != null && pd.plusCanvas != null)
+                Destroy(pd.plusCanvas);
+
+            spawnedObjects.Remove(obj);
+            Destroy(obj);
+            if(spawnObjectCount > 0)
+                spawnObjectCount--;
+        }
     }
 }

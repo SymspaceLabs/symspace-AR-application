@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: b5e1103744f2c93489d9c8a03877a4a0
+guid: 59a4400a2560a0d49869a69c23af95c6
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -48,13 +48,17 @@ ScriptedImporter:
   optimizeGameObjects: 0
   materials:
   - {instanceID: 0}
-  textures: []
+  textures:
+  - {instanceID: 0}
   hasSceneData: 1
   hasAnimationData: 0
   hasMaterialData: 1
-  hasTextureData: 0
+  hasTextureData: 1
   animations: []
   _extensions: []
-  _textures: []
+  _textures:
+  - texture: {instanceID: 0}
+    shouldBeLinear: 0
+    shouldBeNormalMap: 0
   _mainAssetIdentifier: scenes/Scene
   _importPlugins: []

@@ -10,6 +10,7 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using UnityGLTF;
 using static CategoryManager;
+using static UnityEngine.GraphicsBuffer;
 public enum CategoryType
 {
     Necklaces,
@@ -27,6 +28,8 @@ public enum CategoryType
 
 public class ARJewelryManager : MonoBehaviour
 {
+    public static ARJewelryManager Instance;
+
     [Header("References")]
     public ARFaceManager faceManager;
 
@@ -56,7 +59,15 @@ public class ARJewelryManager : MonoBehaviour
     private string localPath;
 
 
-    public List<GameObject> downloadedModels;
+    //public List<GameObject> downloadedModels;
+
+    public GameObject plusBtnCanvas;
+
+    private void Awake()
+    {
+        if (Instance == null)
+            Instance = this;
+    }
 
     private IEnumerator Start()
     {
@@ -73,13 +84,13 @@ public class ARJewelryManager : MonoBehaviour
         List<XROcclusionSubsystem> subsystems = new List<XROcclusionSubsystem>();
         SubsystemManager.GetSubsystems(subsystems);
         if (subsystems.Count < 1)
-            Debug.Log("no subsytem found");
+            if(CategoryManager.Instance.isDebugMode)Debug.Log("no subsytem found");
 
         foreach (var subsystem in subsystems)
         {
             if (subsystem != null && subsystem.running)
             {
-                Debug.Log("Stopping XROcclusionSubsystem in this scene");
+                if(CategoryManager.Instance.isDebugMode)Debug.Log("Stopping XROcclusionSubsystem in this scene");
                 subsystem.Stop();
             }
         }
@@ -96,7 +107,7 @@ public class ARJewelryManager : MonoBehaviour
 
     private void OnFacesChanged(ARTrackablesChangedEventArgs<ARFace> args)
     {
-        //Debug.Log("Face Detected");
+        //if(CategoryManager.Instance.isDebugMode)Debug.Log("Face Detected");
         foreach (var face in args.added)
         {
             //if (currentFace == null)
@@ -206,7 +217,7 @@ public class ARJewelryManager : MonoBehaviour
 
                 item.instance.transform.localPosition = localPosition;
 
-                Debug.Log($"item.instance parent : {item.instance.transform.parent.name} parent Pos : {item.instance.transform.parent.localPosition}, item Pos: {item.instance.transform.localPosition}");
+                if(CategoryManager.Instance.isDebugMode)Debug.Log($"item.instance parent : {item.instance.transform.parent.name} parent Pos : {item.instance.transform.parent.localPosition}, item Pos: {item.instance.transform.localPosition}");
 
                 float targetSize = 0.05f;
 
@@ -244,154 +255,125 @@ public class ARJewelryManager : MonoBehaviour
         }
     }
 
-    GameObject FindExistingModel(string productId, CategoryType cat)
-    {
-        GameObject downloaded;
-        if (cat == CategoryType.LeftEarring)
-            downloaded = downloadedModels.Find(m =>
-            m.GetComponent<ProductDetails>().product.id == productId && m.GetComponent<ProductDetails>().category == CategoryType.LeftEarring);
-        else if (cat == CategoryType.RightEarring)
-            downloaded = downloadedModels.Find(m =>
-            m.GetComponent<ProductDetails>().product.id == productId && m.GetComponent<ProductDetails>().category == CategoryType.RightEarring);
-        else
-            downloaded = downloadedModels.Find(m =>
-                m.GetComponent<ProductDetails>().product.id == productId);
+    //GameObject FindExistingModel(string productId, CategoryType cat)
+    //{
+    //    GameObject downloaded;
+    //    if (cat == CategoryType.LeftEarring)
+    //        downloaded = downloadedModels.Find(m =>
+    //        m.GetComponent<ProductDetails>().product.id == productId && m.GetComponent<ProductDetails>().category == CategoryType.LeftEarring);
+    //    else if (cat == CategoryType.RightEarring)
+    //        downloaded = downloadedModels.Find(m =>
+    //        m.GetComponent<ProductDetails>().product.id == productId && m.GetComponent<ProductDetails>().category == CategoryType.RightEarring);
+    //    else
+    //        downloaded = downloadedModels.Find(m =>
+    //            m.GetComponent<ProductDetails>().product.id == productId);
 
-        if (downloaded != null)
-            return downloaded;
+    //    if (downloaded != null)
+    //        return downloaded;
 
-        return null;
-    }
+    //    return null;
+    //}
 
     public IEnumerator JewelrySelected(Products p, string url, string categoryName, ProductItemData pid)
     {
         CategoryType category;
         ProductSelection.TryParseObjectType(categoryName, out category);
-        Debug.Log("name: " + categoryName + ", result: " + category);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("name: " + categoryName + ", result: " + category);
+
         GameObject newObject = null;
-        GameObject downloadedModel = null;
-        GameObject leftEarringInstance = null;
-        GameObject rightEarringInstance = null;
         DownloadState stateCheck = null;
 
-        if (category == CategoryType.Earrings)
-        {
-            leftEarringInstance = FindExistingModel(p.id, CategoryType.LeftEarring);
-            rightEarringInstance = FindExistingModel(p.id, CategoryType.RightEarring);
-        }
+        if (category == CategoryType.Necklaces)
+            newObject = Instantiate(necklaceHolder);
         else
-        {
-            downloadedModel = FindExistingModel(p.id, category);
-        }
+            newObject = Instantiate(jewelryHolder);
 
-        if (leftEarringInstance == null)
+        var state = newObject.GetComponent<DownloadState>() ?? newObject.AddComponent<DownloadState>();
+        state.isDownloading = false;
+        state.isReady = false;
+
+        newObject.GetComponent<ProductDetails>().product.id = p.id;
+
+        stateCheck = newObject.GetComponent<DownloadState>();
+
+        if (!stateCheck.isReady && !stateCheck.isDownloading)
         {
-            if (downloadedModel != null)
-                newObject = downloadedModel;
+            if (pid != null)
+            {
+               if(CategoryManager.Instance.isDebugMode)Debug.Log("PID is not empty");
+                yield return StartCoroutine(
+                    DownloadAndAssign(
+                        url,
+                        newObject,
+                        p,
+                        pid.ProductProgress,
+                        pid.DownloadFailed));
+            }
             else
             {
-                if (category == CategoryType.Necklaces)
-                    newObject = Instantiate(necklaceHolder);
-                else
-                    newObject = Instantiate(jewelryHolder);
-
-                var state = newObject.GetComponent<DownloadState>() ?? newObject.AddComponent<DownloadState>();
-                state.isDownloading = false;
-                state.isReady = false;
-
-                newObject.GetComponent<ProductDetails>().product.id = p.id;
-            }
-
-            stateCheck = newObject.GetComponent<DownloadState>();
-
-            if (!stateCheck.isReady && !stateCheck.isDownloading)
-            {
-                if (pid != null)
-                {
-                    Debug.Log("PID is not empty");
-                    yield return StartCoroutine(DownloadAndAssign(url, newObject, p, pid.ProductProgress, pid.DownloadFailed));
-
-                }
-                else
-                    yield return StartCoroutine(DownloadAndAssign(url, newObject, p));
-            }
-        }
-        else
-            stateCheck = leftEarringInstance.GetComponent<DownloadState>();
-
-        var newJewelry = new Jewelries
-        {
-            category = category,
-            instance = newObject
-        };
-
-        Jewelries newLeftJewelry = null;
-        Jewelries newRightJewelry = null;
-
-        if (leftEarringInstance != null)
-            newLeftJewelry = new Jewelries
-            {
-                category = CategoryType.LeftEarring,
-                instance = leftEarringInstance
-            };
-
-        if (rightEarringInstance != null)
-            newRightJewelry = new Jewelries
-            {
-                category = CategoryType.RightEarring,
-                instance = rightEarringInstance
-            };
-
-        if (downloadedModel != null)
-        {
-            if (!downloadedModel.activeInHierarchy)
-            {
-                for (int i = 0; i < jewelries.Count; i++)
-                {
-                    if (jewelries[i].category != newJewelry.category)
-                        continue;
-
-                    // Remove old instance
-                    if (jewelries[i].instance != null)
-                    {
-                        //Destroy(jewelries[i].instance);
-                        jewelries[i].instance.gameObject.SetActive(false);
-                    }
-                        jewelries[i].instance = newJewelry.instance;
-                        jewelries[i].instance.gameObject.SetActive(true);
-                }
+                yield return StartCoroutine(
+                    DownloadAndAssign(
+                        url,
+                        newObject,
+                        p));
             }
         }
 
-        if (leftEarringInstance != null)
-        {
-            if (!leftEarringInstance.activeInHierarchy)
-            {
-                for (int i = 0; i < jewelries.Count; i++)
-                {
-                    if (jewelries[i].category == CategoryType.LeftEarring)
-                    {
-                        if (jewelries[i].instance != null)
-                            jewelries[i].instance.gameObject.SetActive(false);
-
-                        jewelries[i].instance = newLeftJewelry.instance;
-                        jewelries[i].instance.gameObject.SetActive(true);
-                    }
-                    else
-                    {
-                        if (jewelries[i].instance != null)
-                            jewelries[i].instance.gameObject.SetActive(false);
-
-                        jewelries[i].instance = newRightJewelry.instance;
-                        jewelries[i].instance.gameObject.SetActive(true);
-                    }
-                }
-            }
-        }
-
+        SpawnCanvas(newObject, category);
 
         if (stateCheck.isReady)
             CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
+    }
+
+    void SpawnCanvas(GameObject newObject, CategoryType category)
+    {
+        WorldCanvasFaceCamera[] allWorldCanvases =
+                    FindObjectsByType<WorldCanvasFaceCamera>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        bool spawnCanvas = true;
+
+        var newPd = newObject.GetComponent<ProductDetails>();
+
+        foreach (var c in allWorldCanvases)
+        {
+            if (c.pd == newPd)
+            {
+                spawnCanvas = false;
+                c.gameObject.SetActive(true);
+                break;
+            }
+        }
+
+        if (spawnCanvas)
+        {
+            WorldCanvasFaceCamera btnCanvas =
+                Instantiate(plusBtnCanvas).GetComponent<WorldCanvasFaceCamera>();
+
+            if (!btnCanvas.GetComponent<ObjectDetail>())
+                btnCanvas.gameObject.AddComponent<ObjectDetail>();
+
+            //btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.TopLeft;
+            btnCanvas.targetModel = newObject.GetComponentInChildren<MeshRenderer>()?.transform;
+            btnCanvas.pd = newPd;
+            newPd.plusCanvas = btnCanvas.gameObject;
+            btnCanvas.objDetail = newObject.GetComponent<ObjectDetail>();
+
+            switch (category)
+            {
+                case CategoryType.Necklaces:
+                    btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Left;
+                    break;
+                case CategoryType.Earrings:
+                    btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Left;
+                    break;
+                case CategoryType.Glasses:
+                    btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Right;
+                    break;
+                case CategoryType.Hat:
+                    btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Right;
+                    break;
+            }
+        }
     }
 
     public string GetUniqueName(string baseName, List<GameObject> existingObjects)
@@ -408,11 +390,13 @@ public class ARJewelryManager : MonoBehaviour
         return newName;
     }
 
-    IEnumerator DownloadAndAssign(string url, GameObject targetPrefab, Products p, Action<float> onProgress = null, Action onFailed = null)
+    IEnumerator DownloadAndAssign(string url, GameObject targetPrefab, Products p,
+    Action<float> onProgress = null,
+    Action onFailed = null)
     {
         if (targetPrefab == null)
         {
-            Debug.LogError("Target prefab is null!");
+            if(CategoryManager.Instance.isDebugMode)Debug.LogError("Target prefab is null!");
             yield break;
         }
 
@@ -421,143 +405,337 @@ public class ARJewelryManager : MonoBehaviour
         var state = targetPrefab.GetComponent<DownloadState>();
         state.isDownloading = true;
         state.isReady = false;
+
         GameObject loadedGLB = null;
-        yield return StartCoroutine(ModelLoaderService.DownloadAndLoad(url, (model) => { loadedGLB = model; }, onProgress, onFailed));
+
+        yield return StartCoroutine(
+            ModelLoaderService.DownloadAndLoad(
+                url,
+                (model) => { loadedGLB = model; },
+                onProgress,
+                onFailed));
 
         if (loadedGLB == null)
             yield break;
 
-            Transform actualObject = loadedGLB.transform.childCount > 0
-                        ? loadedGLB.transform.GetChild(0)
-                        : loadedGLB.transform;
-            actualObject.localScale = Vector3.one;
+        Transform actualObject = loadedGLB.transform.childCount > 0
+            ? loadedGLB.transform.GetChild(0)
+            : loadedGLB.transform;
 
-            loadedGLB.transform.parent = targetPrefab.transform;
-            loadedGLB.transform.localPosition = Vector3.zero;
-            loadedGLB.transform.localRotation = Quaternion.identity;
+        actualObject.localScale = Vector3.one;
 
+        loadedGLB.transform.parent = targetPrefab.transform;
+        loadedGLB.transform.localPosition = Vector3.zero;
+        loadedGLB.transform.localRotation = Quaternion.identity;
 
-            targetPrefab.name = GetUniqueName(p.name, downloadedModels);
+        targetPrefab.name = p.name;
 
-            CategoryType cat;
-            ProductSelection.TryParseObjectType(p.category.name, out cat);
+        CategoryType cat;
+        ProductSelection.TryParseObjectType(p.category.name, out cat);
 
-            var newJewelry = new Jewelries
+        var newJewelry = new Jewelries
+        {
+            category = cat,
+            instance = targetPrefab
+        };
+
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("Name : " + p.name + ", tag : " + p.category.name);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("category : " + cat);
+
+        GameObject newRightEaring = new GameObject();
+
+        if (newJewelry.category == CategoryType.Earrings)
+        {
+            newRightEaring = Instantiate(newJewelry.instance);
+
+            Quaternion tempRotation =
+                newRightEaring.transform.GetChild(0).rotation;
+
+            tempRotation.y = 180f;
+
+            newRightEaring.transform.GetChild(0).rotation =
+                tempRotation;
+        }
+
+        for (int i = 0; i < jewelries.Count; i++)
+        {
+            switch (newJewelry.category)
             {
-                category = cat,
-                instance = targetPrefab
-            };
-
-            Debug.Log("Name : " + p.name + ", tag : " + p.category.name);
-            Debug.Log("category : " + cat);
-            //if(Equip(newJewelry))
-            GameObject newRightEaring = new GameObject();
-
-
-            if (newJewelry.category == CategoryType.Earrings)
-            {
-                newRightEaring = Instantiate(newJewelry.instance);
-                Quaternion tempRotation = newRightEaring.transform.GetChild(0).transform.rotation;
-                tempRotation.y = 180f;
-                newRightEaring.transform.GetChild(0).transform.rotation = tempRotation;
-            }
-
-
-            //Vector3 camPos = Camera.main.transform.position;
-            //camPos.y = newJewelry.instance.transform.position.y;
-            //newJewelry.instance.transform.LookAt(camPos);
-
-            for (int i = 0; i < jewelries.Count; i++)
-            {
-                switch (newJewelry.category)
-                {
-                    case CategoryType.Earrings:
-                        {
-                            // Earrings map to TWO slots
-                            if (jewelries[i].category != CategoryType.LeftEarring &&
-                                jewelries[i].category != CategoryType.RightEarring)
-                                break;
-
-                            // Remove old instance
-                            if (jewelries[i].instance != null)
-                            {
-                                //Destroy(jewelries[i].instance);
-                                jewelries[i].instance.gameObject.SetActive(false);
-                                jewelries[i].instance = null;
-                            }
-
-                            // Assign new instance
-                            if (jewelries[i].category == CategoryType.LeftEarring)
-                            {
-                                newJewelry.instance.GetComponent<ProductDetails>().category = CategoryType.LeftEarring;
-                                jewelries[i].instance = newJewelry.instance;
-                            }
-                            else // RightEarring
-                            {
-                                newRightEaring.GetComponent<ProductDetails>().category = CategoryType.RightEarring;
-                                jewelries[i].instance = newRightEaring;
-                            }
-
-                            currentItemSelected = i;
+                case CategoryType.Earrings:
+                    {
+                        if (jewelries[i].category != CategoryType.LeftEarring &&
+                            jewelries[i].category != CategoryType.RightEarring)
                             break;
+
+                        if (jewelries[i].instance != null)
+                        {
+                            Destroy(jewelries[i].instance.GetComponent<ProductDetails>().plusCanvas.gameObject);
+                            Destroy(jewelries[i].instance.gameObject);
+                            jewelries[i].instance = null;
                         }
-                    case CategoryType.Necklaces:
-                        HandleSingleItem(i, newJewelry);
-                        break;
 
-                    case CategoryType.Cap:
-                        HandleSingleItem(i, newJewelry);
-                        break;
+                        if (jewelries[i].category == CategoryType.LeftEarring)
+                        {
+                            newJewelry.instance.GetComponent<ProductDetails>().category =
+                                CategoryType.LeftEarring;
 
-                    case CategoryType.Hat:
-                        HandleSingleItem(i, newJewelry);
-                        break;
+                            jewelries[i].instance = newJewelry.instance;
+                        }
+                        else
+                        {
+                            newRightEaring.GetComponent<ProductDetails>().category =
+                                CategoryType.RightEarring;
 
-                    case CategoryType.Glasses:
-                        HandleSingleItem(i, newJewelry);
-                        break;
+                            jewelries[i].instance = newRightEaring;
+                        }
 
-                    case CategoryType.NosePin:
-                        HandleSingleItem(i, newJewelry);
+                        currentItemSelected = i;
                         break;
-                }
+                    }
+
+                case CategoryType.Necklaces:
+                    HandleSingleItem(i, newJewelry);
+                    break;
+
+                case CategoryType.Cap:
+                    HandleSingleItem(i, newJewelry);
+                    break;
+
+                case CategoryType.Hat:
+                    HandleSingleItem(i, newJewelry);
+                    break;
+
+                case CategoryType.Glasses:
+                    HandleSingleItem(i, newJewelry);
+                    break;
+
+                case CategoryType.NosePin:
+                    HandleSingleItem(i, newJewelry);
+                    break;
             }
+        }
 
-            foreach (var jewelry in jewelries)
+        foreach (var jewelry in jewelries)
+        {
+            if (jewelry.instance != null)
             {
-                if (jewelry.instance != null)
+                jewelry.instance.transform.localScale = Vector3.one;
+
+                if (jewelry.category == CategoryType.LeftEarring ||
+                    jewelry.category == CategoryType.RightEarring)
                 {
-                    jewelry.instance.transform.localScale = Vector3.one;
-                    if (jewelry.category == CategoryType.LeftEarring || jewelry.category == CategoryType.RightEarring)
-                        jewelry.instance.transform.localScale *= 2.5f;
-                    else if (jewelry.category == CategoryType.Glasses)
-                        jewelry.instance.transform.localScale *= 1.2f;
-
-                    // ✅ NEW
-                    else if (jewelry.category == CategoryType.Cap)
-                        jewelry.instance.transform.localScale *= 0.7f;
-
-                    else
-                        jewelry.instance.transform.localScale *= 1f;
+                    jewelry.instance.transform.localScale *= 2.5f;
+                }
+                else if (jewelry.category == CategoryType.Glasses)
+                {
+                    jewelry.instance.transform.localScale *= 1.2f;
+                }
+                else if (jewelry.category == CategoryType.Cap)
+                {
+                    jewelry.instance.transform.localScale *= 0.7f;
+                }
+                else
+                {
+                    jewelry.instance.transform.localScale *= 1f;
                 }
             }
+        }
 
-            state.isDownloading = false;
-            state.isReady = true;
+        ProductDetails pd = targetPrefab.GetComponent<ProductDetails>();
 
-            if(newJewelry.category == CategoryType.Earrings)
-            {
-                if (!downloadedModels.Contains(newJewelry.instance))
-                    downloadedModels.Add(newJewelry.instance);
-                if (!downloadedModels.Contains(newRightEaring))
-                    downloadedModels.Add(newRightEaring);
-            }
-            else if (!downloadedModels.Contains(targetPrefab))
-                downloadedModels.Add(targetPrefab);
+        pd.product = p;
 
-            Debug.Log("✅ GLB model downloaded, instantiated, and scaled successfully.");
-        //}
+        pd.colors.Clear();
+        foreach (var c in p.colors)
+        {
+            UnityEngine.Color newColor;
+            ColorUtility.TryParseHtmlString(c.code, out newColor);
+            pd.colors.Add(newColor);
+        }
+
+        pd.imagesUrl.Clear();
+
+        foreach (var img in pd.product.images)
+            pd.imagesUrl.Add(img.url);
+
+        pd.texturesUrl.Clear();
+
+        foreach (var t in pd.product.threeDModels)
+            if (t.texture.Length > 0)
+                pd.texturesUrl.Add(t.texture);
+
+        // ---------------- UI MODEL PREVIEW (UNCHANGED) ----------------
+        GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
+        modelToView.transform.parent = UIManagerAR.instance.UI_3D_Models_Parent.transform;
+        modelToView.transform.localPosition = Vector3.zero;
+
+        UIManagerAR.instance.UI_3D_Models.Add(modelToView);
+
+        StartCoroutine(SetProductImages(targetPrefab.GetComponent<ProductDetails>()));
+
+        MeshFilter srcMF = loadedGLB.GetComponentInChildren<MeshFilter>();
+        MeshRenderer srcMR = loadedGLB.GetComponentInChildren<MeshRenderer>();
+
+        modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = srcMF.mesh;
+        modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = srcMR.materials;
+        modelToView.name = targetPrefab.name;
+
+        modelToView.GetComponent<ProductDetails>().product.id = pd.product.id;
+
+        state.isDownloading = false;
+        state.isReady = true;
+
+        CategoryManager.Instance.mv.FrameObject(modelToView);
+        CategoryManager.Instance.GetComponent<SlideUpPanel>().ShowPanel();
+
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("✅ GLB model downloaded, instantiated, and scaled successfully.");
     }
+
+    void CopyDownloadedData(GameObject source, GameObject target)
+    {
+        var srcMR = source.GetComponentInChildren<MeshRenderer>();
+        var tgtMR = target.GetComponentInChildren<MeshRenderer>();
+
+        if (srcMR != null && tgtMR != null)
+        {
+            Material[] mats = new Material[srcMR.sharedMaterials.Length];
+
+            for (int i = 0; i < mats.Length; i++)
+                mats[i] = new Material(srcMR.sharedMaterials[i]);
+
+            tgtMR.materials = mats;
+        }
+    }
+
+    #region Helper Methods
+    public IEnumerator SetProductImages(ProductDetails pd)
+    {
+        yield return null;
+        pd.sprites.Clear();
+        for (int i = 0; i < pd.imagesUrl.Count; i++)
+        {
+            pd.sprites.Add(null);
+        }
+
+        for (int i = 0; i < pd.imagesUrl.Count; i++)
+        {
+            yield return StartCoroutine(DownloadSpriteCoroutine(pd.imagesUrl[i], pd.sprites, i));
+        }
+
+        pd.textures.Clear();
+        for (int i = 0; i < pd.texturesUrl.Count; i++)
+        {
+            pd.textures.Add(null);
+        }
+
+        for (int i = 0; i < pd.texturesUrl.Count; i++)
+        {
+            yield return StartCoroutine(DownloadTextureCoroutine(pd.texturesUrl[i], pd.textures, i));
+            if(CategoryManager.Instance.isDebugMode)Debug.Log("texture downloading");
+        }
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("texture Finish");
+
+    }
+
+    public IEnumerator DownloadSpriteCoroutine(string url, List<Sprite> spritesList, int index)
+    {
+        UnityWebRequest req = UnityWebRequest.Get(url);
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            if(CategoryManager.Instance.isDebugMode)Debug.LogError(req.error);
+
+            yield break;
+        }
+
+        byte[] imageData = req.downloadHandler.data;
+        Texture2D texture = new Texture2D(2, 2);
+
+        if (texture.LoadImage(imageData))
+        {
+            Sprite sprite = Sprite.Create(texture,
+                new Rect(0, 0, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f));
+            if (spritesList != null)
+                spritesList[index] = sprite;
+        }
+        else
+        {
+            if(CategoryManager.Instance.isDebugMode)Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
+        }
+    }
+
+    public IEnumerator DownloadTextureCoroutine(string url, List<Texture2D> texturesList, int index)
+    {
+        UnityWebRequest req = UnityWebRequest.Get(url);
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            if(CategoryManager.Instance.isDebugMode)Debug.LogError(req.error);
+
+            yield break;
+        }
+
+        byte[] imageData = req.downloadHandler.data;
+        Texture2D texture = new Texture2D(2, 2);
+
+        if (texture.LoadImage(imageData))
+        {
+            if (texturesList != null)
+                texturesList[index] = texture;
+        }
+        else
+        {
+            if(CategoryManager.Instance.isDebugMode)Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
+        }
+    }
+
+    public void ChangeModelTexture(int index)
+    {
+        foreach (Transform child in UIManagerAR.instance.colorParent_LD)
+        {
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        foreach (Transform child in UIManagerAR.instance.colorParent_SD)
+        {
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        foreach (Transform child in CategoryManager.Instance.modelVariantParent)
+        {
+            child.gameObject.SetActive(true);
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        if (index >= UIManagerAR.instance.selectedModelDetails.textures.Count)
+            return;
+
+        UIManagerAR.instance.selectedModelDetails.selectedColorIndex = index;
+        Material mat = UIManagerAR.instance.selectedModelDetails.GetComponentInChildren<MeshRenderer>().material;
+
+        //Color newColor1;
+        //ColorUtility.TryParseHtmlString(selectedProduct.product.colors[index].code, out newColor1);
+        //mat.color = newColor1;
+
+        mat.mainTexture = UIManagerAR.instance.selectedModelDetails.textures[index];
+
+        UIManagerAR.instance.selectedModelDetails.GetComponentInChildren<MeshRenderer>().material = mat;
+    }
+
+
+    #endregion
 
     void HandleSingleItem(int i, Jewelries newJewelry)
     {
@@ -567,7 +745,8 @@ public class ARJewelryManager : MonoBehaviour
         // Remove old
         if (jewelries[i].instance != null)
         {
-            jewelries[i].instance.gameObject.SetActive(false);
+            Destroy(jewelries[i].instance.GetComponent<ProductDetails>().plusCanvas.gameObject);
+            Destroy(jewelries[i].instance.gameObject);
             jewelries[i].instance = null;
         }
 
@@ -584,40 +763,37 @@ public class ARJewelryManager : MonoBehaviour
             rot.y = 180;
             jewelries[i].instance.transform.GetChild(1).localEulerAngles = rot;
         }
-        else */if (newJewelry.category == CategoryType.Glasses)
-        {
-            Vector3 rot = jewelries[i].instance.transform.GetChild(0).localEulerAngles;
-            rot.y = 180;
-            jewelries[i].instance.transform.GetChild(0).localEulerAngles = rot;
-            //Debug.Log("Glasses Rotated");
-        }
-        else if(newJewelry.category == CategoryType.LeftEarring || newJewelry.category == CategoryType.RightEarring)
+        else */
+        if (newJewelry.category == CategoryType.Glasses)
         {
             Vector3 rot = jewelries[i].instance.transform.GetChild(0).localEulerAngles;
             rot.y = 180;
             jewelries[i].instance.transform.GetChild(0).localEulerAngles = rot;
         }
-            //Debug.Log("New Jewelry : " + newJewelry.category);
+        else if (newJewelry.category == CategoryType.LeftEarring || newJewelry.category == CategoryType.RightEarring)
+        {
+            Vector3 rot = jewelries[i].instance.transform.GetChild(0).localEulerAngles;
+            rot.y = 180;
+            jewelries[i].instance.transform.GetChild(0).localEulerAngles = rot;
+        }
     }
 
     public bool Equip(Jewelries newItem)
     {
-        // Look for another item of same category that is equipped
         foreach (var j in jewelries)
         {
             if (j.category == newItem.category && j != newItem)
             {
-                // remove old instance
                 if (j.instance != null)
-                    Destroy(j.instance);
+                    Destroy(j.instance.gameObject);
 
                 j.instance = null;
             }
         }
 
-        // If item is already equipped, do nothing
         if (newItem.instance != null)
             return false;
+
         return true;
     }
 
@@ -627,9 +803,33 @@ public class ARJewelryManager : MonoBehaviour
         {
             if (jewelry.instance != null)
             {
-                //Destroy(jewelry.instance.gameObject);
-                jewelry.instance.gameObject.SetActive(false);
+                var details = jewelry.instance.GetComponent<ProductDetails>();
+                var canvas = details.plusCanvas;
+
+                if (canvas != null)
+                {
+                    Destroy(canvas);
+                }
+
+                Destroy(jewelry.instance.gameObject);
+                //jewelry.instance.gameObject.SetActive(false);
                 jewelry.instance = null;
+            }
+        }
+
+        UIManagerAR.instance.DeleteAllSpawnedObjects();
+    }
+
+    public void DeleteSelectedJewelry(GameObject objToDelete)
+    {
+        foreach (var j in jewelries)
+        {
+            if(j.instance != null && j.instance == objToDelete)
+            {
+                Destroy(j.instance.GetComponent<ProductDetails>().plusCanvas.gameObject);
+                Destroy(j.instance.gameObject);
+                j.instance = null;
+                break;
             }
         }
     }
@@ -640,13 +840,13 @@ public class ARJewelryManager : MonoBehaviour
     private Vector3 GetLandmarkWorldPosition(int vertexIndex, Vector3 offset)
     {
         var vertices = GetFaceVertices();
-        Debug.Log("vertex index " + vertexIndex);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("vertex index " + vertexIndex);
         if (vertices != null && vertexIndex < vertices.Length)
         {
             return vertices[vertexIndex] + offset;
         }
         if(vertices != null)
-            Debug.Log("vertices " + vertices.Length);
+            if(CategoryManager.Instance.isDebugMode)Debug.Log("vertices " + vertices.Length);
 
         return Vector3.zero;
     }
@@ -660,7 +860,7 @@ public class ARJewelryManager : MonoBehaviour
         {
             return meshFilter.sharedMesh.vertices;
         }
-        Debug.Log("Mesh Filter is null");
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("Mesh Filter is null");
         return null;
     }
     // Replace these with actual ARKit vertex indices or custom mappings as per your AR SDK
@@ -759,7 +959,7 @@ public class ARJewelryManager : MonoBehaviour
         model.transform.localScale = Vector3.one;
 
         Vector3 trueSize = GetTrueSize(model);
-        Debug.Log("Mesh true size: " + trueSize);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("Mesh true size: " + trueSize);
 
         float maxDimension = Mathf.Max(trueSize.x, trueSize.y, trueSize.z);
 

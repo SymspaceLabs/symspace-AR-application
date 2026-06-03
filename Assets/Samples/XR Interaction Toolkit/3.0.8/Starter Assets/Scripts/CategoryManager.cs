@@ -68,6 +68,8 @@ public class CategoryManager : MonoBehaviour
 
     public GameObject plusBtnCanvas;
 
+    public bool isDebugMode = false;
+
     #region Private Variables
     private string localPath;
     #endregion
@@ -111,30 +113,35 @@ public class CategoryManager : MonoBehaviour
         {
             string fixedJson = "{\"categories\":" + response + "}";
             RootData responseData = JsonUtility.FromJson<RootData>(fixedJson);
-            Debug.Log("Categories loaded");
+            if (isDebugMode)
+                Debug.Log("Categories loaded");
             LoadCategories(responseData);
         },
         (error) =>
         {
-            Debug.LogError("Failed to load categories: " + error);
+            if (isDebugMode)
+                Debug.LogError("Failed to load categories: " + error);
         }, "GET"));
     }
 
     void GetAllProducts(string type)
     {
         //string formattedType = type.ToLower().Replace("'", "").Replace(" ", "-");
-        Debug.Log("corrected formate : " + type);
+        if (isDebugMode)
+            Debug.Log("corrected formate : " + type);
         StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?" + type, "",
         (response) =>
         {
             ProductResponse responseData = JsonUtility.FromJson<ProductResponse>(response);
             allProductsData = responseData;
-            Debug.Log("Products loaded");
+            if (isDebugMode)
+                Debug.Log("Products loaded");
             PopulateProducts(responseData);
         },
         (error) =>
         {
-            Debug.LogError("Failed to load categories: " + error);
+            if (isDebugMode)
+                Debug.LogError("Failed to load categories: " + error);
         }, "GET"));
     }
     #endregion
@@ -151,10 +158,13 @@ public class CategoryManager : MonoBehaviour
 
             // Check what kind of data we actually got
             string textPreview = System.Text.Encoding.UTF8.GetString(imageData);
-            Debug.Log("Response preview: " + textPreview.Substring(0, Mathf.Min(200, textPreview.Length)));
+            if (isDebugMode)
+                Debug.Log("Response preview: " + textPreview.Substring(0, Mathf.Min(200, textPreview.Length)));
 
-            Debug.Log("Content-Type: " + request.GetResponseHeader("Content-Type"));
-            Debug.Log("Data length: " + imageData.Length);
+            if (isDebugMode)
+                Debug.Log("Content-Type: " + request.GetResponseHeader("Content-Type"));
+            if (isDebugMode)
+                Debug.Log("Data length: " + imageData.Length);
 
             Texture2D texture = new Texture2D(2, 2);
             if (texture.LoadImage(imageData))
@@ -172,12 +182,14 @@ public class CategoryManager : MonoBehaviour
             }
             else
             {
-                Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
+                if (isDebugMode)
+                    Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
             }
         }
         else
         {
-            Debug.LogError($"Failed to download image: {request.error}");
+            if (isDebugMode)
+                Debug.LogError($"Failed to download image: {request.error}");
         }
 
         if(loadingIcon != null)
@@ -191,7 +203,8 @@ public class CategoryManager : MonoBehaviour
 
         if (req.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError(req.error);
+            if (isDebugMode)
+                Debug.LogError(req.error);
             
             yield break;
         }
@@ -209,7 +222,8 @@ public class CategoryManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
+            if (isDebugMode)
+                Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
         }
     }
 
@@ -220,7 +234,8 @@ public class CategoryManager : MonoBehaviour
 
         if (req.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError(req.error);
+            if (isDebugMode)
+                Debug.LogError(req.error);
 
             yield break;
         }
@@ -235,7 +250,8 @@ public class CategoryManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
+            if (isDebugMode)
+                Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
         }
     }
     #endregion
@@ -271,7 +287,8 @@ public class CategoryManager : MonoBehaviour
                     foreach (var obj in FindObjectsByType<DownloadState>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                     {
                         var tempPd = obj.GetComponent<ProductDetails>();
-                        Debug.Log("download state found");
+                        if (isDebugMode)
+                            Debug.Log("download state found");
                         if (tempPd != null && tempPd.product.id == p.id && obj.isDownloading)
                         {
                             yield break;
@@ -319,13 +336,18 @@ public class CategoryManager : MonoBehaviour
                 SpawnCanvas(newObject);
 
                 if (state == null)
-                    Debug.Log("statecheck is null");
+                {
+                    if (isDebugMode)
+                        Debug.Log("statecheck is null");
+                }
                 else
-                    Debug.Log("statecheck is not null");
+                    if (isDebugMode)
+                        Debug.Log("statecheck is not null");
                 if (state.isReady)
                 {
                     GhostPlacementController.Instance.objectToSpawn = newObject;
-                    Debug.Log("product is already downloading or ready : " + state.isReady);
+                    if (isDebugMode)
+                        Debug.Log("product is already downloading or ready : " + state.isReady);
 
                     GhostPlacementController.Instance.unit =
                                 (p.sizes != null && p.sizes.Count > 0)
@@ -483,7 +505,8 @@ public class CategoryManager : MonoBehaviour
             }
             else if (SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
             {
-                Debug.Log("Mars 1");
+                if (isDebugMode)
+                    Debug.Log("Mars 1");
                 BodyTrackingWithMars.Instance.BodyModelSelected(p, url, p.category.name, pid);
             }
         }
@@ -520,6 +543,7 @@ public class CategoryManager : MonoBehaviour
 
             btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Top;
             btnCanvas.targetModel = newObject.GetComponentInChildren<MeshRenderer>()?.transform;
+            newPd.plusCanvas = btnCanvas.gameObject;
             btnCanvas.pd = newPd;
             btnCanvas.objDetail = newObject.GetComponent<ObjectDetail>();
         }
@@ -588,7 +612,8 @@ public class CategoryManager : MonoBehaviour
 
     public void UpdateObjectScale(ProductDetails pd, GameObject newObject, bool isVertical = false, int dimensionIndex = 0)
     {
-        Debug.Log("dimension Index : " + dimensionIndex);
+        if (isDebugMode)
+            Debug.Log("dimension Index : " + dimensionIndex);
         Vector3 modelOriginalHeight;
 
 
@@ -605,7 +630,8 @@ public class CategoryManager : MonoBehaviour
             //Transform plusBtnCanvas = newObject.GetComponentInChildren<Canvas>().transform;
 
             //plusBtnCanvas.SetParent(null, true);
-            Debug.Log("parent scale : " + newObject.transform.localScale);
+            if (isDebugMode)
+                Debug.Log("parent scale : " + newObject.transform.localScale);
             //UnparentSafely(plusBtnCanvas, newObject.transform);
             yield return null;
             //newObject.transform.localScale = Vector3.one;
@@ -659,8 +685,11 @@ public class CategoryManager : MonoBehaviour
             //    );
             //    newObject.transform.localScale = finalScale;
 
-            Debug.Log("model Original Size : " + modelOriginalHeight);
-            Debug.Log("Length: " + axis_L + ", Width: " + axis_W + ", Height: " + axis_H);
+            if (isDebugMode)
+            {
+                Debug.Log("model Original Size : " + modelOriginalHeight);
+                Debug.Log("Length: " + axis_L + ", Width: " + axis_W + ", Height: " + axis_H);
+            }
 
             Physics.SyncTransforms();
             Canvas.ForceUpdateCanvases();
@@ -675,7 +704,8 @@ public class CategoryManager : MonoBehaviour
     {
         if (child == null || parent == null)
         {
-            Debug.LogWarning("Assign both child and parent!");
+            if (isDebugMode)
+                Debug.LogWarning("Assign both child and parent!");
             return;
         }
 
@@ -701,18 +731,21 @@ public class CategoryManager : MonoBehaviour
             childLocalMatrix.GetColumn(2).magnitude
         );
 
-        Debug.Log($"Child {child.name} safely reparented under {parent.name} with matrix. {child.localScale.ToString("F9")}");
+        if (isDebugMode)
+            Debug.Log($"Child {child.name} safely reparented under {parent.name} with matrix. {child.localScale.ToString("F9")}");
     }
 
     public void UnparentSafely(Transform child, Transform parent)
     {
         if (child == null)
         {
-            Debug.LogWarning("Assign a child!");
+            if (isDebugMode)
+                Debug.LogWarning("Assign a child!");
             return;
         }
 
-        Debug.Log("Child local scale: " + child.localScale.ToString("F9"));
+        if (isDebugMode)
+            Debug.Log("Child local scale: " + child.localScale.ToString("F9"));
         // Store world matrix
         Matrix4x4 childWorldMatrix = child.localToWorldMatrix;
 
@@ -733,7 +766,8 @@ public class CategoryManager : MonoBehaviour
 
         child.localScale = new Vector3(0.005f, 0.005f, 0.005f);
 
-        Debug.Log($"Child {child.name} safely unparented using matrix. {child.lossyScale.ToString("F9")}");
+        if (isDebugMode)
+            Debug.Log($"Child {child.name} safely unparented using matrix. {child.lossyScale.ToString("F9")}");
     }
 
     float ConvertToUnityScale(float inputSize, string unit)
@@ -747,7 +781,8 @@ public class CategoryManager : MonoBehaviour
             case "m":
                 return inputSize; // already in meters
             default:
-                Debug.LogWarning("Unknown unit, defaulting to meters");
+                if (isDebugMode)
+                    Debug.LogWarning("Unknown unit, defaulting to meters");
                 return inputSize;
         }
     }
@@ -795,7 +830,8 @@ public class CategoryManager : MonoBehaviour
         {
             if (!SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
             {
-                Debug.Log("not Mars");
+                if (isDebugMode)
+                    Debug.Log("not Mars");
                 CategoryType category;
                 ProductSelection.TryParseObjectType(p.name, out category);
                 ProductSelection.ClearSelection();
@@ -803,6 +839,7 @@ public class CategoryManager : MonoBehaviour
                 UIManagerAR.instance.ChangeARScene(SceneNames.ARBodyTrackingMars);
                 return false;
             }
+            if (isDebugMode)
                 Debug.Log("Mars");
             return true;
         }
@@ -848,7 +885,8 @@ public class CategoryManager : MonoBehaviour
 
         if (srcMF == null || srcMR == null)
         {
-            Debug.LogError("GLB missing mesh");
+            if (isDebugMode)
+                Debug.LogError("GLB missing mesh");
             yield break;
         }
 
@@ -899,17 +937,19 @@ public class CategoryManager : MonoBehaviour
 
         targetMF.GetComponent<ARDimensionVisualizer>().enabled = true;
 
-        targetObject.GetComponent<ProductDetails>().product = p;
+        ProductDetails pd = targetObject.GetComponent<ProductDetails>();
 
-        targetObject.GetComponent<ProductDetails>().colors.Clear();
+        pd.product = p;
+
+        pd.colors.Clear();
         foreach (var c in p.colors)
         {
             UnityEngine.Color newColor;
             ColorUtility.TryParseHtmlString(c.code, out newColor);
-            targetObject.GetComponent<ProductDetails>().colors.Add(newColor);
+            pd.colors.Add(newColor);
         }
 
-        UpdateObjectScale(targetObject.GetComponent<ProductDetails>(), targetObject,
+        UpdateObjectScale(pd, targetObject,
             !p.ar_type.Equals("horizontal-plane detection"));
 
         yield return new WaitForSeconds(0.2f);
@@ -917,7 +957,6 @@ public class CategoryManager : MonoBehaviour
         state.isDownloading = false;
         state.isReady = true;
 
-        ProductDetails pd = targetObject.GetComponent<ProductDetails>();
         pd.imagesUrl.Clear();
 
         foreach (var img in pd.product.images)
@@ -963,7 +1002,8 @@ public class CategoryManager : MonoBehaviour
 
         Destroy(loadedRoot);
 
-        Debug.Log("✅ Download + Assign complete");
+        if (isDebugMode)
+            Debug.Log("✅ Download + Assign complete");
         
     }
 
@@ -979,8 +1019,8 @@ public class CategoryManager : MonoBehaviour
     private void PopulateTopLevelCategories(List<CategoryData> Categories)
     {
         ClearAllUI();
-
-        Debug.Log("Categories : " + Categories.Count);
+        if(isDebugMode)
+            Debug.Log("Categories : " + Categories.Count);
         foreach (var category in Categories)
         {
             GameObject buttonObj = Instantiate(categoryButtonPrefab, topLevelCategoryParent);
@@ -1002,7 +1042,8 @@ public class CategoryManager : MonoBehaviour
 
                     ProductSelection.categoryName = category.name;
                     //string formattedType = category.name.Replace(" ", "-");
-                    Debug.Log("corrected query : " + query);
+                    if (isDebugMode)
+                        Debug.Log("corrected query : " + query);
                     StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?" + query, "",
                     (response) =>
                     {
@@ -1012,7 +1053,8 @@ public class CategoryManager : MonoBehaviour
                         if (category.items != null && category.items.Count > 0)
                         {
                             PopulateSubCategories(category.items);
-                            Debug.Log("Product Spawned " + productsSpawned);
+                            if (isDebugMode)
+                                Debug.Log("Product Spawned " + productsSpawned);
                             //if (productsSpawned)
                             //    subCategoryParent.gameObject.SetActive(false);
                             //else
@@ -1021,7 +1063,8 @@ public class CategoryManager : MonoBehaviour
                     },
                     (error) =>
                     {
-                        Debug.LogError("Failed to load categories: " + error);
+                        if (isDebugMode)
+                            Debug.LogError("Failed to load categories: " + error);
                     }, "GET"));
 
 
@@ -1039,7 +1082,8 @@ public class CategoryManager : MonoBehaviour
             {
                 firstTime = true;
                 Button btn = topLevelCategoryParent.GetChild(0).GetComponent<Button>();
-                Debug.Log("Button listener count: " + btn.onClick.GetPersistentEventCount());
+                if (isDebugMode)
+                    Debug.Log("Button listener count: " + btn.onClick.GetPersistentEventCount());
 
                 StartCoroutine(somefunction());
                 IEnumerator somefunction()
@@ -1079,14 +1123,16 @@ public class CategoryManager : MonoBehaviour
             bool productsSpawned = false;
 
             Button btn = buttonObj.GetComponent<Button>();
-            Debug.Log("Button found on " + buttonObj.name);
+            if (isDebugMode)
+                Debug.Log("Button found on " + buttonObj.name);
             if (btn != null)
             {
                 btn.onClick.AddListener(() =>
                 {
                     string query = sub.queryParam + "=" + sub.slug;
                     //string formattedType = sub.name.Replace(" ", "-");
-                    Debug.Log("corrected formate : " + query);
+                    if (isDebugMode)
+                        Debug.Log("corrected formate : " + query);
                     StartCoroutine(AuthAPI.PostRequest(getAllProductsURL + "?" + query, "",
                     (response) =>
                     {
@@ -1096,7 +1142,8 @@ public class CategoryManager : MonoBehaviour
                         if (sub.items != null && sub.items.Count > 0)
                         {
                             PopulateLeafCategories(sub.items);
-                            Debug.Log("Product Spawned " + productsSpawned);
+                            if (isDebugMode)
+                                Debug.Log("Product Spawned " + productsSpawned);
                             //if (productsSpawned)
                             //    leafCategoryParent.gameObject.SetActive(false);
                             //else
@@ -1107,7 +1154,8 @@ public class CategoryManager : MonoBehaviour
                     },
                     (error) =>
                     {
-                        Debug.LogError("Failed to load categories: " + error);
+                        if (isDebugMode)
+                            Debug.LogError("Failed to load categories: " + error);
                     }, "GET"));
 
 
@@ -1177,7 +1225,8 @@ public class CategoryManager : MonoBehaviour
     {
         ClearTransform(productContainer);
 
-        Debug.Log("Products count : " + response.products.Count);
+        if (isDebugMode)
+            Debug.Log("Products count : " + response.products.Count);
         if (response.products.Count == 0)
             return false;
 
@@ -1369,9 +1418,11 @@ public class CategoryManager : MonoBehaviour
         for (int i = 0; i < pd.texturesUrl.Count; i++)
         {
             yield return StartCoroutine(DownloadTextureCoroutine(pd.texturesUrl[i], pd.textures, i));
-            Debug.Log("texture downloading");
+            if (isDebugMode)
+                Debug.Log("texture downloading");
         }
-        Debug.Log("texture Finish");
+        if (isDebugMode)
+            Debug.Log("texture Finish");
         
     }
 

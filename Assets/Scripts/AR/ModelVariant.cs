@@ -18,19 +18,38 @@ public class ModelVariant : MonoBehaviour
             GhostPlacementController.Instance.ChangeTextureByIndex(index);
         else if (BodyTrackingWithMars.Instance != null)
             BodyTrackingWithMars.Instance.ChangeModelTexture(index);
+        else if(HandItemSelector.Instance != null)
+            HandItemSelector.Instance.ChangeModelTexture(index);
+        else if(ARJewelryManager.Instance != null)
+            ARJewelryManager.Instance.ChangeModelTexture(index);
     }
 
     public void OnColorClicked()
     {
-        if (SceneManager.GetActiveScene().name == SceneNames.ARScene)
+        if (SceneManager.GetActiveScene().name == SceneNames.Blogs)
+        {
+            CategoriesUI.Instance.ChangeModelTexture(index);
+            CategoriesUI.Instance.ChangeModelVariant();
+        }
+        else if(GhostPlacementController.Instance != null)
         {
             GhostPlacementController.Instance.ChangeTextureByIndex(index);
             UIManagerAR.instance.ChangeModelVariant();
         }
-        else if (SceneManager.GetActiveScene().name == SceneNames.Blogs)
+        else if(HandItemSelector.Instance != null)
         {
-            CategoriesUI.Instance.ChangeModelTexture(index);
-            CategoriesUI.Instance.ChangeModelVariant();
+            HandItemSelector.Instance.ChangeModelTexture(index);
+            UIManagerAR.instance.ChangeModelVariant();
+        }
+        else if (ARJewelryManager.Instance != null)
+        {
+            ARJewelryManager.Instance.ChangeModelTexture(index);
+            UIManagerAR.instance.ChangeModelVariant();
+        }
+        else if(BodyTrackingWithMars.Instance != null)
+        {
+            BodyTrackingWithMars.Instance.ChangeModelTexture(index);
+            UIManagerAR.instance.ChangeModelVariant();
         }
     }
 }

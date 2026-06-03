@@ -33,8 +33,8 @@ public class ResetPasswordUI : MonoBehaviour
     #region API Call
     private void HandleReset()
     {
-        //if (!CheckInputData())
-        //    return;
+        if (!CheckInputData())
+            return;
 
         JsonDataStructure jsonData = new JsonDataStructure();
         jsonData.email = PlayerPrefs.GetString("Email");
@@ -69,23 +69,27 @@ public class ResetPasswordUI : MonoBehaviour
 
         if (string.IsNullOrWhiteSpace(newPasswordInput.text))
         {
-            ShowError("Email is empty", newPasswordInput);
+            MenuManager.Instance.ShowError("Password is empty");
+            //ShowError("Email is empty", newPasswordInput);
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(confirmNewPassword.text))
         {
-            ShowError("Password is empty", confirmNewPassword);
+            MenuManager.Instance.ShowError("Confirm Password is empty");
+            //ShowError("Password is empty", confirmNewPassword);
             return false;
         }
 
         if (newPasswordInput.text != confirmNewPassword.text)
         {
-            errorMessageParent.SetActive(true);
-            errorMessage.text = "Password Don't Match";
+            //errorMessageParent.SetActive(true);
+            //errorMessage.text = "Password Don't Match";
 
-            newPasswordInput.text = "";
-            confirmNewPassword.text = "";
+            MenuManager.Instance.ShowError("Password Don't Match");
+
+            //newPasswordInput.text = "";
+            //confirmNewPassword.text = "";
 
             newPasswordInput.GetComponent<Image>().sprite = errorInputFieldSprite;
             confirmNewPassword.GetComponent<Image>().sprite = errorInputFieldSprite;
@@ -93,17 +97,17 @@ public class ResetPasswordUI : MonoBehaviour
             return false;
         }
 
-        if (!IsValidPassword(newPasswordInput.text))
-        {
-            ShowError("The password must contain at least 8 characters, 1 uppercase letter, 1 lowercase letter,  1 number", newPasswordInput);
+        //if (!IsValidPassword(newPasswordInput.text))
+        //{
+        //    ShowError("The password must contain at least 8 characters, 1 uppercase letter, 1 lowercase letter,  1 number", newPasswordInput);
             
-            newPasswordInput.text = "";
-            confirmNewPassword.text = "";
+        //    newPasswordInput.text = "";
+        //    confirmNewPassword.text = "";
 
-            newPasswordInput.GetComponent<Image>().sprite = errorInputFieldSprite;
+        //    newPasswordInput.GetComponent<Image>().sprite = errorInputFieldSprite;
 
-            return false;
-        }
+        //    return false;
+        //}
 
         // All inputs are valid
         MenuManager.Instance.loadingPanel.SetActive(true);

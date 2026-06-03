@@ -159,13 +159,13 @@ public class UIManagerAR : MonoBehaviour
         List<XROcclusionSubsystem> subsystems = new List<XROcclusionSubsystem>();
         SubsystemManager.GetSubsystems(subsystems);
         if (subsystems.Count < 1)
-            Debug.Log("no subsytem found");
+            if(CategoryManager.Instance.isDebugMode)Debug.Log("no subsytem found");
 
         foreach (var subsystem in subsystems)
         {
             if (subsystem != null && subsystem.running)
             {
-                Debug.Log("Stopping XROcclusionSubsystem in this scene");
+                if(CategoryManager.Instance.isDebugMode)Debug.Log("Stopping XROcclusionSubsystem in this scene");
                 subsystem.Stop();
             }
         }
@@ -185,8 +185,8 @@ public class UIManagerAR : MonoBehaviour
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
                 hit.transform.TryGetComponent<DirectionalKeyMovement>(out selectedObject);
-                if(selectedObject != null)
-                    Debug.Log("Selected: " + selectedObject.name);
+                //if(selectedObject != null)
+                //    if(CategoryManager.Instance.isDebugMode)Debug.Log("Selected: " + selectedObject.name);d
 
                 // Optionally: highlight, select, etc.
                 // selectedObject.GetComponent<Renderer>().material.color = Color.green;
@@ -315,6 +315,7 @@ public class UIManagerAR : MonoBehaviour
         shopUI.SetActive(true);
         objectDiscription.SetActive(false);
         slidePanel.ShowPanel();
+        smallDetail.SetActive(false);
     }
 
     public void CloseLargeDetail()
@@ -550,14 +551,14 @@ public class UIManagerAR : MonoBehaviour
                 LD_Price.color = new Color(1f, 1f, 1f);
                 LD_SalePrice.gameObject.SetActive(false);
             }
-            Debug.Log($"tempSizeIndex : {tempSizeIndex}");
+            if(CategoryManager.Instance.isDebugMode)Debug.Log($"tempSizeIndex : {tempSizeIndex}");
             ProductDetails pd = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
             foreach (var v in pd.product.variants)
             {
                 if (v.color.id == pd.product.colors[pd.selectedColorIndex].id)
                 {
                     maxStocks = v.stock;
-                    Debug.Log("Max Stocks " + maxStocks);
+                    if(CategoryManager.Instance.isDebugMode)Debug.Log("Max Stocks " + maxStocks);
                     //if (v.salePrice > 0 && v.salePrice < v.price)
                     //{
                     //    SD_Price.text = "<s>$" + v.price + "<s>";
@@ -675,7 +676,7 @@ public class UIManagerAR : MonoBehaviour
         if (selectedModelDetails.product.sizes.Count > 1 && selectedSizeIndex == 0)
             return;
         
-        Debug.Log("LD size changed");
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("LD size changed");
 
         ProductDetails pd = null;
         if (GhostPlacementController.Instance != null)
@@ -707,7 +708,7 @@ public class UIManagerAR : MonoBehaviour
         if (selectedModelDetails.product.sizes.Count > 1 && selectedSizeIndex == 0)
             return;
 
-        Debug.Log("SD size changed");
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("SD size changed");
         selectedModelDetails.selectedSizeIndex = selectedSizeIndex;
         if(GhostPlacementController.Instance != null)
             /*ProductDetails pd = */GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
@@ -751,15 +752,15 @@ public class UIManagerAR : MonoBehaviour
 
     public void NextPreviousImage(int index)
     {
-        ProductDetails pd = null;
-        if (GhostPlacementController.Instance != null)
-            pd = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
-        else
-            pd = UI_3D_Models[objectSelectedIndex].GetComponent<ProductDetails>();
+        ProductDetails pd = selectedModelDetails;
+        //if (GhostPlacementController.Instance != null)
+        //    pd = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
+        //else
+        //    pd = UI_3D_Models[objectSelectedIndex].GetComponent<ProductDetails>();
         string colorCode = pd.product.colors[pd.selectedColorIndex].code;
-        Debug.Log("Object selected : " + pd.selectedColorIndex);
-        Debug.Log("ID: " + pd.product.id);
-        Debug.Log("current Index before : " + currentImage);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("Object selected : " + pd.selectedColorIndex);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("ID: " + pd.product.id);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("current Index before : " + currentImage);
         currentImage += index;
 
         if (currentImage < -1)
@@ -786,7 +787,7 @@ public class UIManagerAR : MonoBehaviour
                 }
             }
 
-        Debug.Log("current Index : " + currentImage);
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("current Index : " + currentImage);
 
         if(currentImage == -1)
         {
@@ -846,10 +847,37 @@ public class UIManagerAR : MonoBehaviour
         foreach (Transform obj in UI_3D_Models_Parent.transform)
             Destroy(obj.gameObject);
 
+        smallDetail.SetActive(false);
         itemsToPlaceParent.SetActive(false);
         TogglePlaneVisuals(false);
 
         OnResetClick?.Invoke();
+    }
+
+    public void DeleteCurrentObject()
+    {
+        if (selectedModelDetails != null)
+        {
+            GameObject objToDelete = selectedModelDetails.gameObject;
+            if (GhostPlacementController.Instance != null)
+                GhostPlacementController.Instance.DeleteSpawnedObject(objToDelete);
+            else if(ARJewelryManager.Instance != null)
+                ARJewelryManager.Instance.DeleteSelectedJewelry(objToDelete);
+            else if(HandItemSelector.Instance != null)
+                HandItemSelector.Instance.DeleteSelectedItem(objToDelete);
+            else if (BodyTrackingWithMars.Instance != null)
+                BodyTrackingWithMars.Instance.DeleteSelectedItem(objToDelete);
+
+            foreach(Transform item in itemsToPlaceParent.transform)
+            {
+                Destroy(item.gameObject);
+            }
+
+            smallDetail.SetActive(false);
+            CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
+            UI_3D_Models.Remove(objToDelete);
+            Destroy(objToDelete);
+        }
     }
 
     public void ToggleMovementUI()

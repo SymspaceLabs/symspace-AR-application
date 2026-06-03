@@ -48,7 +48,7 @@ public class BodyTrackingWithMars : MonoBehaviour
         //BodySlot slot;
         //if (!System.Enum.TryParse(bodySlotName, out slot))
         //{
-        //    Debug.LogError("Invalid body slot name!");
+        //    if(CategoryManager.Instance.isDebugMode)Debug.LogError("Invalid body slot name!");
         //    return;
         //}
 
@@ -83,8 +83,8 @@ public class BodyTrackingWithMars : MonoBehaviour
             targetSlot = BodySlot.Footwear;
             isRigged = false; // Static
         }
-        Debug.Log("body slot Name : " + bodySlotName);
-        StartCoroutine(DownloadAndAssignBodyModel(p, url, targetSlot, isRigged, pid? pid.ProductProgress: null, pid? pid.DownloadFailed: null));
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("body slot Name : " + bodySlotName);
+        StartCoroutine(DownloadAndAssignBodyModel(p, url, targetSlot, isRigged, pid ? pid.ProductProgress : null, pid ? pid.DownloadFailed : null));
     }
 
     public BodySlot GetBodySlot(string slotName)
@@ -95,6 +95,8 @@ public class BodyTrackingWithMars : MonoBehaviour
             case "hoodies":
                 return BodySlot.Top;
             case "bottom":
+            case "pant":
+            case "jeans":
                 return BodySlot.Bottom;
             case "head":
                 return BodySlot.Head;
@@ -105,7 +107,7 @@ public class BodyTrackingWithMars : MonoBehaviour
             case "accessory":
                 return BodySlot.Accessory;
             default:
-                Debug.LogError("Invalid body slot name! " + slotName);
+                if(CategoryManager.Instance.isDebugMode)Debug.LogError("Invalid body slot name! " + slotName);
                 return BodySlot.Accessory;
         }
     }
@@ -136,7 +138,7 @@ public class BodyTrackingWithMars : MonoBehaviour
 
         //    if (www.result != UnityWebRequest.Result.Success)
         //    {
-        //        Debug.LogError("Download failed: " + www.error);
+        //        if(CategoryManager.Instance.isDebugMode)Debug.LogError("Download failed: " + www.error);
         //        onFailed?.Invoke();
         //        yield break;
         //    }
@@ -154,7 +156,7 @@ public class BodyTrackingWithMars : MonoBehaviour
 
         //        if (loadedGLB == null)
         //        {
-        //            Debug.LogError("Failed to load GLB model!");
+        //            if(CategoryManager.Instance.isDebugMode)Debug.LogError("Failed to load GLB model!");
         //            yield break;
         //        }
 
@@ -164,163 +166,192 @@ public class BodyTrackingWithMars : MonoBehaviour
         if (loadedGLB == null)
             yield break;
 
-                // 🔹 CLEANUP
-                if (activeBodyModels.ContainsKey(slot))
-                {
-                    foreach (var bone in activeBodyModels[slot].ReparentedBones)
-                    {
-                        if (bone != null) Destroy(bone);
-                    }
-                    Destroy(activeBodyModels[slot].RootObject);
-                    activeBodyModels.Remove(slot);
-                }
+        // 🔹 CLEANUP
+        if (activeBodyModels.ContainsKey(slot))
+        {
+            foreach (var bone in activeBodyModels[slot].ReparentedBones)
+            {
+                if (bone != null) Destroy(bone);
+            }
+            Destroy(activeBodyModels[slot].RootObject);
+            activeBodyModels.Remove(slot);
+        }
 
-                ModelTracker newTracker = new ModelTracker();
-                newTracker.RootObject = loadedGLB;
+        ModelTracker newTracker = new ModelTracker();
+        newTracker.RootObject = loadedGLB;
 
-                if (isRigged)
-                {
-                    EquipClothing(loadedGLB);
+        if (isRigged)
+        {
+            EquipClothing(loadedGLB);
 
-                    // 🔹 RIGGED LOGIC (Tops/Bottoms)
-                    //Transform[] downloadedTransforms = loadedGLB.GetComponentsInChildren<Transform>(true);
-                    //foreach (Transform modelBone in downloadedTransforms)
-                    //{
-                    //    Transform matchingProxyBone = FindDeepChild(bodyProxyRoot, modelBone.name);
-                    //    if (matchingProxyBone != null && modelBone != loadedGLB.transform)
-                    //    {
-                    //        newTracker.ReparentedBones.Add(modelBone.gameObject);
-                    //        modelBone.SetParent(matchingProxyBone);
-                    //        modelBone.localPosition = Vector3.zero;
-                    //        modelBone.localRotation = Quaternion.identity;
-                    //    }
-                    //}
+            // 🔹 RIGGED LOGIC (Tops/Bottoms)
+            //Transform[] downloadedTransforms = loadedGLB.GetComponentsInChildren<Transform>(true);
+            //foreach (Transform modelBone in downloadedTransforms)
+            //{
+            //    Transform matchingProxyBone = FindDeepChild(bodyProxyRoot, modelBone.name);
+            //    if (matchingProxyBone != null && modelBone != loadedGLB.transform)
+            //    {
+            //        newTracker.ReparentedBones.Add(modelBone.gameObject);
+            //        modelBone.SetParent(matchingProxyBone);
+            //        modelBone.localPosition = Vector3.zero;
+            //        modelBone.localRotation = Quaternion.identity;
+            //    }
+            //}
 
-                    //// Parent the main container to root
-                    //loadedGLB.transform.SetParent(bodyProxyRoot);
-                }
-                else
-                {
-                    // 🔹 STATIC LOGIC (Hats, Watches, Shoes)
-                    // Find the single specific bone this item should stick to
-                    Transform targetBone = GetStaticTargetBone(slot);
-                    if (targetBone != null)
-                    {
-                        loadedGLB.transform.SetParent(targetBone);
-                    }
-                    else
-                    {
-                        loadedGLB.transform.SetParent(bodyProxyRoot);
-                    }
-                }
+            //// Parent the main container to root
+            //loadedGLB.transform.SetParent(bodyProxyRoot);
+        }
+        else
+        {
+            // 🔹 STATIC LOGIC (Hats, Watches, Shoes)
+            // Find the single specific bone this item should stick to
+            Transform targetBone = GetStaticTargetBone(slot);
+            if (targetBone != null)
+            {
+                loadedGLB.transform.SetParent(targetBone);
+            }
+            else
+            {
+                loadedGLB.transform.SetParent(bodyProxyRoot);
+            }
+        }
 
-                ProductDetails pd = loadedGLB.AddComponent<ProductDetails>();
+        ProductDetails pd = loadedGLB.AddComponent<ProductDetails>();
 
-                pd.imagesUrl.Clear();
-                foreach(var img in p.images)
-                    pd.imagesUrl.Add(img.url);
+        pd.imagesUrl.Clear();
+        foreach (var img in p.images)
+            pd.imagesUrl.Add(img.url);
 
-                pd.texturesUrl.Clear();
-                foreach(var model in p.threeDModels)
-                    pd.texturesUrl.Add(model.texture);
+        pd.texturesUrl.Clear();
+        foreach (var model in p.threeDModels)
+            pd.texturesUrl.Add(model.texture);
 
-                pd.colors.Clear();
-                for (int i = 0; i < p.colors.Count; i++)
-                {
-                    UnityEngine.Color newColor1;
-                    ColorUtility.TryParseHtmlString(p.colors[i].code, out newColor1);
-                    pd.colors.Add(newColor1);
-                }
+        pd.colors.Clear();
+        for (int i = 0; i < p.colors.Count; i++)
+        {
+            UnityEngine.Color newColor1;
+            ColorUtility.TryParseHtmlString(p.colors[i].code, out newColor1);
+            pd.colors.Add(newColor1);
+        }
 
-                pd.product = p;
-                StartCoroutine(CategoryManager.Instance.SetProductImages(pd));
-
-                WorldCanvasFaceCamera btnCanvas = Instantiate(plusBtnCanvas).GetComponent<WorldCanvasFaceCamera>();
-
-                // Assign correct target
-                btnCanvas.targetModel = loadedGLB.transform;
-
-                // 🔹 Set position based on BodySlot
-                switch (slot)
-                {
-                    case BodySlot.Top:
-                        btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Custom;
-                        break;
-
-                    case BodySlot.Bottom:
-                        btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Custom;
-                        break;
-
-                    case BodySlot.Head:
-                        btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.TopRight;
-                        break;
-
-                    default:
-                        btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.BottomLeft;
-                        break;
-                }
-
-                btnCanvas.pd = pd;
-
-                GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
-                modelToView.transform.parent = UIManagerAR.instance.UI_3D_Models_Parent.transform;
-                modelToView.transform.localPosition = Vector3.zero;
-                UIManagerAR.instance.UI_3D_Models.Add(modelToView);
+        pd.product = p;
+        StartCoroutine(CategoryManager.Instance.SetProductImages(pd));
 
 
-                ProductDetails mtv_pd = modelToView.GetComponent<ProductDetails>();
-                mtv_pd.imagesUrl.Clear();
-                foreach (var img in p.images)
-                    mtv_pd.imagesUrl.Add(img.url);
+        GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
+        modelToView.transform.parent = UIManagerAR.instance.UI_3D_Models_Parent.transform;
+        modelToView.transform.localPosition = Vector3.zero;
+        UIManagerAR.instance.UI_3D_Models.Add(modelToView);
 
-                mtv_pd.texturesUrl.Clear();
-                foreach (var model in p.threeDModels)
-                    mtv_pd.texturesUrl.Add(model.texture);
 
-                StartCoroutine(CategoryManager.Instance.SetProductImages(mtv_pd));
+        ProductDetails mtv_pd = modelToView.GetComponent<ProductDetails>();
+        mtv_pd.imagesUrl.Clear();
+        foreach (var img in p.images)
+            mtv_pd.imagesUrl.Add(img.url);
 
-                mtv_pd.product = p;
+        mtv_pd.texturesUrl.Clear();
+        foreach (var model in p.threeDModels)
+            mtv_pd.texturesUrl.Add(model.texture);
 
-                mtv_pd.colors.Clear();
-                for (int i = 0; i < p.colors.Count; i++)
-                {
-                    UnityEngine.Color newColor1;
-                    ColorUtility.TryParseHtmlString(p.colors[i].code, out newColor1);
-                    mtv_pd.colors.Add(newColor1);
-                }
+        StartCoroutine(CategoryManager.Instance.SetProductImages(mtv_pd));
 
-                loadedGLB.transform.localPosition = Vector3.zero;
-                loadedGLB.transform.localRotation = Quaternion.identity;
-                activeBodyModels.Add(slot, newTracker);
+        mtv_pd.product = p;
 
-                modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
-                modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().materials;
+        mtv_pd.colors.Clear();
+        for (int i = 0; i < p.colors.Count; i++)
+        {
+            UnityEngine.Color newColor1;
+            ColorUtility.TryParseHtmlString(p.colors[i].code, out newColor1);
+            mtv_pd.colors.Add(newColor1);
+        }
 
-                Material mat = loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().material;
+        loadedGLB.transform.localPosition = Vector3.zero;
+        loadedGLB.transform.localRotation = Quaternion.identity;
+        activeBodyModels.Add(slot, newTracker);
 
-                if(pd.textures.Count > 0)
-                    mat.mainTexture = pd.textures[0];
+        modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
+        modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().materials;
 
-                loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().material = mat;
+        Material mat = loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().material;
 
-                loadedGLB.name = CategoryManager.Instance.GetUniqueName(p.name, UIManagerAR.instance.UI_3D_Models);
+        if (pd.textures.Count > 0)
+            mat.mainTexture = pd.textures[0];
 
-                modelToView.name = loadedGLB.name;
-        
-                mv.FrameObject(modelToView);
+        loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>().material = mat;
 
-                Debug.Log($"✅ {slot} attached as {(isRigged ? "Rigged" : "Static")}.");
+        loadedGLB.name = CategoryManager.Instance.GetUniqueName(p.name, UIManagerAR.instance.UI_3D_Models);
 
-                CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
-                
-                //float sizeValue;
-                //if (float.TryParse(p.variants[0].size.size, out sizeValue))
-                //{
-                    ClothingFitController.ApplySizeFromLabel(p.variants[0].size.size, loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>());
-                //}
+        modelToView.name = loadedGLB.name;
+
+
+        SpawnCanvas(loadedGLB, slot);
+
+        mv.FrameObject(modelToView);
+
+        if(CategoryManager.Instance.isDebugMode)Debug.Log($"✅ {slot} attached as {(isRigged ? "Rigged" : "Static")}.");
+
+        CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
+
+        //float sizeValue;
+        //if (float.TryParse(p.variants[0].size.size, out sizeValue))
+        //{
+        ClothingFitController.ApplySizeFromLabel(p.variants[0].size.size, loadedGLB.GetComponentInChildren<SkinnedMeshRenderer>());
+        //}
 
         //    }
         //}
+    }
+
+    void SpawnCanvas(GameObject newObject, BodySlot slot)
+    {
+        WorldCanvasFaceCamera[] allWorldCanvases =
+                    FindObjectsByType<WorldCanvasFaceCamera>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        bool spawnCanvas = true;
+
+        var newPd = newObject.GetComponent<ProductDetails>();
+
+        foreach (var c in allWorldCanvases)
+        {
+            if (c.pd == newPd)
+            {
+                spawnCanvas = false;
+                break;
+            }
+        }
+
+        if (spawnCanvas)
+        {
+            WorldCanvasFaceCamera btnCanvas =
+                Instantiate(plusBtnCanvas).GetComponent<WorldCanvasFaceCamera>();
+
+            if (!btnCanvas.GetComponent<ObjectDetail>())
+                btnCanvas.gameObject.AddComponent<ObjectDetail>();
+
+            switch (slot)
+            {
+                case BodySlot.Top:
+                    btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Right;
+                    break;
+
+                case BodySlot.Bottom:
+                    btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.Right;
+                    break;
+
+                case BodySlot.Head:
+                    btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.TopRight;
+                    break;
+
+                default:
+                    btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.BottomLeft;
+                    break;
+            }
+
+            btnCanvas.targetModel = newObject.GetComponentInChildren<SkinnedMeshRenderer>()?.transform;
+            newPd.plusCanvas = btnCanvas.gameObject;
+            btnCanvas.pd = newPd;
+            btnCanvas.objDetail = newObject.GetComponent<ObjectDetail>();
+        }
     }
 
     public void EquipClothing(GameObject clothingModel)
@@ -355,7 +386,7 @@ public class BodyTrackingWithMars : MonoBehaviour
                 }
             }
 
-            if (!found) Debug.LogWarning("Could not find bone: " + boneName);
+            if (!found) if(CategoryManager.Instance.isDebugMode)Debug.LogWarning("Could not find bone: " + boneName);
         }
 
         // 6. Assign the character's bones to the clothing renderer
@@ -451,6 +482,30 @@ public class BodyTrackingWithMars : MonoBehaviour
         activeBodyModels.Clear();
 
         UIManagerAR.instance.DeleteAllSpawnedObjects();
+    }
+
+    public void DeleteSelectedItem(GameObject objToDelete)
+    {
+        foreach (var kvp in activeBodyModels)
+        {
+            if (kvp.Value.RootObject == objToDelete)
+            {
+                foreach (var bone in kvp.Value.ReparentedBones)
+                {
+                    if (bone != null) Destroy(bone);
+                }
+                
+                var productDetails = kvp.Value.RootObject.GetComponent<ProductDetails>();
+                if (productDetails != null && productDetails.plusCanvas != null)
+                {
+                    Destroy(productDetails.plusCanvas);
+                }
+
+                Destroy(kvp.Value.RootObject);
+                activeBodyModels.Remove(kvp.Key);
+                break;
+            }
+        }
     }
 
     public enum BodySlot

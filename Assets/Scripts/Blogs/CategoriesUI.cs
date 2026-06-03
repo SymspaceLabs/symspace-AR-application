@@ -255,68 +255,90 @@ public class CategoriesUI : MonoBehaviour
         //        yield break;
         //    }
 
-            MeshFilter srcMF = loadedRoot.GetComponentInChildren<MeshFilter>();
-            MeshRenderer srcMR = loadedRoot.GetComponentInChildren<MeshRenderer>();
+        MeshFilter srcMF = loadedRoot.GetComponentInChildren<MeshFilter>();
+        MeshRenderer srcMR = loadedRoot.GetComponentInChildren<MeshRenderer>();
+        SkinnedMeshRenderer srcSK = loadedRoot.GetComponentInChildren<SkinnedMeshRenderer>();
 
-            if (srcMF == null || srcMR == null)
-            {
-                Debug.LogError("Loaded model has no MeshFilter or MeshRenderer!");
-                state.isDownloading = false;
-                yield break;
-            }
+        Mesh mesh = null;
+        Material[] mats = null;
 
-            // Assign mesh/material to target
-            Transform visual = targetObject.transform.Find("Visual");
-            if (visual == null)
-            {
-                visual = new GameObject("Visual").transform;
-                visual.parent = targetObject.transform;
-                visual.localPosition = Vector3.zero;
-            }
-
-            MeshFilter targetMF = visual.GetComponent<MeshFilter>() ?? visual.gameObject.AddComponent<MeshFilter>();
-            MeshRenderer targetMR = visual.GetComponent<MeshRenderer>() ?? visual.gameObject.AddComponent<MeshRenderer>();
-
-            targetMF.mesh = Instantiate(srcMF.sharedMesh);
-            targetMR.materials = srcMR.materials.Clone() as Material[];
-
-            for (int matIdx = 0; matIdx < targetMR.materials.Length; matIdx++)
-            {
-                Material mat = targetMR.materials[matIdx];
-                Material srcMat = srcMR.materials[matIdx];
-
-                foreach (string prop in srcMat.GetTexturePropertyNames())
-                {
-                    Texture tex = srcMat.GetTexture(prop);
-                    if (tex == null) continue;
-
-                    if (tex is Texture2D srcTex)
-                    {
-                        Texture2D copy = new Texture2D(srcTex.width, srcTex.height, srcTex.format, srcTex.mipmapCount > 1);
-                        Graphics.CopyTexture(srcTex, copy);
-                        copy.wrapMode = srcTex.wrapMode;
-                        copy.filterMode = srcTex.filterMode;
-                        copy.anisoLevel = srcTex.anisoLevel;
-                        copy.Apply();
-                        mat.SetTexture(prop, copy);
-                    }
-                }
-            }
-
-            Debug.Log("Mesh and materials assigned!");
-
-            if (currentProductID == p.id)
-                targetObject.SetActive(true);
-            else
-                targetObject.SetActive(false);
-
-            if (!downloadedModels.Contains(targetObject))
-                downloadedModels.Add(targetObject);
-
+        // Normal mesh
+        if (srcMF != null && srcMR != null)
+        {
+            mesh = srcMF.sharedMesh;
+            mats = srcMR.materials;
+        }
+        // Skinned mesh
+        else if (srcSK != null)
+        {
+            mesh = srcSK.sharedMesh;
+            mats = srcSK.materials;
+        }
+        else
+        {
+            Debug.LogError("Loaded model has no renderable mesh!");
             state.isDownloading = false;
-            state.isReady = true;
+            yield break;
+        }
 
-            mv.FrameObject(targetObject);
+        // Assign mesh/material to target
+        Transform visual = targetObject.transform.Find("Visual");
+
+        if (visual == null)
+        {
+            visual = new GameObject("Visual").transform;
+            visual.parent = targetObject.transform;
+            visual.localPosition = Vector3.zero;
+        }
+
+        MeshFilter targetMF =
+            visual.GetComponent<MeshFilter>() ??
+            visual.gameObject.AddComponent<MeshFilter>();
+
+        MeshRenderer targetMR =
+            visual.GetComponent<MeshRenderer>() ??
+            visual.gameObject.AddComponent<MeshRenderer>();
+
+        targetMF.mesh = Instantiate(mesh);
+        targetMR.materials = mats;
+
+        //for (int matIdx = 0; matIdx < targetMR.materials.Length; matIdx++)
+        //{
+        //    Material mat = targetMR.materials[matIdx];
+        //    Material srcMat = srcMR.materials[matIdx];
+
+        //    foreach (string prop in srcMat.GetTexturePropertyNames())
+        //    {
+        //        Texture tex = srcMat.GetTexture(prop);
+        //        if (tex == null) continue;
+
+        //        if (tex is Texture2D srcTex)
+        //        {
+        //            Texture2D copy = new Texture2D(srcTex.width, srcTex.height, srcTex.format, srcTex.mipmapCount > 1);
+        //            Graphics.CopyTexture(srcTex, copy);
+        //            copy.wrapMode = srcTex.wrapMode;
+        //            copy.filterMode = srcTex.filterMode;
+        //            copy.anisoLevel = srcTex.anisoLevel;
+        //            copy.Apply();
+        //            mat.SetTexture(prop, copy);
+        //        }
+        //    }
+        //}
+
+        Debug.Log("Mesh and materials assigned!");
+
+        if (currentProductID == p.id)
+            targetObject.SetActive(true);
+        else
+            targetObject.SetActive(false);
+
+        if (!downloadedModels.Contains(targetObject))
+            downloadedModels.Add(targetObject);
+
+        state.isDownloading = false;
+        state.isReady = true;
+
+        mv.FrameObject(targetObject);
 
         Destroy(loadedRoot);
         //}

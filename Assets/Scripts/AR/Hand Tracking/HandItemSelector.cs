@@ -22,6 +22,8 @@ public class HandItemSelector : MonoBehaviour
     public GameObject watchesParent;
     public GameObject ringsParent;
 
+    public GameObject plusBtnCanvas;
+
     #endregion
 
 
@@ -36,7 +38,7 @@ public class HandItemSelector : MonoBehaviour
     Dictionary<CategoryType, Quaternion> initialRot = new();
     Dictionary<CategoryType, Vector3> initialScale = new();
 
-    Dictionary<string, GameObject> downloadedModels = new();
+    //Dictionary<string, GameObject> downloadedModels = new();
 
     #endregion
 
@@ -122,7 +124,7 @@ public class HandItemSelector : MonoBehaviour
         //    {
         //        if (state.isDownloading)
         //        {
-        //            Debug.Log("Model already downloading.");
+        //            if(CategoryManager.Instance.isDebugMode)Debug.Log("Model already downloading.");
         //            //yield break;
         //        }
 
@@ -162,40 +164,72 @@ public class HandItemSelector : MonoBehaviour
 
         if (item == null)
         {
-            //HandleProductSelection(pid? pid: null);
+            item = new GameObject();
+
             if (ShouldDownloadModel())
             {
-                StartCoroutine(DownloadAndSpawnModel(category, pid ? pid.ProductProgress : null, pid ? pid.DownloadFailed : null));
+                StartCoroutine(
+                    DownloadAndSpawnModel(
+                        category,
+                        pid ? pid.ProductProgress : null,
+                        pid ? pid.DownloadFailed : null));
+
                 return;
             }
         }
 
-        var state = item.GetComponent<DownloadState>();
-
-        if (state != null && !state.isReady)
-        {
-            Debug.Log("Model not ready yet.");
-            return;
-        }
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("item Name : " + item.name);
 
         SetActiveItem(category, item);
-
 
         CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
     }
 
+    void SpawnCanvas(GameObject newObject)
+    {
+        WorldCanvasFaceCamera[] allWorldCanvases =
+                    FindObjectsByType<WorldCanvasFaceCamera>(FindObjectsSortMode.None);
+
+        bool spawnCanvas = true;
+
+        var newPd = newObject.GetComponent<ProductDetails>();
+
+        foreach (var c in allWorldCanvases)
+        {
+            if (c.pd == newPd)
+            {
+                spawnCanvas = false;
+                break;
+            }
+        }
+
+        if (spawnCanvas)
+        {
+            WorldCanvasFaceCamera btnCanvas =
+                Instantiate(plusBtnCanvas).GetComponent<WorldCanvasFaceCamera>();
+
+            if (!btnCanvas.GetComponent<ObjectDetail>())
+                btnCanvas.gameObject.AddComponent<ObjectDetail>();
+
+            btnCanvas.canvasPosition = WorldCanvasFaceCamera.CanvasPosition.TopRight;
+            btnCanvas.targetModel = newObject.GetComponentInChildren<MeshRenderer>()?.transform;
+            newPd.plusCanvas = btnCanvas.gameObject;
+            btnCanvas.pd = newPd;
+            btnCanvas.objDetail = newObject.GetComponent<ObjectDetail>();
+        }
+    }
+
     GameObject GetItem(string itemName, CategoryType category)
     {
-        if (downloadedModels.ContainsKey(itemName))
-            return downloadedModels[itemName];
-
         return GetPreloadedItem(category, itemName);
     }
 
     void SetActiveItem(CategoryType category, GameObject obj)
     {
         if (activeItems.ContainsKey(category) && activeItems[category] != obj)
-            activeItems[category].SetActive(false);
+        {
+            Destroy(activeItems[category]);
+        }
 
         activeItems[category] = obj;
 
@@ -219,42 +253,19 @@ public class HandItemSelector : MonoBehaviour
         return hasUrl && !isPreloaded;
     }
 
-    public IEnumerator DownloadAndSpawnModel(
-        CategoryType category,
-        Action<float> onProgress = null,
-        Action onFailed = null)
+    public IEnumerator DownloadAndSpawnModel(CategoryType category, Action<float> onProgress = null, Action onFailed = null)
     {
         string name = ProductSelection.productData.name;
-
         string url = ProductSelection.modelURL;
-        string localPath = Path.Combine(Application.persistentDataPath, $"{name}.glb");
 
         GameObject model = null;
 
-        yield return StartCoroutine(ModelLoaderService.DownloadAndLoad(url, (glbModel) => { model = glbModel; }, onProgress, onFailed));
-
-        //using (UnityWebRequest www = UnityWebRequest.Get(url))
-        //{
-        //    www.downloadHandler = new DownloadHandlerFile(localPath);
-        //    www.SendWebRequest();
-
-
-        //    while (!www.isDone)
-        //    {
-        //        onProgress?.Invoke(www.downloadProgress);
-        //        yield return null;
-        //    }
-
-        //    if (www.result != UnityWebRequest.Result.Success)
-        //    {
-        //        Debug.LogError("Download failed: " + www.error);
-        //        onFailed?.Invoke();
-        //        yield break;
-        //    }
-
-        //    onProgress?.Invoke(1f);
-        //    Debug.Log("total size : " + www.downloadedBytes);
-        //}
+        yield return StartCoroutine(
+            ModelLoaderService.DownloadAndLoad(
+                url,
+                (glbModel) => { model = glbModel; },
+                onProgress,
+                onFailed));
 
         if (model == null)
             yield break;
@@ -265,99 +276,230 @@ public class HandItemSelector : MonoBehaviour
         if (state == null)
             state = model.AddComponent<DownloadState>();
 
-        state.isDownloading = true;
-        state.isReady = false;
+        ProductDetails pd = model.GetComponent<ProductDetails>();
+        if (pd == null)
+            pd = model.AddComponent<ProductDetails>();
+
+        pd.product = ProductSelection.productData;
+
+
+        pd.colors.Clear();
+        foreach (var c in pd.product.colors)
+        {
+            UnityEngine.Color newColor;
+            ColorUtility.TryParseHtmlString(c.code, out newColor);
+            pd.colors.Add(newColor);
+        }
+
+        pd.imagesUrl.Clear();
+
+        foreach (var img in pd.product.images)
+            pd.imagesUrl.Add(img.url);
+
+        pd.texturesUrl.Clear();
+
+        foreach (var t in pd.product.threeDModels)
+            if (t.texture.Length > 0)
+                pd.texturesUrl.Add(t.texture);
+
+        // ---------------- UI MODEL PREVIEW (UNCHANGED) ----------------
+        GameObject modelToView = Instantiate(UIManagerAR.instance.modelPrefab);
+        modelToView.transform.parent = UIManagerAR.instance.UI_3D_Models_Parent.transform;
+        modelToView.transform.localPosition = Vector3.zero;
+
+        UIManagerAR.instance.UI_3D_Models.Add(modelToView);
+
+        StartCoroutine(SetProductImages(pd));
+
+        MeshFilter srcMF = model.GetComponentInChildren<MeshFilter>();
+        MeshRenderer srcMR = model.GetComponentInChildren<MeshRenderer>();
+
+        modelToView.transform.Find("Visual").GetComponent<MeshFilter>().mesh = srcMF.mesh;
+        modelToView.transform.Find("Visual").GetComponent<MeshRenderer>().materials = srcMR.materials;
+        modelToView.name = model.name;
+
+        modelToView.GetComponent<ProductDetails>().product.id = pd.product.id;
+
+        state.isDownloading = false;
+        state.isReady = true;
+
+        CategoryManager.Instance.mv.FrameObject(modelToView);
 
         Transform parent = spawnParents[category];
 
         ResetSpawnParent(category);
 
-        // Reset transform
         model.transform.localRotation = Quaternion.identity;
 
         if (category == CategoryType.Rings)
         {
-            float scaleFactor = HandItemsScaler.RingScaleFromBounds(model.GetComponentInChildren<Renderer>());
-            Debug.Log("Ring Mesh true size: " + scaleFactor);
+            float scaleFactor = HandItemsScaler.RingScaleFromBounds(
+                model.GetComponentInChildren<Renderer>());
 
             model.transform.localScale = Vector3.one * scaleFactor;
         }
         else
         {
-            float scaleFactor = HandItemsScaler.WatchScaleFromBounds(model.GetComponentInChildren<Renderer>());
-            Debug.Log("Watch Mesh true size: " + scaleFactor);
+            float scaleFactor = HandItemsScaler.WatchScaleFromBounds(
+                model.GetComponentInChildren<Renderer>());
 
             model.transform.localScale = Vector3.one * scaleFactor;
-            //model.transform.localScale = Vector3.one;
         }
 
         model.transform.localEulerAngles = new Vector3(0, 180, 0);
 
-
         if (category == CategoryType.Rings)
             parent.localEulerAngles = new Vector3(90, 0, 0);
 
-        // watches[0].transform.localEulerAngles = new Vector3(0, 0, 0);
-
         foreach (Transform obj in parent)
             obj.gameObject.SetActive(false);
-        model.transform.SetParent(parent);
 
+        model.transform.SetParent(parent);
         model.transform.localPosition = Vector3.zero;
-        // yield return new WaitForSeconds(1f);
-        // watches[0].transform.localEulerAngles = new Vector3(90, 0, 0);
-        // Debug.Log("Watch : " + watches[0].transform.localEulerAngles);
 
         if (category == CategoryType.Watches)
         {
-            //GetComponent<HandTrackingVisualizer>().currentWristAnchor = loadedGLB;
-            GetComponent<HandTrackingVisualizer>().watchWidth = model.GetComponentInChildren<MeshRenderer>().bounds.size.x;
+            GetComponent<HandTrackingVisualizer>().watchWidth =
+                model.GetComponentInChildren<MeshRenderer>().bounds.size.x;
         }
 
         if (category == CategoryType.Rings)
             parent.localEulerAngles = new Vector3(0, 0, 0);
 
-        //else if (category == CategoryType.Rings)
-        //    GetComponent<RingPlacer>().currentRing = loadedGLB;
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("category : " + category);
 
-        Debug.Log("cateogry : " + category);
-
-        // Add to downloaded models cache
-        downloadedModels[ProductSelection.productData.name] = model;
-
-        // Initially disable the model
-        //model.SetActive(false);
-
-        Debug.Log($"✅ Model loaded and cached: {ProductSelection.productData.name}");
-
-        //model.transform.localScale = Vector3.one;
-        //model.transform.SetParent(parent);
-        //model.transform.localPosition = Vector3.zero;
-        //model.transform.localRotation = Quaternion.identity;
-        //model.transform.localEulerAngles = new Vector3(0, 180, 0);
-
-        //foreach (Transform t in parent)
-        //    t.gameObject.SetActive(false);
-
-        //if (category == CategoryType.Watches)
-        //{
-        //    GetComponent<HandTrackingVisualizer>().watchWidth =
-        //        model.GetComponentInChildren<MeshRenderer>().bounds.size.x;
-        //}
-
-        //downloadedModels[name] = model;
-
-        state.isDownloading = false;
-        state.isReady = true;
-
-        //Debug.Log($"Model downloaded and cached: {name}");
-
-        //SelectItem(name, category.ToString());
+        SpawnCanvas(model);
 
         CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
+    }
 
-        //yield return StartCoroutine(LoadAndSpawnGLB(localPath, category));
+    #endregion
 
+    #region Helper Methods
+    public IEnumerator SetProductImages(ProductDetails pd)
+    {
+        yield return null;
+        pd.sprites.Clear();
+        for (int i = 0; i < pd.imagesUrl.Count; i++)
+        {
+            pd.sprites.Add(null);
+        }
+
+        for (int i = 0; i < pd.imagesUrl.Count; i++)
+        {
+            yield return StartCoroutine(DownloadSpriteCoroutine(pd.imagesUrl[i], pd.sprites, i));
+        }
+
+        pd.textures.Clear();
+        for (int i = 0; i < pd.texturesUrl.Count; i++)
+        {
+            pd.textures.Add(null);
+        }
+
+        for (int i = 0; i < pd.texturesUrl.Count; i++)
+        {
+            yield return StartCoroutine(DownloadTextureCoroutine(pd.texturesUrl[i], pd.textures, i));
+            if(CategoryManager.Instance.isDebugMode)Debug.Log("texture downloading");
+        }
+        if(CategoryManager.Instance.isDebugMode)Debug.Log("texture Finish");
+
+    }
+
+    public IEnumerator DownloadSpriteCoroutine(string url, List<Sprite> spritesList, int index)
+    {
+        UnityWebRequest req = UnityWebRequest.Get(url);
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            if(CategoryManager.Instance.isDebugMode)Debug.LogError(req.error);
+
+            yield break;
+        }
+
+        byte[] imageData = req.downloadHandler.data;
+        Texture2D texture = new Texture2D(2, 2);
+
+        if (texture.LoadImage(imageData))
+        {
+            Sprite sprite = Sprite.Create(texture,
+                new Rect(0, 0, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f));
+            if (spritesList != null)
+                spritesList[index] = sprite;
+        }
+        else
+        {
+            if(CategoryManager.Instance.isDebugMode)Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
+        }
+    }
+
+    public IEnumerator DownloadTextureCoroutine(string url, List<Texture2D> texturesList, int index)
+    {
+        UnityWebRequest req = UnityWebRequest.Get(url);
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            if(CategoryManager.Instance.isDebugMode)Debug.LogError(req.error);
+
+            yield break;
+        }
+
+        byte[] imageData = req.downloadHandler.data;
+        Texture2D texture = new Texture2D(2, 2);
+
+        if (texture.LoadImage(imageData))
+        {
+            if (texturesList != null)
+                texturesList[index] = texture;
+        }
+        else
+        {
+            if(CategoryManager.Instance.isDebugMode)Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
+        }
+    }
+
+    public void ChangeModelTexture(int index)
+    {
+        foreach (Transform child in UIManagerAR.instance.colorParent_LD)
+        {
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        foreach (Transform child in UIManagerAR.instance.colorParent_SD)
+        {
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        foreach (Transform child in CategoryManager.Instance.modelVariantParent)
+        {
+            child.gameObject.SetActive(true);
+            if (child.GetComponent<ModelVariant>()?.index == index)
+                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
+            else
+                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
+        }
+
+        if (index >= UIManagerAR.instance.selectedModelDetails.textures.Count)
+            return;
+
+        UIManagerAR.instance.selectedModelDetails.selectedColorIndex = index;
+        Material mat = UIManagerAR.instance.selectedModelDetails.GetComponentInChildren<MeshRenderer>().material;
+
+        //Color newColor1;
+        //ColorUtility.TryParseHtmlString(selectedProduct.product.colors[index].code, out newColor1);
+        //mat.color = newColor1;
+
+        mat.mainTexture = UIManagerAR.instance.selectedModelDetails.textures[index];
+
+        UIManagerAR.instance.selectedModelDetails.GetComponentInChildren<MeshRenderer>().material = mat;
     }
 
     #endregion
@@ -377,11 +519,11 @@ public class HandItemSelector : MonoBehaviour
 
     //    //if (model == null)
     //    //{
-    //    //    Debug.LogError("GLB failed to load.");
+    //    //    if(CategoryManager.Instance.isDebugMode)Debug.LogError("GLB failed to load.");
     //    //    yield break;
     //    //}
 
-        
+
     //}
 
 
@@ -452,12 +594,18 @@ public class HandItemSelector : MonoBehaviour
 
     public bool IsModelReady(string name)
     {
-        if (!downloadedModels.ContainsKey(name))
-            return false;
+        // Check currently active item first
+        foreach (var item in activeItems.Values)
+        {
+            if (item != null && item.name == name)
+            {
+                var state = item.GetComponent<DownloadState>();
+                return state != null && state.isReady;
+            }
+        }
 
-        var state = downloadedModels[name].GetComponent<DownloadState>();
-
-        return state != null && state.isReady;
+        // Not loaded in scene yet → treat as not ready
+        return false;
     }
 
     public void DisableAllObjects()
@@ -471,13 +619,12 @@ public class HandItemSelector : MonoBehaviour
 
     public void ClearDownloadedModels()
     {
-        foreach (var model in downloadedModels.Values)
+        foreach (var item in activeItems.Values)
         {
-            if (model != null)
-                Destroy(model);
+            if (item != null)
+                Destroy(item);
         }
 
-        downloadedModels.Clear();
         activeItems.Clear();
     }
 
@@ -486,17 +633,54 @@ public class HandItemSelector : MonoBehaviour
         foreach (var parent in spawnParents.Values)
         {
             foreach (Transform t in parent)
-                t.gameObject.SetActive(false);
-                //Destroy(t.gameObject);
+            {
+                var details = t.GetComponent<ProductDetails>();
+                var canvas = details.plusCanvas;
+
+                if (canvas != null)
+                {
+                    Destroy(canvas);
+                }
+
+                Destroy(t.gameObject);
+            }
+
         }
 
-        //ClearDownloadedModels();
+        activeItems.Clear();
+
+        UIManagerAR.instance.DeleteAllSpawnedObjects();
+    }
+
+    public void DeleteSelectedItem(GameObject objToDelete)
+    {
+        foreach(var parent in spawnParents.Values)
+        {
+            foreach (Transform t in parent)
+            {
+                if (t.gameObject == objToDelete)
+                {
+                    Destroy(t.GetComponent<ProductDetails>().plusCanvas.gameObject);
+                    Destroy(t.gameObject);
+                    return;
+                }
+            }
+        }
     }
 
     public void PreDownloadModel(CategoryType category)
     {
-        if (!downloadedModels.ContainsKey(ProductSelection.productData.name))
+        if (ProductSelection.productData == null)
+            return;
+
+        // Already active in scene → no need to preload
+        if (activeItems.ContainsKey(category) && activeItems[category] != null)
+            return;
+
+        if (ShouldDownloadModel())
+        {
             StartCoroutine(DownloadAndSpawnModel(category));
+        }
     }
 
     #endregion

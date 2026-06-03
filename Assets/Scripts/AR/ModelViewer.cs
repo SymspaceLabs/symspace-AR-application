@@ -93,10 +93,17 @@ public class ModelViewer : MonoBehaviour, IPointerDownHandler, IDragHandler
 
     Bounds GetObjectBounds(GameObject obj)
     {
-        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
-
+        MeshRenderer[] renderers = obj.GetComponentsInChildren<MeshRenderer>();
         if (renderers.Length == 0)
-            return new Bounds(obj.transform.position, Vector3.one * 0.01f);
+        {
+            SkinnedMeshRenderer[] skinnedRenderers = obj.GetComponentsInChildren<SkinnedMeshRenderer>();
+            if (skinnedRenderers.Length == 0)
+                return new Bounds(obj.transform.position, Vector3.zero);
+            Bounds skinnedBounds = skinnedRenderers[0].bounds;
+            for (int i = 1; i < skinnedRenderers.Length; i++)
+                skinnedBounds.Encapsulate(skinnedRenderers[i].bounds);
+            return skinnedBounds;
+        }
 
         Bounds bounds = renderers[0].bounds;
         for (int i = 1; i < renderers.Length; i++)

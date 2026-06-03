@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ce9de9a0b772e84589568d58baaa4a5, type: 3}
   m_Name: SimulationSettings
   m_EditorClassIdentifier: Unity.MARS.Editor::UnityEditor.MARS.Simulation.SimulationSettings
-  m_EnvironmentMode: 0
+  m_EnvironmentMode: 1
   m_EnvironmentPrefab: {fileID: 8433440242579774579, guid: a7291c0c73cf6b04091bff379cb1ce31, type: 3}
   m_SyntheticModeEnvironmentGuid: a7291c0c73cf6b04091bff379cb1ce31
   m_IndependentRecording: {fileID: 4410859653355543093, guid: d2671e1e7e470f04da58f5043cc61dce, type: 2}

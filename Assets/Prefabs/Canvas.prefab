@@ -400,7 +400,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetModel: {fileID: 0}
-  verticalPadding: -0.25
+  verticalPadding: 0
   pd: {fileID: 0}
   objDetail: {fileID: 0}
   canvasPosition: 8
