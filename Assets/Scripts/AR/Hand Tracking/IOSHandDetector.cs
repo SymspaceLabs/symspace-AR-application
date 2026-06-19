@@ -67,6 +67,11 @@ public class IOSHandDetector : MonoBehaviour
             InitializeNativePlugin();
         }
 
+        StartTutorial();
+    }
+
+    public void StartTutorial()
+    {
         tutorialRoutine = StartCoroutine(TutorialFlow());
 
         Invoke(nameof(EnableObjects), 5f);

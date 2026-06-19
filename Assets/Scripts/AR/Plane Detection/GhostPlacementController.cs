@@ -37,11 +37,14 @@ public class GhostPlacementController : MonoBehaviour
 
     public Material transparentMat;
     public GameObject objectToSpawn;
+    public Vector3 offset;
 
     public List<GameObject> spawnedObjects;
 
     public int spawnObjectCount = 0;
     private Material tempMaterial;
+
+    public GameObject selectedAreaBottom;
 
     /// <summary>
     /// Call this to start showing the ghost preview for a product.
@@ -70,11 +73,49 @@ public class GhostPlacementController : MonoBehaviour
 
         ghostInstance = Instantiate(objectToSpawn);
         HologramPreview hp = ghostInstance.AddComponent<HologramPreview>();
+        if (selectedAreaBottom != null)
+        {
+            Invoke(nameof(DelayedFunction), 1f);
+        }
+
+        Outline outline = hp.AddComponent<Outline>();
+        outline.OutlineWidth = 5f;
+        outline.OutlineMode = Outline.Mode.OutlineVisible;
         hp.transparentMat = transparentMat;
         ghostInstance.SetActive(false);
         if(CategoryManager.Instance.isDebugMode)Debug.Log("Ghost item available", ghostInstance);
         if (tapToPlaceHint != null)
             tapToPlaceHint.SetActive(true);
+    }
+
+    void DelayedFunction()
+    {
+        MeshRenderer rend = ghostInstance.GetComponentInChildren<MeshRenderer>();
+
+        GameObject instance = Instantiate(selectedAreaBottom);
+
+        Bounds bounds = rend.bounds;
+
+        float size = Mathf.Max(bounds.size.x, bounds.size.z);
+
+        // Add 10% padding
+        size *= 1.3f;
+
+        // Position at bottom
+        instance.transform.position = new Vector3(
+            bounds.center.x,
+            bounds.min.y + -0.07f,
+            bounds.center.z
+        );
+
+        // Scale to match model footprint
+        instance.transform.localScale = new Vector3(
+            size,
+            0.01f,
+            size
+        );
+
+        instance.transform.parent = rend.transform;
     }
 
     void Update()
@@ -173,7 +214,7 @@ public class GhostPlacementController : MonoBehaviour
                 rotation = Quaternion.Euler(euler);
             }
 
-            ghostInstance.transform.SetPositionAndRotation(spawnPoint, rotation);
+            ghostInstance.transform.SetPositionAndRotation(spawnPoint + offset, rotation);
         }
         else
         {

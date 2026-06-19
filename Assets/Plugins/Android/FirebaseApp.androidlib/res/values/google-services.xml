@@ -1,11 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/gcm_defaultSenderId,@string/google_storage_bucket,@string/project_id,@string/google_api_key,@string/google_crash_reporting_api_key,@string/google_app_id,@string/default_android_client_id,@string/default_web_client_id">
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@string/gcm_defaultSenderId,@string/google_storage_bucket,@string/project_id,@string/google_api_key,@string/google_crash_reporting_api_key,@string/google_app_id,@string/default_web_client_id">
   <string name="gcm_defaultSenderId" translatable="false">16413480362</string>
   <string name="google_storage_bucket" translatable="false">symspace-unity-alternative.firebasestorage.app</string>
   <string name="project_id" translatable="false">symspace-unity-alternative</string>
   <string name="google_api_key" translatable="false">AIzaSyA9Hx0xhQ1966-rcM76ToFlJk7d3dbVsFM</string>
   <string name="google_crash_reporting_api_key" translatable="false">AIzaSyA9Hx0xhQ1966-rcM76ToFlJk7d3dbVsFM</string>
   <string name="google_app_id" translatable="false">1:16413480362:android:05e22b541daeb2d4bec7d3</string>
-  <string name="default_android_client_id" translatable="false">16413480362-l7gfvl360ntq012n1b2vmkdd4ih7uet6.apps.googleusercontent.com</string>
   <string name="default_web_client_id" translatable="false">16413480362-e2g9nraukjjcr5rej9070q4k4iqv156i.apps.googleusercontent.com</string>
 </resources>

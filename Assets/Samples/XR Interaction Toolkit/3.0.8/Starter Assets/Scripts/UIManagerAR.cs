@@ -184,12 +184,17 @@ public class UIManagerAR : MonoBehaviour
 
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
-                hit.transform.TryGetComponent<DirectionalKeyMovement>(out selectedObject);
-                //if(selectedObject != null)
-                //    if(CategoryManager.Instance.isDebugMode)Debug.Log("Selected: " + selectedObject.name);d
 
-                // Optionally: highlight, select, etc.
-                // selectedObject.GetComponent<Renderer>().material.color = Color.green;
+                if(hit.transform.TryGetComponent<DirectionalKeyMovement>(out var movement))
+                {
+                    selectedObject = movement;
+
+                    //if(selectedObject != null)
+                    //    if(CategoryManager.Instance.isDebugMode)Debug.Log("Selected: " + selectedObject.name);
+
+                    // Optionally: highlight, select, etc.
+                    // selectedObject.GetComponent<Renderer>().material.color = Color.green;
+                }
             }
         }
     }
@@ -809,7 +814,6 @@ public class UIManagerAR : MonoBehaviour
     }
 
     public bool arController = true;
-    public ObjectSpawner spawner;
 
     public IEnumerator ChangeMovementControllers(GameObject obj)
     {
@@ -887,137 +891,17 @@ public class UIManagerAR : MonoBehaviour
         CrossBtn();
     }
 
-    public void MoveUp()
-    {
-        if (selectedObject != null)
-        {
-            selectedObject.SetMovementDirection(GetCameraRelativeDirection("forward"));
-        }
-        
-    }
 
-    public void MoveDown()
-    {
-        if (selectedObject != null)
-        {
-            selectedObject.SetMovementDirection(GetCameraRelativeDirection("back"));
-        }
-    }
+    // --- UI Button PointerDown / PointerUp Events ---
 
-    public void MoveLeft()
-    {
-        if (selectedObject != null)
-        {
-            selectedObject.SetMovementDirection(GetCameraRelativeDirection("left"));
-        }
-    }
+    public void MoveUp() => selectedObject?.SetMovement(DirectionalKeyMovement.MovementDirection.Forward);
+    public void MoveDown() => selectedObject?.SetMovement(DirectionalKeyMovement.MovementDirection.Back);
+    public void MoveLeft() => selectedObject?.SetMovement(DirectionalKeyMovement.MovementDirection.Left);
+    public void MoveRight() => selectedObject?.SetMovement(DirectionalKeyMovement.MovementDirection.Right);
+    public void StopMovement() => selectedObject?.StopMovement();
 
-    public void MoveRight()
-    {
-        if (selectedObject != null)
-        {
-            selectedObject.SetMovementDirection(GetCameraRelativeDirection("right"));
-        }
-    }
-
-    public void StopMovement()
-    {
-        if (selectedObject != null)
-            selectedObject.StopMovement();
-    }
-
-    public void RotateLeft()
-    {
-        if (selectedObject != null)
-        {
-            selectedObject.SetRotationDirection(GetRotationAxis("left"));
-        }
-    }
-
-    public void RotateRight()
-    {
-        if (selectedObject != null)
-        {
-            selectedObject.SetRotationDirection(GetRotationAxis("right"));
-        }
-    }
-
-    public void StopRotating()
-    {
-        if (selectedObject != null)
-            selectedObject.StopRotation();
-    }
-
-    private float GetRotationAxis(string dir)
-    {
-        var planeMode = selectedObject.GetComponent<ARTransformer>().objectPlaneTranslationMode;
-
-
-        int directionMultiplier = 0;
-        if (dir == "left") directionMultiplier = 1;
-        else if (dir == "right") directionMultiplier = -1;
-        else return 0; // invalid input
-
-        // Return axis * direction multiplier based on plane mode
-        if (planeMode == ARTransformer.PlaneTranslationMode.Horizontal)
-        {
-            // Horizontal object: rotate around Y axis
-            return directionMultiplier;
-        }
-        else if (planeMode == ARTransformer.PlaneTranslationMode.Vertical)
-        {
-            // Vertical object: rotate around X axis
-            return directionMultiplier;
-        }
-
-        return 0;
-    }
-
-    private Vector3 GetCameraRelativeDirection(string dir)
-    {
-        var transformer = selectedObject.GetComponent<ARTransformer>();
-
-        if (transformer.objectPlaneTranslationMode == ARTransformer.PlaneTranslationMode.Horizontal)
-        {
-            // Horizontal surfaces (e.g., floor/table)
-            Vector3 forward = arCamera.transform.forward;
-            Vector3 right = arCamera.transform.right;
-
-            // Keep movement parallel to ground
-            forward = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
-            right = Vector3.ProjectOnPlane(right, Vector3.up).normalized;
-
-            switch (dir)
-            {
-                case "forward": return forward;
-                case "back": return -forward;
-                case "left": return -right;
-                case "right": return right;
-            }
-        }
-        else if (transformer.objectPlaneTranslationMode == ARTransformer.PlaneTranslationMode.Vertical)
-        {
-            // Vertical surfaces (e.g., wall)
-            // Use the object's local axes to determine direction along the wall
-            Transform t = selectedObject.transform;
-
-            // Define based on your custom orientation rule
-            Vector3 planeNormal = t.up;           // Wall's outward normal
-            Vector3 planeRight = t.forward;       // Wall's right direction
-            Vector3 planeUp = -t.right;           // Wall's upward direction (red arrow downward ? invert)
-
-            switch (dir)
-            {
-                //case "up": return planeUp;
-                //case "down": return -planeUp;
-                case "left": return -planeRight;
-                case "right": return planeRight;
-                case "forward": return planeUp;   // Move away from wall
-                case "back": return -planeUp;     // Move into wall
-            }
-        }
-
-        return Vector3.zero;
-    }
+    public void RotateLeft() => selectedObject?.SetRotation(DirectionalKeyMovement.RotationDirection.Left);
+    public void RotateRight() => selectedObject?.SetRotation(DirectionalKeyMovement.RotationDirection.Right);
+    public void StopRotating() => selectedObject?.StopRotation();
 
 }
