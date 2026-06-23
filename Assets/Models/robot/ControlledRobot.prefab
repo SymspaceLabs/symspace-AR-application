@@ -3576,8 +3576,8 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
     m_Colors:
-    - _BaseColor: {r: 0.85660374, g: 0.28015482, b: 0, a: 0}
-    - _Color: {r: 0.85660374, g: 0.2801548, b: 0, a: 0}
+    - _BaseColor: {r: 0.85660374, g: 0.28015482, b: 0, a: 0.50980395}
+    - _Color: {r: 0.85660374, g: 0.28015482, b: 0, a: 0.50980395}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []
@@ -3706,8 +3706,8 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
     m_Colors:
-    - _BaseColor: {r: 0, g: 0.20695731, b: 1, a: 0}
-    - _Color: {r: 0, g: 0.20695728, b: 1, a: 0}
+    - _BaseColor: {r: 0, g: 0.20695731, b: 1, a: 0.57254905}
+    - _Color: {r: 0, g: 0.20695731, b: 1, a: 0.57254905}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []
@@ -4692,8 +4692,8 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 0
     m_Colors:
-    - _BaseColor: {r: 0.19742295, g: 0.93207544, b: 0, a: 0}
-    - _Color: {r: 0.19742292, g: 0.93207544, b: 0, a: 0}
+    - _BaseColor: {r: 0.19742295, g: 0.93207544, b: 0, a: 0.5176471}
+    - _Color: {r: 0.19742295, g: 0.93207544, b: 0, a: 0.5176471}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []

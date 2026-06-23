@@ -7,39 +7,29 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:16413480362:android:05e22b541daeb2d4bec7d3",
+        "mobilesdk_app_id": "1:16413480362:ios:ddcda0fdbff1aa50bec7d3",
         "android_client_info": {
-          "package_name": "com.symspacelabs.SymspaceLabs"
+          "package_name": "com.symspace.SymSpace"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzaSyAN5f579c5L-2-XuODQCMEpXhIigmNo0EY"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 0
+        },
+        "appinvite_service": {
+          "status": 1
         }
       },
       "oauth_client": [
         {
-          "client_id": "16413480362-e2g9nraukjjcr5rej9070q4k4iqv156i.apps.googleusercontent.com",
-          "client_type": 3
+          "client_id": "16413480362-tqhchon0rug4u3tk6eicj8jelmn8el2n.apps.googleusercontent.com"
         }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyA9Hx0xhQ1966-rcM76ToFlJk7d3dbVsFM"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "16413480362-e2g9nraukjjcr5rej9070q4k4iqv156i.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "16413480362-tqhchon0rug4u3tk6eicj8jelmn8el2n.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.symspace.SymSpace"
-              }
-            }
-          ]
-        }
-      }
+      ]
     }
   ],
   "configuration_version": "1"

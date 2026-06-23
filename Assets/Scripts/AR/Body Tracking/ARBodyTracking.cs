@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
+using TMPro;
 
 
 public class ARBodyTracking : MonoBehaviour
@@ -245,6 +246,10 @@ public class ARBodyTracking : MonoBehaviour
     public Slider ySlider;
     public Slider zSlider;
 
+    public TextMeshProUGUI xText;
+    public TextMeshProUGUI yText;
+    public TextMeshProUGUI zText;
+
     // New method to handle the "Lag" effect
     private void SmoothApplyBodyPose(BoneController controller, ARHumanBody body)
     {
@@ -272,13 +277,16 @@ public class ARBodyTracking : MonoBehaviour
         }
     }
 
-    //private void Update()
-    //{
-    //    if(accessories.Count == 2)
-    //    {
-    //        accessories[1].realWorldDimensions = new Vector3(xSlider.value, ySlider.value, zSlider.value);
-    //    }
-    //}
+    // private void Update()
+    // {
+    //     if(accessories.Count == 3)
+    //     {
+    //         accessories[2].offset = new Vector3(xSlider.value, ySlider.value, zSlider.value);
+    //         xText.text = xSlider.value.ToString("F5");
+    //         yText.text = ySlider.value.ToString("F5");
+    //         zText.text = zSlider.value.ToString("F5");
+    //     }
+    // }
 
     private void DestroyAllInstances()
     {

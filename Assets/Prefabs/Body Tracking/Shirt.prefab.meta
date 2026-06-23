@@ -1,6 +1,11 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK/Plugins/Editor/Dependencies.xml.meta
+guid: 230012f40f4bc4d6cbce58d1f7ddc31c
+TextScriptImporter:
+========
 guid: 54f0a705b2ab82b438d8b4c9337cee91
 PrefabImporter:
+>>>>>>>> main:Assets/Models/Client Send Models/Shirt.prefab.meta
   externalObjects: {}
   userData: 
   assetBundleName: 

@@ -1110,6 +1110,10 @@ PrefabInstance:
       propertyPath: spawner
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 1026919781179828888, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
+      propertyPath: productCardPrefab
+      value: 
+      objectReference: {fileID: 8316169689192214904, guid: f752e5919c170471eb9a98b9cadd9c16, type: 3}
     - target: {fileID: 1151856379429881433, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: cameraManager
       value: 
@@ -1332,7 +1336,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4319789748230626760, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 144.77673
+      value: 133.77203
       objectReference: {fileID: 0}
     - target: {fileID: 4339410713255953986, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchorMax.x

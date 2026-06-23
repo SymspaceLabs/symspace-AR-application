@@ -8779,8 +8779,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 170406084}
   m_HandleRect: {fileID: 170406083}
   m_Direction: 0
-  m_Value: 0
-  m_Size: 0.9270386
+  m_Value: -0.00000032742173
+  m_Size: 0.8399902
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -9691,8 +9691,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 535339335}
   m_HandleRect: {fileID: 535339334}
   m_Direction: 2
-  m_Value: 1
-  m_Size: 0.559109
+  m_Value: 0.99999976
+  m_Size: 0.55910903
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -19130,7 +19130,7 @@ MonoBehaviour:
   m_AsteriskChar: 42
   m_KeyboardType: 0
   m_LineType: 0
-  m_HideMobileInput: 0
+  m_HideMobileInput: 1
   m_HideSoftKeyboard: 0
   m_CharacterValidation: 0
   m_RegexValue: 
@@ -24031,7 +24031,7 @@ MonoBehaviour:
   m_AsteriskChar: 42
   m_KeyboardType: 0
   m_LineType: 0
-  m_HideMobileInput: 0
+  m_HideMobileInput: 1
   m_HideSoftKeyboard: 0
   m_CharacterValidation: 0
   m_RegexValue: 
@@ -39804,7 +39804,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1148049870}
   m_HandleRect: {fileID: 1148049869}
   m_Direction: 0
-  m_Value: 0
+  m_Value: -0.0000034119912
   m_Size: 0.98345023
   m_NumberOfSteps: 0
   m_OnValueChanged:

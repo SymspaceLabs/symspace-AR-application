@@ -272,7 +272,7 @@ RectTransform:
   m_Father: {fileID: 1827702159}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6393,8 +6393,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 969030755}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6832,8 +6832,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1017862065}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -9406,18 +9406,21 @@ MonoBehaviour:
   - label: 
     prefab: {fileID: 7967240442047860935, guid: 1121e5fcc41e0ee4795bd0d143835fdd, type: 3}
     bone: 1
-    offset: {x: 0, y: 0, z: 0}
+    offset: {x: -0.02574, y: -0.21416, z: 0.06266}
     realWorldDimensions: {x: 0.4, y: 0.6, z: 0.4}
     instance: {fileID: 0}
     baseScale: {x: 0, y: 0, z: 0}
   targetShirtHeight: 0.75
   targetShirtWidth: 0.55
   targetShirtDepth: 0.2
-  positionSmoothing: 0.2
+  positionSmoothing: 0.19060852
   rotationSmoothing: 0.15
   xSlider: {fileID: 692980187}
   ySlider: {fileID: 1142253142}
   zSlider: {fileID: 912494397}
+  xText: {fileID: 675992894}
+  yText: {fileID: 1555445090}
+  zText: {fileID: 1281631538}
 --- !u!1 &508934797
 GameObject:
   m_ObjectHideFlags: 0
@@ -13164,8 +13167,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1215533173}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -13427,7 +13430,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -14029,8 +14032,8 @@ MonoBehaviour:
   m_FillRect: {fileID: 2132341127}
   m_HandleRect: {fileID: 658208002}
   m_Direction: 0
-  m_MinValue: 0
-  m_MaxValue: 0.4
+  m_MinValue: -0.5
+  m_MaxValue: 0.5
   m_WholeNumbers: 0
   m_Value: 0
   m_OnValueChanged:
@@ -16816,8 +16819,8 @@ MonoBehaviour:
   m_FillRect: {fileID: 1531300754}
   m_HandleRect: {fileID: 350717969}
   m_Direction: 0
-  m_MinValue: 0
-  m_MaxValue: 1
+  m_MinValue: -0.5
+  m_MaxValue: 0.5
   m_WholeNumbers: 0
   m_Value: 0
   m_OnValueChanged:
@@ -20920,8 +20923,8 @@ MonoBehaviour:
   m_FillRect: {fileID: 16825852}
   m_HandleRect: {fileID: 379262992}
   m_Direction: 0
-  m_MinValue: 0
-  m_MaxValue: 0.4
+  m_MinValue: -0.5
+  m_MaxValue: 0.5
   m_WholeNumbers: 0
   m_Value: 0
   m_OnValueChanged:
@@ -23450,7 +23453,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -27460,7 +27463,7 @@ RectTransform:
   m_Father: {fileID: 912603245}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -27830,7 +27833,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -36879,7 +36882,7 @@ RectTransform:
   m_Father: {fileID: 17119341}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}

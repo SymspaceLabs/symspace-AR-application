@@ -7258,7 +7258,6 @@ MonoBehaviour:
   maxStocks: 0
   stocksSelected: {fileID: 0}
   arController: 1
-  spawner: {fileID: 0}
 --- !u!1 &236631896
 GameObject:
   m_ObjectHideFlags: 0
@@ -35553,6 +35552,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1026919781179828888, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
+      propertyPath: productCardPrefab
+      value: 
+      objectReference: {fileID: 8316169689192214904, guid: f752e5919c170471eb9a98b9cadd9c16, type: 3}
+    - target: {fileID: 1026919781179828888, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: glbPrafabHorizontal
       value: 
       objectReference: {fileID: 0}
@@ -35587,18 +35590,18 @@ PrefabInstance:
     - target: {fileID: 1809576604679847603, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 2089663037}
+      objectReference: {fileID: 2089663043}
     - target: {fileID: 1809576604679847603, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: 
+      value: StartTutorial
       objectReference: {fileID: 0}
     - target: {fileID: 1809576604679847603, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: 
+      value: IOSHandDetector, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 1809576604679847603, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: 
+      value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 1870316797459935189, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchorMax.x
@@ -35718,7 +35721,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4319789748230626760, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 144.7767
+      value: 133.77208
       objectReference: {fileID: 0}
     - target: {fileID: 4339410713255953986, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchorMax.x
@@ -52754,6 +52757,7 @@ MonoBehaviour:
   HIS: {fileID: 2089663045}
   firstTutorialPage: {fileID: 866344056}
   secondTutorialPage: {fileID: 1984150406}
+  enableRingDetection: 0
 --- !u!114 &2089663044
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK/Examples.meta
+guid: b18c8b0b6bf404558b71cadc76dc37fb
+========
 guid: 20a27dd766a86ba4293bb2292bc50446
+>>>>>>>> main:Assets/Editor Default Resources/Firebase.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

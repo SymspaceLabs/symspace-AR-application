@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK/Plugins/iOS.meta
+guid: b7a07880e98b946499a73d6cf1f454d9
+========
 guid: f0d5d004461bb6645a5f16be50a042a6
+>>>>>>>> main:Assets/Firebase/Plugins/iOS.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

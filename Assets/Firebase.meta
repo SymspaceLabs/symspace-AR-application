@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK/Examples/CloudAndroid.meta
+guid: 9d4e245bd55c740ea9fd686f901feb26
+========
 guid: 21108132d9da91943b69911e56b77532
+>>>>>>>> main:Assets/Firebase.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

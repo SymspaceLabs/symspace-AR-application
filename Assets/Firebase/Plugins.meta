@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK/Plugins.meta
+guid: 3378d089eb7d64a309f108dcc17b4e7e
+========
 guid: 2905ed26e0cb35e47824d4ad825cdc3e
+>>>>>>>> main:Assets/Firebase/Plugins.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

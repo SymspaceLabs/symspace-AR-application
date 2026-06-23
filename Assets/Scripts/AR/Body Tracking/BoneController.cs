@@ -156,6 +156,7 @@ public class BoneController : MonoBehaviour
             var bone = m_BoneMapping[i];
             if (bone != null)
             {
+                // Debug.Log("bone Name : " + bone.name + ", index: " + i);
                 bone.transform.localPosition = joint.localPose.position;
                 bone.transform.localRotation = joint.localPose.rotation;
             }

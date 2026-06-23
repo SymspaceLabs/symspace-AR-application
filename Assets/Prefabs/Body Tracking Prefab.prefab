@@ -12,7 +12,8 @@ GameObject:
   - component: {fileID: 8865264546173230449}
   - component: {fileID: 1545096400364473850}
   - component: {fileID: 2399803536225943380}
-  - component: {fileID: 3750631606364891107}
+  - component: {fileID: -943137429353669133}
+  - component: {fileID: 2451317961423105247}
   m_Layer: 0
   m_Name: Body Tracking Prefab
   m_TagString: Untagged
@@ -68,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -112,7 +113,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &3750631606364891107
+--- !u!114 &-943137429353669133
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4597257575992368773}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de04797b0e550474e8c280bdc19c5e8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BodySpawned
+--- !u!114 &2451317961423105247
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -124,4 +137,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9084ac900ac140359edfd560f097dc9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARHumanBody
-  m_DestroyOnRemoval: 1
+  m_DestroyOnRemoval: 0

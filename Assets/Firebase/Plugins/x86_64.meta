@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK/Examples/CloudAndroid/Music.meta
+guid: 5c7af244267f04f51b62b5d2358fdbd8
+========
 guid: 31d34e9aeec81f443818e75c3e50deb6
+>>>>>>>> main:Assets/Firebase/Plugins/x86_64.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

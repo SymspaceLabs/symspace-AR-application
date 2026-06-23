@@ -73,7 +73,7 @@ public class HumanBodyTracker : MonoBehaviour
             if (m_SkeletonTracker.TryGetValue(humanBody.trackableId, out boneController))
             {
                 boneController.ApplyBodyPose(humanBody);
-                Debug.Log("Body Position : " +  humanBody);
+                Debug.Log("Body Position : " +  humanBody.transform.position);
                 Debug.Log("Cube Position : " + cube.position);
             }
         }

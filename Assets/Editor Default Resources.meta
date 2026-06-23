@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK.meta
+guid: 8877942b6db124e12b83d1e15be5a0fc
+========
 guid: 31c5b71afd98fef47ae4c9e9cc5c1663
+>>>>>>>> main:Assets/Editor Default Resources.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

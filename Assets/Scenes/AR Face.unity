@@ -8778,6 +8778,7 @@ MonoBehaviour:
   maxStocks: 0
   stocksSelected: {fileID: 0}
   arController: 1
+  spawner: {fileID: 0}
 --- !u!114 &234504260
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9370,6 +9371,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1026919781179828888, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
+      propertyPath: productCardPrefab
+      value: 
+      objectReference: {fileID: 8316169689192214904, guid: f752e5919c170471eb9a98b9cadd9c16, type: 3}
+    - target: {fileID: 1026919781179828888, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: selectedBgColor.b
       value: 1
       objectReference: {fileID: 0}
@@ -9531,7 +9536,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4319789748230626760, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 144.7767
+      value: 133.77206
       objectReference: {fileID: 0}
     - target: {fileID: 4339410713255953986, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchorMax.x
@@ -9539,10 +9544,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4339410713255953986, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4339410713255953986, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
-      propertyPath: m_AnchorMin.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4547032112219281289, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
@@ -15783,7 +15784,6 @@ MonoBehaviour:
   finalScale: {x: 0, y: 0, z: 0}
   firstTime: 0
   plusBtnCanvas: {fileID: 0}
-  isDebugMode: 0
 --- !u!224 &461297249
 RectTransform:
   m_ObjectHideFlags: 0
@@ -16053,7 +16053,7 @@ MonoBehaviour:
   - id: 
     category: 7
     instance: {fileID: 0}
-    localOffset: {x: 0, y: -0.01, z: 0.05}
+    localOffset: {x: 0, y: -0.01, z: 0.03}
     smoothTime: 0
     velocity: {x: 0, y: 0, z: 0}
     allowScale: 0
@@ -23412,7 +23412,6 @@ MonoBehaviour:
   finalScale: {x: 0, y: 0, z: 0}
   firstTime: 0
   plusBtnCanvas: {fileID: 0}
-  isDebugMode: 0
 --- !u!114 &729244259
 MonoBehaviour:
   m_ObjectHideFlags: 0
