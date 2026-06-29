@@ -61,9 +61,6 @@ public class ContactUsUI : MonoBehaviour
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
 
-                Debug.Log("Status : " + responseData.status);
-                Debug.Log("Message: " + responseData.message);
-
                 firstNameInput.text = "";
                 emailInput.text = "";
                 messageInput.text = "";
@@ -73,9 +70,9 @@ public class ContactUsUI : MonoBehaviour
             },
             (error) =>
             {
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-                Debug.LogError("Contact message failed: " + errorResponse.message);
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
                 MenuManager.Instance.ShowError(errorResponse.message);
+
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
@@ -168,12 +165,6 @@ public class ContactUsUI : MonoBehaviour
     {
         public string status;
         public string message;
-    }
-    private class ErrorResponse
-    {
-        public string message;
-        public string error;
-        public string statusCode;
     }
     #endregion
 }

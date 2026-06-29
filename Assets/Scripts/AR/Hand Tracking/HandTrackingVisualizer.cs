@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
@@ -19,7 +20,7 @@ public class HandTrackingVisualizer : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private float smoothTime = 0.1f;
-    [SerializeField] private Vector3 wristOffset = new Vector3(0f, 0.02f, 0f);
+    public Vector3 wristOffset = new Vector3(0f, 0.02f, 0f);
     [SerializeField] private Vector3 rotationOffsetEuler = new Vector3(0f, 0f, 0f);
     [SerializeField] private float baseWatchScale = 0.1f; // Base scale at 0.5m distance
 
@@ -312,7 +313,10 @@ public class HandTrackingVisualizer : MonoBehaviour
             float depthValue = 0f;
             if (buffer.Length >= 4)
             {
-                depthValue = System.BitConverter.ToSingle(buffer.ToArray(), 0);
+                unsafe
+                {
+                    depthValue = *(float*)buffer.GetUnsafeReadOnlyPtr();
+                }
             }
 
             buffer.Dispose();
@@ -337,7 +341,7 @@ public class HandTrackingVisualizer : MonoBehaviour
         // Smooth position
         Vector3 smoothedPosition = Vector3.SmoothDamp(
             currentWristAnchor.transform.position,
-            targetPosition + wristOffset,
+            targetPosition /*+ wristOffset*/,
             ref currentVelocity,
             smoothTime
         );

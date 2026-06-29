@@ -8,20 +8,20 @@ public class SignUpUI : MonoBehaviour
 {
     #region Parameters
     [Header("Input Fields")]
-    public TMP_InputField firstName;
-    public TMP_InputField lastName;
-    public TMP_InputField emailInput;
-    public TMP_InputField passwordInput;
+    [SerializeField] private TMP_InputField firstName;
+    [SerializeField] private TMP_InputField lastName;
+    [SerializeField] private TMP_InputField emailInput;
+    [SerializeField] private TMP_InputField passwordInput;
 
     [Space(5)]
-    public Button signUpButton;
+    [SerializeField] private Button signUpButton;
     private string signUpUrl = AuthAPI.api + "signup";
 
     [Space(5)]
-    public Sprite normalSprite;
-    public Sprite errorInputFieldSprite;
-    public TextMeshProUGUI errorMessage;
-    public GameObject errorMessageParent;
+    [SerializeField] private Sprite normalSprite;
+    [SerializeField] private Sprite errorInputFieldSprite;
+    [SerializeField] private TextMeshProUGUI errorMessage;
+    [SerializeField] private GameObject errorMessageParent;
 
     public SignUpOTPVerifyUI signUpOTPVerifyUI;
 
@@ -42,15 +42,6 @@ public class SignUpUI : MonoBehaviour
     #region API Call
     void OnSignUpClicked()
     {
-        //if (!CheckInputData())
-        //    return;
-        
-        //WWWForm form = new WWWForm();
-        //form.AddField("firstName", firstName.text);
-        //form.AddField("lastName", lastName.text);
-        //form.AddField("email", emailInput.text);
-        //form.AddField("password", passwordInput.text);
-
         MenuManager.Instance.loadingPanel.SetActive(true);
 
         JsonDataStructure jsonData = new JsonDataStructure();
@@ -65,37 +56,16 @@ public class SignUpUI : MonoBehaviour
             (response) =>
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
-                Debug.Log("Sign Up Success: "/* + responseData.message*/);
 
-                //Debug.Log("Email: " + emailInput.text);
-                //Debug.Log("token: " + responseData.token);
                 PlayerPrefs.SetString("Email", emailInput.text);
 
-                //MenuManager.Instance.signUpOTPVerifyPanel.GetComponent<SignUpOTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
                 MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             },
             (error) =>
             {
-                Debug.LogError("Sign Up Failed: " + error);
-
                 FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
-
-                //if(errorResponse.message.Contains("Email already exists"))
-                //{
-                    //ShowError("An account with this email already exists. Please try signing in or use a different email");
-                    MenuManager.Instance.ShowError(errorResponse.message);
-                    //errorMessageParent.SetActive(false);
-                    //MenuManager.Instance.signUpOTPVerifyPanel.GetComponent<SignUpOTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
-                    //PlayerPrefs.SetString("Email", emailInput.text);
-                    //MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
-                //}
-
-                //if (errorResponse.message.Contains("Email already exists"))
-                //{
-                //    MenuManager.Instance.otpVerifyPanel.GetComponent<OTPVerifyUI>().nextPanel = MenuManager.Instance.homePanel;
-                //    MenuManager.Instance.EnablePanel(MenuManager.Instance.otpVerifyPanel);
-                //}
+                MenuManager.Instance.ShowError(errorResponse.message);
 
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
@@ -104,6 +74,9 @@ public class SignUpUI : MonoBehaviour
     #endregion
 
     #region Data Validation
+    /* Validation is currently done on the server side, but if we want to do it on the client side,
+       we can use this function to validate the input data before sending it to the server.*/
+    // Validate input data before sending to the server
     public bool CheckInputData()
     {
         errorMessageParent.SetActive(false);

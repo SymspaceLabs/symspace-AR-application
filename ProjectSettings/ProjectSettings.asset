@@ -696,6 +696,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
+    Standalone: UNITY_CCU
     iPhone: UNITY_XR_ARKIT_LOADER_ENABLED;UNITY_XR_ARKIT_FACE_TRACKING_ENABLED;UNITY_CCU
   additionalCompilerArguments: {}
   platformArchitecture: {}

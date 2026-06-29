@@ -464,7 +464,6 @@ public class RingPlacer : MonoBehaviour
         currentRing.transform.position = smoothedPosition;
         currentRing.transform.rotation = smoothedRotation;
         //currentRing.transform.localScale = Vector3.one * smoothedScale * 250 * 2f;
-        Debug.Log($"Ring Pos: {currentRing.transform.position:F3}m, Rotation: {currentRing.transform.eulerAngles:F2}m, Scale: {currentRing.transform.localScale:F3}");
     }
 
     private Quaternion SmoothDampQuaternion(Quaternion current, Quaternion target, ref Vector3 velocity, float smoothTime)

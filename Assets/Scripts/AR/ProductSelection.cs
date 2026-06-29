@@ -33,8 +33,8 @@ public static class ProductSelection
         if (objectType.Length > 0)
         {
             CategoryType parsed;
-            TryParseObjectType(objectType, out parsed);
-            SelectedObjectType = parsed;
+            if (TryParseObjectType(objectType, out parsed))
+                SelectedObjectType = parsed;
         }
 
         isHorizontalPlane = isHorizontal;

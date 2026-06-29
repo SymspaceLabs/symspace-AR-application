@@ -59,8 +59,9 @@ public class IOSHandDetector : MonoBehaviour
             cameraManager = FindObjectOfType<ARCameraManager>();
 
         cameraManager.frameReceived += OnCameraFrameReceived;
-
+        
         DisableOcclusion();
+        DisableOcclusionTexture();
 
         if (Application.platform == RuntimePlatform.IPhonePlayer)
         {
@@ -124,13 +125,28 @@ public class IOSHandDetector : MonoBehaviour
         HIS.enabled = true;
     }
 
+    void DisableOcclusionTexture()
+    {
+        var bg = cameraManager.GetComponent<ARCameraBackground>();
+
+        Material mat = new Material(bg.material);
+
+        mat.DisableKeyword("_ENVIRONMENT_DEPTH");
+        mat.DisableKeyword("_ENVIRONMENT_DEPTH_OCCLUSION");
+        mat.DisableKeyword("_HUMAN_DEPTH");
+        mat.DisableKeyword("_HUMAN_STENCIL");
+
+        bg.useCustomMaterial = true;
+        bg.customMaterial = mat;
+    }
+
     void DisableOcclusion()
     {
         // This stops occlusion rendering but LiDAR still provides depth data
-        occlusionManager.enabled = false;
+        occlusionManager.enabled = true;
 
         // OR be more specific:
-        occlusionManager.requestedEnvironmentDepthMode = EnvironmentDepthMode.Disabled;
+        occlusionManager.requestedEnvironmentDepthMode = EnvironmentDepthMode.Fastest;
         occlusionManager.requestedHumanStencilMode = HumanSegmentationStencilMode.Disabled;
         occlusionManager.requestedHumanDepthMode = HumanSegmentationDepthMode.Disabled;
     }
