@@ -62,13 +62,6 @@ public class SignUpOTPVerifyUI : MonoBehaviour
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
 
-                Debug.Log("OTP Verified");
-                Debug.Log("Message: " + responseData.message);
-
-                //if (nextPanel != null)
-                //    MenuManager.Instance.EnablePanel(nextPanel);
-
-                //MenuManager.Instance.EnablePanel(MenuManager.Instance.homePanel);
                 PlayerPrefs.SetInt("RememberMe", 1);
                 SceneManager.LoadScene(SceneNames.Home);
 
@@ -77,9 +70,7 @@ public class SignUpOTPVerifyUI : MonoBehaviour
             },
             (error) =>
             {
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-                Debug.LogError("OTP Verification Failed: " + errorResponse.message);
-                //errorMessage.text = "Invalid or expired OTP";
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
 
                 MenuManager.Instance.ShowError(errorResponse.message);
 
@@ -98,15 +89,11 @@ public class SignUpOTPVerifyUI : MonoBehaviour
             (response) =>
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
-
-                Debug.Log("OTP sent again successfully");
-                Debug.Log("Message: " + responseData.message);
                 successMessage.SetActive(true);
             },
             (error) =>
             {
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-                Debug.LogError("OTP Verification Failed: " + errorResponse.message);
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
                 
                 MenuManager.Instance.ShowError(errorResponse.message);
             }));
@@ -117,6 +104,9 @@ public class SignUpOTPVerifyUI : MonoBehaviour
     #endregion
 
     #region Data Validation
+    /* Validation is currently done on the server side, but if we want to do it on the client side,
+       we can use this function to validate the input data before sending it to the server.*/
+    // Validate input data before sending to the server
     public bool CheckInputData()
     {
         errorMessageParent.SetActive(false);
@@ -176,13 +166,6 @@ public class SignUpOTPVerifyUI : MonoBehaviour
         public string role;
         public bool isOnboardingFormFilled;
         public string company;
-    }
-
-    private class ErrorResponse
-    {
-        public string message;
-        public string error;
-        public string statusCode;
     }
     #endregion
 }

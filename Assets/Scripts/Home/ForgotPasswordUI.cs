@@ -46,29 +46,13 @@ public class ForgotPasswordUI : MonoBehaviour
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
 
-                Debug.Log("Reset link sent");
-                Debug.Log("Message: " + responseData.message);
-
-                //MenuManager.Instance.signUpOTPVerifyPanel.GetComponent<SignUpOTPVerifyUI>().nextPanel = MenuManager.Instance.resetPasswordPanel;
                 MenuManager.Instance.EnablePanel(MenuManager.Instance.forgotOTPVerifyPanel);
                 PlayerPrefs.SetString("Email", emailInput.text);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             },
             (error) =>
             {
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-
-                Debug.LogError("Reset request failed: " + errorResponse.message);
-
-                //if (errorResponse.message.Contains("No account found"))
-                //{
-                //    errorMessage.text = "No account found with this email. Please verify your email and try again";
-                //}
-                //else
-                //{
-                //    errorMessage.text = "Unknown Error";
-                //}
-
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
                 MenuManager.Instance.ShowError(errorResponse.message);
 
                 MenuManager.Instance.loadingPanel.SetActive(false);
@@ -77,6 +61,9 @@ public class ForgotPasswordUI : MonoBehaviour
     #endregion
 
     #region Data Validation
+    /* Validation is currently done on the server side, but if we want to do it on the client side,
+       we can use this function to validate the input data before sending it to the server.*/
+    // Validate input data before sending to the server
     public bool CheckInputData()
     {
         errorMessageParent.SetActive(false);
@@ -134,13 +121,6 @@ public class ForgotPasswordUI : MonoBehaviour
     private class ResponseData
     {
         public string message;
-    }
-
-    private class ErrorResponse
-    {
-        public string message;
-        public string error;
-        public string statusCode;
     }
     #endregion
 }

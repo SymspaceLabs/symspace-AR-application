@@ -23,9 +23,6 @@ public class ForgotOTPVerifyUI : MonoBehaviour
 
     public GameObject successMessage;
 
-    //[Space(5)]
-    //public Sprite[] confirmBtnIcons;
-
     [Space(20)]
     public GameObject nextPanel;
     #endregion
@@ -63,12 +60,6 @@ public class ForgotOTPVerifyUI : MonoBehaviour
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
 
-                Debug.Log("OTP Verified");
-                Debug.Log("Message: " + responseData.message);
-
-                //if (nextPanel != null)
-                //    MenuManager.Instance.EnablePanel(nextPanel);
-
                 MenuManager.Instance.EnablePanel(MenuManager.Instance.resetPasswordPanel);
 
                 PlayerPrefs.SetString("OTP", otpInput.text);
@@ -76,9 +67,9 @@ public class ForgotOTPVerifyUI : MonoBehaviour
             },
             (error) =>
             {
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-                Debug.LogError("OTP Verification Failed: " + errorResponse.message);
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
                 MenuManager.Instance.ShowError(errorResponse.message);
+
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
     }
@@ -95,30 +86,13 @@ public class ForgotOTPVerifyUI : MonoBehaviour
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
 
-                Debug.Log("OTP sent again successfully");
-                Debug.Log("Message: " + responseData.message);
                 successMessage.SetActive(true);
             },
             (error) =>
             {
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-                //if (errorResponse.statusCode.Contains("431"))
-                //{
-                //    ShowError("Incorrect Code. Please check your code and try again");
-                //}
-                //else if (errorResponse.statusCode.Contains("432"))
-                //{
-                //    ShowError("Your code has expired. Please request a new code");
-                //}
-                //else if (errorResponse.statusCode.Contains("433"))
-                //{
-                //    ShowError("Unable to send the verification code. Please try again later");
-                //}
-
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
                 MenuManager.Instance.ShowError(errorResponse.message);
-                Debug.LogError("OTP Verification Failed: " + errorResponse.message);
-                //errorMessage.text = "Incorrect Code. Please check your code and try again";
-                //errorMessage.gameObject.SetActive(true);
+
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
 
@@ -128,6 +102,9 @@ public class ForgotOTPVerifyUI : MonoBehaviour
     #endregion
 
     #region Data Validation
+    /* Validation is currently done on the server side, but if we want to do it on the client side,
+       we can use this function to validate the input data before sending it to the server.*/
+    // Validate input data before sending to the server
     public bool CheckInputData()
     {
         errorMessageParent.SetActive(false);
@@ -187,13 +164,6 @@ public class ForgotOTPVerifyUI : MonoBehaviour
         public string role;
         public bool isOnboardingFormFilled;
         public string company;
-    }
-
-    private class ErrorResponse
-    {
-        public string message;
-        public string error;
-        public string statusCode;
     }
     #endregion
 }

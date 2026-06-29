@@ -47,14 +47,14 @@ public class ResetPasswordUI : MonoBehaviour
             (response) =>
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
-                Debug.Log("Password reset success");
+
                 MenuManager.Instance.EnablePanel(MenuManager.Instance.passwordResetSuccessPanel);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             },
             (error) => 
             {
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-                Debug.LogError("Password reset failed: " + errorResponse.message);
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
+                
                 MenuManager.Instance.ShowError(errorResponse.message);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
@@ -62,6 +62,7 @@ public class ResetPasswordUI : MonoBehaviour
     #endregion
 
     #region Data Validation
+    // Validate input data before sending to the server
     public bool CheckInputData()
     {
         errorMessageParent.SetActive(false);
@@ -70,44 +71,23 @@ public class ResetPasswordUI : MonoBehaviour
         if (string.IsNullOrWhiteSpace(newPasswordInput.text))
         {
             MenuManager.Instance.ShowError("Password is empty");
-            //ShowError("Email is empty", newPasswordInput);
             return false;
         }
 
         if (string.IsNullOrWhiteSpace(confirmNewPassword.text))
         {
             MenuManager.Instance.ShowError("Confirm Password is empty");
-            //ShowError("Password is empty", confirmNewPassword);
             return false;
         }
 
         if (newPasswordInput.text != confirmNewPassword.text)
         {
-            //errorMessageParent.SetActive(true);
-            //errorMessage.text = "Password Don't Match";
-
             MenuManager.Instance.ShowError("Password Don't Match");
-
-            //newPasswordInput.text = "";
-            //confirmNewPassword.text = "";
 
             newPasswordInput.GetComponent<Image>().sprite = errorInputFieldSprite;
             confirmNewPassword.GetComponent<Image>().sprite = errorInputFieldSprite;
-            //resetButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
             return false;
         }
-
-        //if (!IsValidPassword(newPasswordInput.text))
-        //{
-        //    ShowError("The password must contain at least 8 characters, 1 uppercase letter, 1 lowercase letter,  1 number", newPasswordInput);
-            
-        //    newPasswordInput.text = "";
-        //    confirmNewPassword.text = "";
-
-        //    newPasswordInput.GetComponent<Image>().sprite = errorInputFieldSprite;
-
-        //    return false;
-        //}
 
         // All inputs are valid
         MenuManager.Instance.loadingPanel.SetActive(true);
@@ -208,13 +188,6 @@ public class ResetPasswordUI : MonoBehaviour
     private class ResponseData
     {
         public string message;
-    }
-
-    private class ErrorResponse
-    {
-        public string message;
-        public string error;
-        public string statusCode;
     }
     #endregion
 }

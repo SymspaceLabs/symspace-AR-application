@@ -62,10 +62,6 @@ public class FirebaseAuthManager : MonoBehaviour
             AuthResult credential = await auth.SignInWithProviderAsync(provider);
 
             var tokenResult = await credential.User.TokenAsync(true);
-            //Debug.Log("ID TOKEN : " + tokenResult);
-            //Debug.Log("Google sign-in successful!");
-            //Debug.Log("User: " + credential.User.DisplayName);
-            //Debug.Log("Email: " + credential.User.Email);
 
             PlayerPrefs.SetString("myuserid", credential.User.UserId);
 
@@ -80,29 +76,18 @@ public class FirebaseAuthManager : MonoBehaviour
                 (response) =>
                 {
                     Response responseData = JsonUtility.FromJson<Response>(response);
-                    Debug.Log("Google Sign In Success: " + responseData.user.firstName);
 
-                    //Debug.Log("Email: " + responseData.user.email);
-                    //Debug.Log("token: " + responseData.accessToken);
                     PlayerPrefs.SetString("Email", responseData.user.email);
 
                     PlayerPrefs.SetString("id", responseData.user.id);
                     PlayerPrefs.SetInt("RememberMe", 1);
                     SceneManager.LoadScene(SceneNames.Home);
-
-                    // MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
-                    // MenuManager.Instance.loadingPanel.SetActive(false);
                 },
             (error) =>
             {
-                Debug.LogError("Google Authentication Failed");
-
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-
-                // if (errorResponse.message.Contains("Email already exists"))
-                // {
                 MenuManager.Instance.ShowError(errorResponse.message);
-                // }
+
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
         }
@@ -136,10 +121,6 @@ public class FirebaseAuthManager : MonoBehaviour
         {
             // Sign in with Apple
             AuthResult credential = await auth.SignInWithProviderAsync(provider);
-            Debug.Log("Apple sign-in successful!");
-            //Debug.Log("User: " + credential.User.DisplayName);
-            //Debug.Log("User: " + credential.User.ProviderId);
-            //Debug.Log("Email: " + credential.User.Email);
 
             PlayerPrefs.SetString("myuserid", credential.User.UserId);
 
@@ -152,29 +133,19 @@ public class FirebaseAuthManager : MonoBehaviour
                 (response) =>
                 {
                     Response responseData = JsonUtility.FromJson<Response>(response);
-                    Debug.Log("Sign Up Success: " + responseData.user.firstName);
-
-                    //Debug.Log("Email: " + responseData.user.email);
-                    //Debug.Log("token: " + responseData.accessToken);
                     PlayerPrefs.SetString("Email", responseData.user.email);
 
                     PlayerPrefs.SetString("id", responseData.user.id);
                     PlayerPrefs.SetInt("RememberMe", 1);
                     SceneManager.LoadScene(SceneNames.Home);
-
-                    // MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
-                    // MenuManager.Instance.loadingPanel.SetActive(false);
                 },
             (error) =>
             {
                 Debug.LogError("Sign in Failed: " + error);
 
                 ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-
-                // if (errorResponse.message.Contains("Email already exists"))
-                // {
                 ShowError(errorResponse.message);
-                // }
+
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));
         }
@@ -197,29 +168,19 @@ public class FirebaseAuthManager : MonoBehaviour
             (response) =>
             {
                 Response responseData = JsonUtility.FromJson<Response>(response);
-                Debug.Log("Sign Up Success: " + responseData.user.firstName);
-
-                //Debug.Log("Email: " + responseData.user.email);
-                //Debug.Log("token: " + responseData.accessToken);
                 PlayerPrefs.SetString("Email", responseData.user.email);
 
                 PlayerPrefs.SetString("id", responseData.user.id);
                 PlayerPrefs.SetInt("RememberMe", 1);
                 SceneManager.LoadScene(SceneNames.Home);
-
-                // MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
-                // MenuManager.Instance.loadingPanel.SetActive(false);
             },
         (error) =>
         {
             Debug.LogError("Sign in Failed: " + error);
 
             ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
-
-            // if (errorResponse.message.Contains("Email already exists"))
-            // {
             MenuManager.Instance.ShowError(errorResponse.message);
-            // }
+
             MenuManager.Instance.loadingPanel.SetActive(false);
         }));
     }

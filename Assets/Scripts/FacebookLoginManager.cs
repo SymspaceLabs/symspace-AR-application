@@ -132,7 +132,7 @@ public class FacebookLoginManager : MonoBehaviour
     //        (error) =>
     //        {
     //            Debug.LogError("facebook login failed: " + error);
-    //            ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+    //            FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
     //            // if (errorResponse.statusCode == 401)
     //            // {
     //            MenuManager.Instance.ShowError(errorResponse.message);
@@ -211,13 +211,5 @@ public class FacebookLoginManager : MonoBehaviour
     //    public string avatar;
     //    public bool isOnboardingFormFilled;
     //    public string token;
-    //}
-
-    //[Serializable]
-    //public class ErrorResponse
-    //{
-    //    public string message;
-    //    public string error;
-    //    public int statusCode;
     //}
 }

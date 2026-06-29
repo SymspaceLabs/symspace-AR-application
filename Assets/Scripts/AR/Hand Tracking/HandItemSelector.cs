@@ -216,6 +216,12 @@ public class HandItemSelector : MonoBehaviour
             newPd.plusCanvas = btnCanvas.gameObject;
             btnCanvas.pd = newPd;
             btnCanvas.objDetail = newObject.GetComponent<ObjectDetail>();
+
+            btnCanvas.gameObject.layer = LayerMask.NameToLayer("top");
+            foreach (Transform obj in btnCanvas.transform)
+            {
+                obj.gameObject.layer = LayerMask.NameToLayer("top");
+            }
         }
     }
 
@@ -355,7 +361,7 @@ public class HandItemSelector : MonoBehaviour
             obj.gameObject.SetActive(false);
 
         model.transform.SetParent(parent);
-        model.transform.localPosition = Vector3.zero;
+        model.transform.localPosition = Vector3.zero + GetComponent<HandTrackingVisualizer>().wristOffset;
 
         if (category == CategoryType.Watches)
         {
@@ -369,6 +375,8 @@ public class HandItemSelector : MonoBehaviour
         if(CategoryManager.Instance.isDebugMode)Debug.Log("category : " + category);
 
         SpawnCanvas(model);
+
+        model.GetComponentInChildren<MeshRenderer>().gameObject.layer = LayerMask.NameToLayer("top");
 
         CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
     }

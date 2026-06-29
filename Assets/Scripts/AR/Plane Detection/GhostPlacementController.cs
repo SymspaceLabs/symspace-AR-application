@@ -1,10 +1,8 @@
 ﻿using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.XR.Interaction.Toolkit.Utilities;
-using static ObjectSpawner;
 
 public class GhostPlacementController : MonoBehaviour
 {
@@ -27,7 +25,7 @@ public class GhostPlacementController : MonoBehaviour
     public float depthInches = 3f;
     public string unit = "cm"; // Units used for scaling
 
-    public SizeInInches[] objectsSize; // Array storing sizes for each object prefab
+    //public SizeInInches[] objectsSize; // Array storing sizes for each object prefab
 
     public List<Color> objectColors; // Colors corresponding to objects
 
@@ -78,9 +76,6 @@ public class GhostPlacementController : MonoBehaviour
             Invoke(nameof(DelayedFunction), 1f);
         }
 
-        Outline outline = hp.AddComponent<Outline>();
-        outline.OutlineWidth = 5f;
-        outline.OutlineMode = Outline.Mode.OutlineVisible;
         hp.transparentMat = transparentMat;
         ghostInstance.SetActive(false);
         if(CategoryManager.Instance.isDebugMode)Debug.Log("Ghost item available", ghostInstance);

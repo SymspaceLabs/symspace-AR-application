@@ -40,13 +40,6 @@ public class SignInUI : MonoBehaviour
     #region API Call
     void OnSignInClicked()
     {
-        //if (!CheckInputData())
-        //    return;
-
-        //WWWForm form = new WWWForm();
-        //form.AddField("email", emailInput.text);
-        //form.AddField("password", passwordInput.text);
-
         JsonDataStructure jsonData = new JsonDataStructure();
         jsonData.email = emailInput.text;
         jsonData.password = passwordInput.text;
@@ -54,42 +47,25 @@ public class SignInUI : MonoBehaviour
 
         string json = JsonUtility.ToJson(jsonData);
 
-        Debug.Log("Calling Sign In URL ");
-
         StartCoroutine(AuthAPI.PostRequest(signInUrl, json,
             (response) =>
             {
-
-                //Debug.Log($"Responseeee: {response}");
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
-                Debug.Log("Sign IN Success");
-
-                //Debug.Log("Access Token: " + responseData.accessToken);
-                //Debug.Log("User : " + responseData);
-                //Debug.Log("ID : " + responseData.user.id);
-                //Debug.Log("Email: " + responseData.user.email);
-                //Debug.Log("First Name : " + responseData.user.firstName);
-                //Debug.Log("Last Name : " + responseData.user.lastName);
-                //Debug.Log("Role : " + responseData.user.role);
-                //Debug.Log("isOnboardingFormFilled : " + responseData.user.isOnboardingFormFilled);
 
                 PlayerPrefs.SetString("id", responseData.user.id);
                 PlayerPrefs.SetInt("RememberMe", 1);
                 SceneManager.LoadScene(SceneNames.Home);
 
-                //MenuManager.Instance.EnablePanel(MenuManager.Instance.homePanel);
                 MenuManager.Instance.loadingPanel.SetActive(false);
             },
             (error) => 
             {
-                Debug.LogError("Sign In Failed: " + error);
-
                 FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
 
                 if(errorResponse.message.Contains("not verified"))
                 {
                     MenuManager.Instance.ShowError(errorResponse.message);
-                    //PlayerPrefs.SetString("Email", emailInput.text);
+
                     MenuManager.Instance.EnablePanel(MenuManager.Instance.signUpOTPVerifyPanel);
                 }
                 else
@@ -102,6 +78,9 @@ public class SignInUI : MonoBehaviour
     #endregion
 
     #region Data Validation
+    /* Validation is currently done on the server side, but if we want to do it on the client side,
+       we can use this function to validate the input data before sending it to the server.*/
+    // Validate input data before sending to the server
     public bool CheckInputData()
     {
         errorMessageParent.SetActive(false);

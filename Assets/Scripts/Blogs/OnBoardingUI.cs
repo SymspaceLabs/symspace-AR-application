@@ -321,7 +321,7 @@ public class OnBoardingUI : MonoBehaviour
             {
                 Debug.LogError("Sign Up Failed: " + error);
 
-                ErrorResponse errorResponse = JsonUtility.FromJson<ErrorResponse>(error);
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
 
                 if (errorResponse.message.Contains("Expected"))
                 {
@@ -360,13 +360,6 @@ public class OnBoardingUI : MonoBehaviour
     {
         public string message;
         public string token;
-    }
-
-    private class ErrorResponse
-    {
-        public string message;
-        public string error;
-        public string statusCode;
     }
     #endregion
 
