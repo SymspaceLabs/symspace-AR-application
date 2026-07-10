@@ -323,6 +323,12 @@ public class ARJewelryManager : MonoBehaviour
 
         if (stateCheck.isReady)
             CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
+
+        ProductDetails pd = newObject.GetComponent<ProductDetails>();
+        if (pd != null && pd.product != null)
+        {
+            UIManagerAR.instance.SelectModel(pd);
+        }
     }
 
     void SpawnCanvas(GameObject newObject, CategoryType category)
@@ -635,6 +641,16 @@ public class ARJewelryManager : MonoBehaviour
         }
         if(CategoryManager.Instance.isDebugMode)Debug.Log("texture Finish");
 
+        if (pd.selectedColorIndex >= 0 && pd.selectedColorIndex < pd.textures.Count && pd.textures[pd.selectedColorIndex] != null)
+        {
+            MeshRenderer renderer = pd.GetComponentInChildren<MeshRenderer>();
+            if (renderer != null)
+            {
+                Material mat = renderer.material;
+                mat.mainTexture = pd.textures[pd.selectedColorIndex];
+                renderer.material = mat;
+            }
+        }
     }
 
     public IEnumerator DownloadSpriteCoroutine(string url, List<Sprite> spritesList, int index)
@@ -719,19 +735,28 @@ public class ARJewelryManager : MonoBehaviour
                 child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
         }
 
-        if (index >= UIManagerAR.instance.selectedModelDetails.textures.Count)
-            return;
+        ProductDetails targetPd = UIManagerAR.instance.selectedModelDetails;
+        if (targetPd == null) return;
 
-        UIManagerAR.instance.selectedModelDetails.selectedColorIndex = index;
-        Material mat = UIManagerAR.instance.selectedModelDetails.GetComponentInChildren<MeshRenderer>().material;
+        targetPd.selectedColorIndex = index;
+        if (index >= 0 && index < targetPd.textures.Count)
+        {
+            Material mat = targetPd.GetComponentInChildren<MeshRenderer>().material;
+            mat.mainTexture = targetPd.textures[index];
+            targetPd.GetComponentInChildren<MeshRenderer>().material = mat;
 
-        //Color newColor1;
-        //ColorUtility.TryParseHtmlString(selectedProduct.product.colors[index].code, out newColor1);
-        //mat.color = newColor1;
+            var modelView = UIManagerAR.instance.UI_3D_Models.Find(m =>
+                m.GetComponent<ProductDetails>().product.id == targetPd.product.id);
+            if (modelView != null)
+            {
+                MeshRenderer mvRenderer = modelView.GetComponentInChildren<MeshRenderer>();
+                if (mvRenderer != null)
+                    mvRenderer.material = mat;
+            }
+        }
 
-        mat.mainTexture = UIManagerAR.instance.selectedModelDetails.textures[index];
-
-        UIManagerAR.instance.selectedModelDetails.GetComponentInChildren<MeshRenderer>().material = mat;
+        UIManagerAR.instance.UpdateDetailData(targetPd);
+        Canvas.ForceUpdateCanvases();
     }
 
 

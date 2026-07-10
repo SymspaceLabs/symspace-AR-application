@@ -286,6 +286,10 @@ public class BodyTrackingWithMars : MonoBehaviour
 
         SpawnCanvas(loadedGLB, slot);
 
+        ProductDetails pd2 = loadedGLB.GetComponent<ProductDetails>();
+        if (pd2 != null && pd2.product != null)
+            UIManagerAR.instance.SelectModel(pd2);
+
         mv.FrameObject(modelToView);
 
         if(CategoryManager.Instance.isDebugMode)Debug.Log($"✅ {slot} attached as {(isRigged ? "Rigged" : "Static")}.");

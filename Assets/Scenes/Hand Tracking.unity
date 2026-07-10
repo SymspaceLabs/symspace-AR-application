@@ -869,6 +869,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 30.2, y: 17.1, z: -32.719}
+--- !u!1 &814655488
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 814655489}
+  m_Layer: 11
+  m_Name: Watch Rotation Saver
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &814655489
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 814655488}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0.7071068, w: 0}
+  m_LocalPosition: {x: 0, y: -0.30000028, z: 0}
+  m_LocalScale: {x: 28.843103, y: 31.72739, z: 37.061596}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 439978362335877000}
+  m_LocalEulerAnglesHint: {x: 90, y: -180, z: 0}
 --- !u!1 &956095466
 GameObject:
   m_ObjectHideFlags: 0
@@ -1394,7 +1425,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4319789748230626760, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 133.7721
+      value: 133.77203
       objectReference: {fileID: 0}
     - target: {fileID: 4339410713255953986, guid: ed9fcf36d46c7d240b8c591bdb90c0fb, type: 3}
       propertyPath: m_AnchorMax.x
@@ -1818,7 +1849,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1576388341}
   - component: {fileID: 1576388344}
-  - component: {fileID: 1576388343}
   - component: {fileID: 1576388342}
   m_Layer: 0
   m_Name: Camera
@@ -1886,14 +1916,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!81 &1576388343
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1576388340}
-  m_Enabled: 1
 --- !u!20 &1576388344
 Camera:
   m_ObjectHideFlags: 0
@@ -2110,6 +2132,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1762999184}
   m_CullTransparentMesh: 1
+--- !u!1 &2042302507
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2042302508}
+  m_Layer: 11
+  m_Name: Ring Rotation Saver
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2042302508
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2042302507}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: -0.3, z: 0}
+  m_LocalScale: {x: 216.25221, y: 216.25215, z: 216.25215}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2959129582022674629}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2080695602
 GameObject:
   m_ObjectHideFlags: 0
@@ -2245,7 +2298,7 @@ MonoBehaviour:
   occlusionManager: {fileID: 956095477}
   wristAnchorPrefab: {fileID: 0}
   smoothTime: 0.1
-  wristOffset: {x: 0, y: -0.3, z: 0}
+  wristOffset: {x: 0, y: 0, z: 0.3}
   rotationOffsetEuler: {x: 15, y: 10, z: 0}
   baseWatchScale: 0.1
   currentWristAnchor: {fileID: 7567028678315208778}
@@ -2304,8 +2357,8 @@ MonoBehaviour:
   - {fileID: 7567028678315208778}
   rings:
   - {fileID: 1982570336491958264}
-  watchSpawnParent: {fileID: 439978362335877000}
-  ringSpawnParent: {fileID: 2959129582022674629}
+  watchSpawnParent: {fileID: 814655489}
+  ringSpawnParent: {fileID: 2042302508}
   watchesParent: {fileID: 1271349946682756346}
   ringsParent: {fileID: 2421352923086169959}
   plusBtnCanvas: {fileID: 5626388012901643927, guid: 35680ec0aa1453742a70d4dc603dc9dd, type: 3}
@@ -2321,7 +2374,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.034670334, y: 0.026982091, z: 0.0315185}
   m_ConstrainProportionsScale: 1
-  m_Children: []
+  m_Children:
+  - {fileID: 814655489}
   m_Father: {fileID: 3977350514511392983}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!114 &542972599735795220
@@ -2473,13 +2527,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4248668449725563265}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.02, y: 0.02, z: 0.02}
   m_ConstrainProportionsScale: 1
-  m_Children: []
+  m_Children:
+  - {fileID: 2042302508}
   m_Father: {fileID: 4482856218636027939}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &3977350514511392983
 Transform:
   m_ObjectHideFlags: 0

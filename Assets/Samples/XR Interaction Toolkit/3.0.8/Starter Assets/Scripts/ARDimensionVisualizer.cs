@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using static Unity.Burst.Intrinsics.X86.Avx;
@@ -30,9 +31,28 @@ public class ARDimensionVisualizer : MonoBehaviour
     public GameObject[] lineTexts = new GameObject[6];
     public Vector3[] externalCorners = new Vector3[8];
 
+    private Transform linesContainer;
+
+    void OnDestroy()
+    {
+        if (linesContainer != null)
+            Destroy(linesContainer.gameObject);
+    }
+
     void Start()
     {
+        CreateContainer();
         InitializeLines();
+    }
+
+    void CreateContainer()
+    {
+        GameObject container = new GameObject("DimensionLines_" + gameObject.name);
+        linesContainer = container.transform;
+        linesContainer.position = transform.position;
+        linesContainer.rotation = transform.rotation;
+        linesContainer.localScale = Vector3.one;
+        container.SetActive(false);
     }
 
 
@@ -43,10 +63,22 @@ public class ARDimensionVisualizer : MonoBehaviour
         Invoke(nameof(CreateAllBorderLines), 1f);
         Invoke(nameof(UpdateAllBorderLines), 1f);
         Invoke(nameof(SetupAllTextObjects), 1f);
-        if (!FindFirstObjectByType<UIManagerAR>().isMeasurementOn)
-            Invoke(nameof(ToggleMeasurement), 1f);
+        Invoke(nameof(ApplyGlobalMeasurementState), 1.1f);
+    }
 
-        Invoke(nameof(DisableSomeLines), 1);
+    void ApplyGlobalMeasurementState()
+    {
+        if (UIManagerAR.instance != null && UIManagerAR.instance.isMeasurementOn)
+        {
+            linesContainer.gameObject.SetActive(true);
+            linesContainer.position = transform.position;
+            linesContainer.rotation = transform.rotation;
+            CalculateExternalCorners();
+            UpdateAllBorderLines();
+            UpdateDashes();
+            SetupTextAlignmentAll();
+            DisableSomeLines();
+        }
     }
 
     void CalculateExternalCorners()
@@ -57,12 +89,7 @@ public class ARDimensionVisualizer : MonoBehaviour
         Vector3 max = bounds.max;
         Vector3 center = bounds.center;
 
-        // Apply lossy scale to each coordinate manually
         Vector3 scale = transform.lossyScale;
-
-        // 8 scaled corners (local space + parent scale applied)
-        //for(int i = 0; i < externalCorners.Length; i++)
-        //    externalCorners[i] = Vector3.Scale(new Vector3(min.x, min.y, min.z), scale);
 
         externalCorners[0] = Vector3.Scale(new Vector3(min.x, min.y, min.z), scale);
         externalCorners[1] = Vector3.Scale(new Vector3(max.x, min.y, min.z), scale);
@@ -73,14 +100,12 @@ public class ARDimensionVisualizer : MonoBehaviour
         externalCorners[6] = Vector3.Scale(new Vector3(max.x, max.y, max.z), scale);
         externalCorners[7] = Vector3.Scale(new Vector3(min.x, max.y, max.z), scale);
 
-        // Also scale the center
         center = Vector3.Scale(center, scale);
 
         for (int i = 0; i < externalCorners.Length; i++)
         {
             Vector3 direction = (externalCorners[i] - center).normalized;
 
-            // Apply per-axis offset scaling
             Vector3 offset = new Vector3(
                 direction.x * axisOffset.x,
                 direction.y * axisOffset.y,
@@ -96,7 +121,7 @@ public class ARDimensionVisualizer : MonoBehaviour
         for (int i = 0; i < 6; i++)
         {
             GameObject lineObj = new GameObject("BorderLine_" + i);
-            lineObj.transform.SetParent(transform);
+            lineObj.transform.SetParent(linesContainer, false);
             lineObj.transform.localPosition = Vector3.zero;
             lineObj.transform.localRotation = Quaternion.identity;
 
@@ -115,38 +140,49 @@ public class ARDimensionVisualizer : MonoBehaviour
         }
     }
 
+    void LateUpdate()
+    {
+        if (linesContainer == null || !linesContainer.gameObject.activeSelf) return;
+        if (lineRenderers[0] == null) return;
+
+        linesContainer.position = transform.position;
+        linesContainer.rotation = transform.rotation;
+    }
+
     void AdjustDashes(LineRenderer lineRenderer, float dashLength = 1f)
     {
-        // Ensure tiling mode is enabled
         lineRenderer.textureMode = LineTextureMode.Tile;
 
-        // Get the two points
         Vector3 start = lineRenderer.GetPosition(0);
         Vector3 end = lineRenderer.GetPosition(1);
 
-        // Calculate length between them
         float length = Vector3.Distance(start, end);
 
-        // Compute how many dashes should fit
         float tileCount = length / dashLength;
 
-        // Set tiling (no need to modify the material)
         lineRenderer.textureScale = new Vector2(tileCount, 1f);
+    }
+
+    void UpdateDashes()
+    {
+        for (int i = 0; i < lineRenderers.Length; i++)
+        {
+            if (lineRenderers[i] != null)
+                AdjustDashes(lineRenderers[i], 0.8f);
+        }
     }
 
     void UpdateAllBorderLines()
     {
-        Vector3 offset = transform.TransformDirection(Vector3.forward) * lineOffset;
-
         // Bottom face lines
-        lineRenderers[0].SetPositions(new Vector3[] { externalCorners[0] /*+ offset*/, externalCorners[1]/* + offset */}); // Width (front)
-        lineRenderers[1].SetPositions(new Vector3[] { externalCorners[1] /*+ offset*/, externalCorners[2] }); // Depth (right)
-        lineRenderers[2].SetPositions(new Vector3[] { externalCorners[2], externalCorners[3] }); // Width (back)
-        lineRenderers[3].SetPositions(new Vector3[] { externalCorners[3], externalCorners[0] }); // Depth (left)
+        lineRenderers[0].SetPositions(new Vector3[] { externalCorners[0], externalCorners[1] });
+        lineRenderers[1].SetPositions(new Vector3[] { externalCorners[1], externalCorners[2] });
+        lineRenderers[2].SetPositions(new Vector3[] { externalCorners[2], externalCorners[3] });
+        lineRenderers[3].SetPositions(new Vector3[] { externalCorners[3], externalCorners[0] });
 
         // Vertical lines (height)
-        lineRenderers[4].SetPositions(new Vector3[] { externalCorners[0], externalCorners[4] }); // Height (front-left)
-        lineRenderers[5].SetPositions(new Vector3[] { externalCorners[2], externalCorners[6] }); // Height (back-right)
+        lineRenderers[4].SetPositions(new Vector3[] { externalCorners[0], externalCorners[4] });
+        lineRenderers[5].SetPositions(new Vector3[] { externalCorners[2], externalCorners[6] });
     }
 
     public void UpdateTexts()
@@ -240,6 +276,15 @@ public class ARDimensionVisualizer : MonoBehaviour
         }
     }
 
+    void SetupTextAlignmentAll()
+    {
+        for (int i = 0; i < lineRenderers.Length; i++)
+        {
+            if (lineTexts[i] != null)
+                SetupTextAlignment(i);
+        }
+    }
+
     void SetupTextAlignment(int i)
     {
         if (i >= lineRenderers.Length || lineTexts[i] == null) return;
@@ -268,37 +313,26 @@ public class ARDimensionVisualizer : MonoBehaviour
 
             lineTexts[i].transform.position = labelPosition;
 
-            // rotation code
-            // Calculate base rotation to align with the line direction
             Vector3 forward = Vector3.Cross(Vector3.up, lineDirection);
             Quaternion baseRotation = Quaternion.LookRotation(forward, Vector3.up);
-
-            // Apply the tilt -30 degrees around local X axis
             Quaternion tilt = Quaternion.AngleAxis(-30f, Vector3.right);
-
-            // Combine the base rotation and tilt
-            Quaternion finalRotation = baseRotation * tilt;
-
-            // Correct the angle discrepancy
-            finalRotation = Quaternion.Euler(finalRotation.eulerAngles.x, finalRotation.eulerAngles.y, 0f);
-
-            // Set the final corrected rotation to the text
-            lineTexts[i].transform.rotation = finalRotation;
+            lineTexts[i].transform.rotation = baseRotation * tilt;
         }
-        else // Vertical lines (unchanged)
+        else // Vertical lines
         {
             Vector3 modelCenter = transform.position;
             Vector3 fromModelCenter = (center - modelCenter).normalized;
             Vector3 labelPosition = center + fromModelCenter * 0.3f;
             lineTexts[i].transform.position = labelPosition;
 
-            if (lineTexts[i].transform.localPosition.x < 0)
+            Vector3 modelLocalDir = transform.InverseTransformDirection(fromModelCenter);
+            if (modelLocalDir.x < 0)
             {
-                lineTexts[i].transform.localRotation = Quaternion.Euler(0, 0, 0);
+                lineTexts[i].transform.rotation = transform.rotation;
             }
             else
             {
-                lineTexts[i].transform.localRotation = Quaternion.Euler(0, 180, 0);
+                lineTexts[i].transform.rotation = transform.rotation * Quaternion.Euler(0, 180, 0);
             }
         }
     }
@@ -327,14 +361,30 @@ public class ARDimensionVisualizer : MonoBehaviour
 
     public void ToggleMeasurement()
     {
-            foreach (var line in lineTexts)
-                if(line != null)
-                    line.SetActive(!line.activeSelf);
+        if (linesContainer == null) return;
+        if (lineRenderers[0] == null) return;
 
-            foreach (var lines in lineRenderers)
-                if (lines != null)
-                    lines.enabled = !lines.enabled;
+        bool isActive = !linesContainer.gameObject.activeSelf;
+        linesContainer.gameObject.SetActive(isActive);
 
+        if (isActive)
+        {
+            StartCoroutine(SetMeasurement());
+        }
+    }
+
+    public IEnumerator SetMeasurement()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        Debug.Log("Setting measurement for " + gameObject.name);
+        linesContainer.position = transform.position;
+        linesContainer.rotation = transform.rotation;
+        CalculateExternalCorners();
+        UpdateAllBorderLines();
+        UpdateDashes();
+        SetupTextAlignmentAll();
         DisableSomeLines();
+        
     }
 }
