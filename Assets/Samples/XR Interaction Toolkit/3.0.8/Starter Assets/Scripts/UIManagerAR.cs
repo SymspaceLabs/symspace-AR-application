@@ -500,9 +500,21 @@ public class UIManagerAR : MonoBehaviour
             GhostPlacementController.Instance.ChangeTextureByIndex(textureIndex);
             //if (spawner.ChangeTextureByIndex(textureIndex))
             //{
-                UpdateDetailData();
             //}
         }
+        else if(HandItemSelector.Instance != null)
+        {
+            HandItemSelector.Instance.ChangeModelTexture(textureIndex);        
+        }
+        else if(ARJewelryManager.Instance != null)
+        {
+            ARJewelryManager.Instance.ChangeModelTexture(textureIndex);
+        }
+        else if (BodyTrackingWithMars.Instance != null)
+        {
+            BodyTrackingWithMars.Instance.ChangeModelTexture(textureIndex);
+        }
+        UpdateDetailData(pd);
 
         ChangeModelVariant();
         //UIModel.GetComponentInChildren<MeshRenderer>().material.mainTexture = model.GetComponent<ProductDetails>().textures[textureIndex];
@@ -513,7 +525,7 @@ public class UIManagerAR : MonoBehaviour
         //spawner.ObjectSelected(index);
     }
 
-    public void UpdateDetailData()
+    public void UpdateDetailData(ProductDetails pd = null)
     {
         if (selectedModelDetails == null)
             return;
@@ -557,36 +569,51 @@ public class UIManagerAR : MonoBehaviour
                 LD_SalePrice.gameObject.SetActive(false);
             }
             if(CategoryManager.Instance.isDebugMode)Debug.Log($"tempSizeIndex : {tempSizeIndex}");
-            ProductDetails pd = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
-            foreach (var v in pd.product.variants)
+
+            if (pd != null)
             {
-                if (v.color.id == pd.product.colors[pd.selectedColorIndex].id)
+                string selectedColorId = pd.product.colors[pd.selectedColorIndex].id;
+                string selectedSizeId = selectedModelDetails.isSizeSelected && selectedModelDetails.product.sizes.Count > 0
+                    ? (selectedModelDetails.product.sizes.Count == 1
+                        ? selectedModelDetails.product.sizes[0].id
+                        : selectedModelDetails.product.sizes[selectedSizeIndex > 0 ? selectedSizeIndex - 1 : 0].id)
+                    : null;
+
+                foreach (var v in pd.product.variants)
                 {
-                    maxStocks = v.stock;
-                    if(CategoryManager.Instance.isDebugMode)Debug.Log("Max Stocks " + maxStocks);
-                    //if (v.salePrice > 0 && v.salePrice < v.price)
-                    //{
-                    //    SD_Price.text = "<s>$" + v.price + "<s>";
-                    //    SD_Price.color = new Color(0.7f, 0.7f, 0.7f);
-                    //    SD_SalePrice.text = "$" + v.salePrice;
-                    //    SD_SalePrice.gameObject.SetActive(true);
+                    bool colorMatch = v.color.id == selectedColorId;
+                    bool sizeMatch = !selectedModelDetails.isSizeSelected ||
+                                     (v.size != null && v.size.id == selectedSizeId);
 
-                    //    LD_Price.text = "<s>$" + v.price + "<s>";
-                    //    LD_Price.color = new Color(0.7f, 0.7f, 0.7f);
-                    //    LD_SalePrice.text = "$" + v.salePrice;
-                    //    LD_SalePrice.gameObject.SetActive(true);
-                    //}
-                    //else
-                    //{
-                    //    SD_Price.text = v.price.ToString();
-                    //    SD_Price.color = new Color(1, 1, 1);
-                    //    SD_SalePrice.gameObject.SetActive(false);
+                    if (colorMatch && sizeMatch)
+                    {
+                        maxStocks = v.stock;
+                        if(CategoryManager.Instance.isDebugMode)Debug.Log("Max Stocks " + maxStocks);
 
-                    //    LD_Price.text = v.price.ToString();
-                    //    LD_Price.color = new Color(1, 1, 1);
-                    //    LD_SalePrice.gameObject.SetActive(false);
+                        if (v.salePrice > 0 && v.salePrice < v.price)
+                        {
+                            SD_Price.text = "<s>$" + v.price + "<s>";
+                            SD_Price.color = new Color(0.7f, 0.7f, 0.7f);
+                            SD_SalePrice.text = "$" + v.salePrice;
+                            SD_SalePrice.gameObject.SetActive(true);
 
-                    //}
+                            LD_Price.text = "<s>$" + v.price + "<s>";
+                            LD_Price.color = new Color(0.7f, 0.7f, 0.7f);
+                            LD_SalePrice.text = "$" + v.salePrice;
+                            LD_SalePrice.gameObject.SetActive(true);
+                        }
+                        else
+                        {
+                            SD_Price.text = "$" + v.price;
+                            SD_Price.color = new Color(1f, 1f, 1f);
+                            SD_SalePrice.gameObject.SetActive(false);
+
+                            LD_Price.text = "$" + v.price;
+                            LD_Price.color = new Color(1f, 1f, 1f);
+                            LD_SalePrice.gameObject.SetActive(false);
+                        }
+                        break;
+                    }
                 }
             }
 
@@ -661,11 +688,11 @@ public class UIManagerAR : MonoBehaviour
         }
         else
         {
-            SD_Price.text = variant.price.ToString();
+            SD_Price.text = "$" + variant.price.ToString();
             SD_Price.color = new Color(1, 1, 1);
             SD_SalePrice.gameObject.SetActive(false);
 
-            LD_Price.text = variant.price.ToString();
+            LD_Price.text = "$" + variant.price.ToString();
             LD_Price.color = new Color(1, 1, 1);
             LD_SalePrice.gameObject.SetActive(false);
         }
@@ -683,9 +710,6 @@ public class UIManagerAR : MonoBehaviour
         
         if(CategoryManager.Instance.isDebugMode)Debug.Log("LD size changed");
 
-        ProductDetails pd = null;
-        if (GhostPlacementController.Instance != null)
-            pd = GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
         else if(SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
             ClothingFitController.ApplySizeFromLabel(selectedModelDetails.product.variants[selectedSizeIndex - 1].size.size, 
                 BodyTrackingWithMars.Instance.activeBodyModels[BodyTrackingWithMars.Instance.GetBodySlot(selectedModelDetails.product.category.name)].RootObject.GetComponentInChildren<SkinnedMeshRenderer>());
@@ -699,9 +723,13 @@ public class UIManagerAR : MonoBehaviour
         //else
         stocksSelected.text = "1";
 
-        if(GhostPlacementController.Instance != null)
-            CategoryManager.Instance.UpdateObjectScale(pd, GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex], 
-                !pd.product.ar_type.Equals("horizontal-plane detection"), selectedModelDetails.product.sizes.Count == 1? selectedSizeIndex : selectedSizeIndex -1);
+        if(GhostPlacementController.Instance != null && GhostPlacementController.Instance.spawnedObjects.Contains(selectedModelDetails.gameObject))
+            CategoryManager.Instance.UpdateObjectScale(selectedModelDetails, GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex], 
+                !selectedModelDetails.product.ar_type.Equals("horizontal-plane detection"), selectedModelDetails.product.sizes.Count == 1? selectedSizeIndex : selectedSizeIndex -1);
+
+        var arDimensions = FindObjectsByType<ARDimensionVisualizer>(FindObjectsSortMode.None);
+        foreach (var arDimension in arDimensions)
+            StartCoroutine(arDimension.SetMeasurement());
     }
 
     public void ChangeSize_SD()
@@ -715,9 +743,8 @@ public class UIManagerAR : MonoBehaviour
 
         if(CategoryManager.Instance.isDebugMode)Debug.Log("SD size changed");
         selectedModelDetails.selectedSizeIndex = selectedSizeIndex;
-        if(GhostPlacementController.Instance != null)
-            /*ProductDetails pd = */GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex].GetComponent<ProductDetails>();
-        else if (SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
+
+        if (SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
             ClothingFitController.ApplySizeFromLabel(selectedModelDetails.product.variants[selectedSizeIndex - 1].size.size,
                 BodyTrackingWithMars.Instance.activeBodyModels[BodyTrackingWithMars.Instance.GetBodySlot(selectedModelDetails.product.category.name)].RootObject.GetComponentInChildren<SkinnedMeshRenderer>());
 
@@ -725,6 +752,9 @@ public class UIManagerAR : MonoBehaviour
 
         stocksSelected.text = "1";
 
+        var arDimensions = FindObjectsByType<ARDimensionVisualizer>(FindObjectsSortMode.None);
+        foreach (var arDimension in arDimensions)
+            StartCoroutine(arDimension.SetMeasurement());
         //CategoryManager.Instance.UpdateObjectScale(pd.product, spawner.objectsSpawned[objectSelectedIndex], !pd.product.ar_type.Equals("horizontal-plane detection"), selectedSizeIndex - 1);
     }
 
@@ -851,8 +881,11 @@ public class UIManagerAR : MonoBehaviour
         foreach (Transform obj in UI_3D_Models_Parent.transform)
             Destroy(obj.gameObject);
 
+        foreach(Transform obj in itemsToPlaceParent.transform)
+            Destroy(obj.gameObject);
+
         smallDetail.SetActive(false);
-        itemsToPlaceParent.SetActive(false);
+        //itemsToPlaceParent.SetActive(false);
         TogglePlaneVisuals(false);
 
         OnResetClick?.Invoke();

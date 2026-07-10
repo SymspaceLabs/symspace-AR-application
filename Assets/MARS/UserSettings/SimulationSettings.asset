@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: SimulationSettings
   m_EditorClassIdentifier: Unity.MARS.Editor::UnityEditor.MARS.Simulation.SimulationSettings
   m_EnvironmentMode: 0
-  m_EnvironmentPrefab: {fileID: 8433440242579774579, guid: a7291c0c73cf6b04091bff379cb1ce31, type: 3}
-  m_SyntheticModeEnvironmentGuid: a7291c0c73cf6b04091bff379cb1ce31
+  m_EnvironmentPrefab: {fileID: 4033279824830409645, guid: 44ffecd288e7dab4bb4e5c1cd7c2d69f, type: 3}
+  m_SyntheticModeEnvironmentGuid: 44ffecd288e7dab4bb4e5c1cd7c2d69f
   m_IndependentRecording: {fileID: 4410859653355543093, guid: d2671e1e7e470f04da58f5043cc61dce, type: 2}
   m_WebCamDeviceIndex: 1
   m_UseSyntheticRecording: 0
@@ -26,7 +26,9 @@ MonoBehaviour:
   m_ShowSimulatedData: 1
   m_SyntheticPrefabs:
   - {fileID: 4033279824830409645, guid: 909f2ab63b9b4ea4b8fe717106d824ad, type: 3}
+  - {fileID: 5430835068141665080, guid: 030743e0e0ba25f49809730c95e0242a, type: 3}
   m_SyntheticRecordings:
   - {fileID: 7451220477654342660, guid: 40566a2a3e4e2a74db0f68bd7b1eb11a, type: 2}
+  - {fileID: 4360023052754472758, guid: 06d6fe6dd5a38c949bc27a84a8bd4bfd, type: 2}
   m_UserFacingEnvironmentMode: 1
   m_WorldFacingEnvironmentMode: 0

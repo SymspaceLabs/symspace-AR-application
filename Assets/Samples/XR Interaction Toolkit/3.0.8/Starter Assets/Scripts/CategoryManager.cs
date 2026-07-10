@@ -68,6 +68,8 @@ public class CategoryManager : MonoBehaviour
 
     public GameObject plusBtnCanvas;
 
+    public TMP_InputField searchInputField;
+
     public bool isDebugMode = false;
 
     #region Private Variables
@@ -84,7 +86,9 @@ public class CategoryManager : MonoBehaviour
     private void Start()
     {
         localPath = Path.Combine(Application.persistentDataPath, "tempModel.glb");
+        searchInputField.onValueChanged.AddListener(OnSearchTextChange);
         GetAllCategories();
+        GetAllProducts();
         StartCoroutine(InitialProductSelection());
     }
     #endregion
@@ -102,6 +106,11 @@ public class CategoryManager : MonoBehaviour
                 ProductSelection.productData.ar_type,
                 ProductSelection.fetchedSprite));
         }
+    }
+
+    private void OnDisable()
+    {
+        searchInputField.onValueChanged.RemoveListener(OnSearchTextChange);
     }
     #endregion
 
@@ -124,7 +133,7 @@ public class CategoryManager : MonoBehaviour
         }, "GET"));
     }
 
-    void GetAllProducts(string type)
+    void GetAllProductsByCategory(string type)
     {
         //string formattedType = type.ToLower().Replace("'", "").Replace(" ", "-");
         if (isDebugMode)
@@ -133,10 +142,27 @@ public class CategoryManager : MonoBehaviour
         (response) =>
         {
             ProductResponse responseData = JsonUtility.FromJson<ProductResponse>(response);
-            allProductsData = responseData;
+            //allProductsData = responseData;
             if (isDebugMode)
                 Debug.Log("Products loaded");
             PopulateProducts(responseData);
+        },
+        (error) =>
+        {
+            if (isDebugMode)
+                Debug.LogError("Failed to load categories: " + error);
+        }, "GET"));
+    }
+
+    void GetAllProducts()
+    {
+        StartCoroutine(AuthAPI.PostRequest(getAllProductsURL, "",
+        (response) =>
+        {
+            ProductResponse responseData = JsonUtility.FromJson<ProductResponse>(response);
+            allProductsData = responseData;
+            if (isDebugMode)
+                Debug.Log("Products loaded");
         },
         (error) =>
         {
@@ -467,8 +493,8 @@ public class CategoryManager : MonoBehaviour
 
                 // ---------------- CLEAN VARIANTS UI ----------------
 */
-                foreach (Transform obj in modelVariantParent)
-                    obj.gameObject.SetActive(false);
+                //foreach (Transform obj in modelVariantParent)
+                //    obj.gameObject.SetActive(false);
 
                 // ---------------- ORIENTATION ----------------
 
@@ -1185,13 +1211,48 @@ public class CategoryManager : MonoBehaviour
                     if (leaf != null)
                     {
                         string query = leaf.queryParam + "=" + leaf.slug;
-                        GetAllProducts(query);
+                        GetAllProductsByCategory(query);
                         UnSelectAllImages(leafCategoryParent);
                         SelectedImage(buttonObj.GetComponent<UnityEngine.UI.Image>());
                     }
                 });
             }
         }
+    }
+
+    public void OnSearchTextChange(string text)
+    {
+        ProductResponse response = SearchProducts(text);
+        PopulateProducts(response);
+        ClearSubCategoriesUI();
+        UnSelectAllImages(topLevelCategoryParent);
+    }
+
+    public ProductResponse SearchProducts(string query)
+    {
+        if (string.IsNullOrEmpty(query))
+            return allProductsData;
+
+        string[] searchWords = query
+        .ToLower()
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        var filteredProducts = allProductsData.products.Where(product =>
+        {
+            string searchableText =
+                $"{product.name} {product.company.entityName} {product.category.name} {product.material} {product.category.parent.name} {product.category.parent.parent.name} {product.category.parent.parent.parent.name}"
+                .ToLower();
+
+            return searchWords.Any(word =>
+                searchableText.Contains(word)
+            );
+
+        }).ToList();
+
+        return new ProductResponse
+        {
+            products = filteredProducts
+        };
     }
 
     private void ClearAllUI()
@@ -1702,6 +1763,15 @@ public class CategoryManager : MonoBehaviour
 
     [System.Serializable]
     public class LesserParent
+    {
+        public string id;
+        public string name;
+        public string slug;
+        public LesserLesserParent parent;
+    }
+
+    [System.Serializable]
+    public class LesserLesserParent
     {
         public string id;
         public string name;

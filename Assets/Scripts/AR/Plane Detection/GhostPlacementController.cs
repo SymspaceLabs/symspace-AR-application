@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using GLTF.Schema;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.XR.Interaction.Toolkit.Utilities;
+using UnityEngine.EventSystems;
 
 public class GhostPlacementController : MonoBehaviour
 {
@@ -70,47 +72,27 @@ public class GhostPlacementController : MonoBehaviour
         isPlaced = false;
 
         ghostInstance = Instantiate(objectToSpawn);
-        HologramPreview hp = ghostInstance.AddComponent<HologramPreview>();
-        if (selectedAreaBottom != null)
-        {
-            Invoke(nameof(DelayedFunction), 1f);
-        }
+        //HologramPreview hp = ghostInstance.AddComponent<HologramPreview>();
+        MeshRenderer renderer = ghostInstance.GetComponentInChildren<MeshRenderer>();
 
-        hp.transparentMat = transparentMat;
+        GltfMaterialCopier.CopyAllTextures(renderer.material, transparentMat);
+
+        // assign
+        renderer.material = transparentMat;
+
+        Outline outliner = ghostInstance.AddComponent<Outline>();
+        outliner.OutlineMode = Outline.Mode.OutlineAll;
+        outliner.OutlineColor = Color.skyBlue;
+        outliner.OutlineWidth = 3f;
+
+        UIManagerAR.instance.SelectModel(ghostInstance.GetComponent<ProductDetails>());
+        //UIManagerAR.instance.smallDetail.SetActive(true);
+
+        //hp.transparentMat = transparentMat;
         ghostInstance.SetActive(false);
         if(CategoryManager.Instance.isDebugMode)Debug.Log("Ghost item available", ghostInstance);
         if (tapToPlaceHint != null)
             tapToPlaceHint.SetActive(true);
-    }
-
-    void DelayedFunction()
-    {
-        MeshRenderer rend = ghostInstance.GetComponentInChildren<MeshRenderer>();
-
-        GameObject instance = Instantiate(selectedAreaBottom);
-
-        Bounds bounds = rend.bounds;
-
-        float size = Mathf.Max(bounds.size.x, bounds.size.z);
-
-        // Add 10% padding
-        size *= 1.3f;
-
-        // Position at bottom
-        instance.transform.position = new Vector3(
-            bounds.center.x,
-            bounds.min.y + -0.07f,
-            bounds.center.z
-        );
-
-        // Scale to match model footprint
-        instance.transform.localScale = new Vector3(
-            size,
-            0.01f,
-            size
-        );
-
-        instance.transform.parent = rend.transform;
     }
 
     void Update()
@@ -216,14 +198,27 @@ public class GhostPlacementController : MonoBehaviour
             ghostInstance.SetActive(false);
         }
 
-        //Tap to confirm placement
+        //Tap to confirm placement (ignore UI clicks)
         if ((Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began) || Input.GetMouseButton(0))
         {
+            if (EventSystem.current != null)
+            {
+                bool isUI = false;
+                if (Input.touchCount > 0)
+                    isUI = EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId);
+                else
+                    isUI = EventSystem.current.IsPointerOverGameObject();
+                if (isUI) return;
+            }
+
             if (ghostInstance.activeSelf)
             {
                 isPlaced = true;
                 Vector3 pos = ghostInstance.transform.position;
                 Quaternion rot = ghostInstance.transform.rotation;
+
+                ProductDetails ghostPd = UIManagerAR.instance.selectedModelDetails;
+                int colorIndex = ghostPd != null ? ghostPd.selectedColorIndex : 0;
 
                 Destroy(ghostInstance);
                 ghostInstance = null;
@@ -231,15 +226,31 @@ public class GhostPlacementController : MonoBehaviour
                 if (tapToPlaceHint != null)
                     tapToPlaceHint.SetActive(false);
 
-                //GameObject obj = Instantiate(objectToSpawn, pos, rot);
                 objectToSpawn.transform.SetPositionAndRotation(pos, rot);
                 objectToSpawn.SetActive(true);
                 spawnedObjects.Add(objectToSpawn);
                 CategoryManager.Instance.tempModels.Remove(objectToSpawn);
+
+                ProductDetails placedPd = objectToSpawn.GetComponent<ProductDetails>();
+                if (placedPd != null)
+                {
+                    placedPd.selectedColorIndex = colorIndex;
+                    UIManagerAR.instance.selectedModelDetails = placedPd;
+                    if (placedPd.textures.Count > colorIndex)
+                    {
+                        MeshRenderer placedRenderer = objectToSpawn.GetComponentInChildren<MeshRenderer>();
+                        if (placedRenderer != null)
+                        {
+                            Material mat = placedRenderer.material;
+                            mat.mainTexture = placedPd.textures[colorIndex];
+                            placedRenderer.material = mat;
+                            placedRenderer.UpdateGIMaterials();
+                        }
+                    }
+                }
+
                 objectToSpawn = null;
                 OnPlacementConfirmed?.Invoke(pos, rot);
-
-                //Invoke(nameof(BeginPlacement), 5f);
             }
         }
     }
@@ -252,12 +263,11 @@ public class GhostPlacementController : MonoBehaviour
         isPlaced = false;
         if (tapToPlaceHint != null)
             tapToPlaceHint.SetActive(false);
+        UIManagerAR.instance.smallDetail.SetActive(false);
     }
 
     public void ChangeTextureByIndex(int index)
     {
-        //objectIndex = index; // commented out to preserve original logic
-
         foreach (Transform child in UIManagerAR.instance.colorParent_LD)
         {
             if (child.GetComponent<ModelVariant>()?.index == index)
@@ -283,42 +293,70 @@ public class GhostPlacementController : MonoBehaviour
                 child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
         }
 
-
-        if (spawnedObjects.Count > 0)
+        ProductDetails targetPd = UIManagerAR.instance.selectedModelDetails;
+        if (targetPd != null)
         {
-            GameObject obj = spawnedObjects[UIManagerAR.instance.objectSelectedIndex];
-            /*Material*/
-            tempMaterial = obj.GetComponentInChildren<MeshRenderer>().material;
+            targetPd.selectedColorIndex = index;
+            bool isGhost = ghostInstance != null && targetPd.gameObject == ghostInstance;
 
-            var modelView = UIManagerAR.instance.UI_3D_Models.Find(m =>
-            m.GetComponent<ProductDetails>().product.id == obj.GetComponent<ProductDetails>().product.id);
-
-            if(CategoryManager.Instance.isDebugMode)Debug.Log($"obj count {obj.GetComponent<ProductDetails>().textures.Count}, index {index}");
-            if (obj.GetComponent<ProductDetails>().textures.Count > index)
-                tempMaterial.mainTexture = obj.GetComponent<ProductDetails>().textures[index];
-
-
-            obj.GetComponent<ProductDetails>().selectedColorIndex = index;
-            if (UIManagerAR.instance.objectSelectedIndex >= 0 && UIManagerAR.instance.objectSelectedIndex < spawnedObjects.Count)
+            if (targetPd.textures.Count > index)
             {
-                obj.GetComponentInChildren<MeshRenderer>().material = tempMaterial;
-                obj.GetComponentInChildren<MeshRenderer>().UpdateGIMaterials();
+                Texture2D selectedTex = targetPd.textures[index];
+
+                if (!isGhost)
+                {
+                    MeshRenderer targetRenderer = targetPd.GetComponentInChildren<MeshRenderer>();
+                    if (targetRenderer != null)
+                    {
+                        tempMaterial = targetRenderer.material;
+                        tempMaterial.mainTexture = selectedTex;
+                        targetRenderer.material = tempMaterial;
+                        targetRenderer.UpdateGIMaterials();
+                    }
+
+                    var modelView = UIManagerAR.instance.UI_3D_Models.Find(m =>
+                        m.GetComponent<ProductDetails>().product.id == targetPd.product.id);
+                    if (modelView != null)
+                    {
+                        MeshRenderer mvRenderer = modelView.GetComponentInChildren<MeshRenderer>();
+                        if (mvRenderer != null)
+                            mvRenderer.material = tempMaterial;
+                    }
+
+                    foreach (var spawned in spawnedObjects)
+                    {
+                        if (spawned != null && spawned != targetPd.gameObject)
+                        {
+                            var spawnedPd = spawned.GetComponent<ProductDetails>();
+                            if (spawnedPd != null && spawnedPd.product.id == targetPd.product.id)
+                            {
+                                spawnedPd.selectedColorIndex = index;
+                                MeshRenderer spawnedRenderer = spawned.GetComponentInChildren<MeshRenderer>();
+                                if (spawnedRenderer != null)
+                                {
+                                    Material mat = spawnedRenderer.material;
+                                    mat.mainTexture = selectedTex;
+                                    spawnedRenderer.material = mat;
+                                    spawnedRenderer.UpdateGIMaterials();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (ghostInstance != null && ghostInstance.activeSelf)
+                {
+                    MeshRenderer ghostRenderer = ghostInstance.GetComponentInChildren<MeshRenderer>();
+                    if (ghostRenderer != null)
+                        ghostRenderer.material.mainTexture = selectedTex;
+                }
             }
 
-
-            modelView.GetComponentInChildren<MeshRenderer>().material = tempMaterial;
-            Canvas.ForceUpdateCanvases();
-
-            UIManagerAR.instance.UpdateDetailData();
-
-            //return true;
+            UIManagerAR.instance.UpdateDetailData(targetPd);
         }
 
-
-        if(CategoryManager.Instance.isDebugMode)Debug.Log("index : " + index);
-
+        if (CategoryManager.Instance.isDebugMode) Debug.Log("index : " + index);
         Canvas.ForceUpdateCanvases();
-        //return false;
     }
 
     public void DeleteAllSpawnedObjects()

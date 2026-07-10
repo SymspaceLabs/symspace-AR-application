@@ -182,6 +182,10 @@ public class HandItemSelector : MonoBehaviour
 
         SetActiveItem(category, item);
 
+        ProductDetails selectedPd = item.GetComponent<ProductDetails>();
+        if (selectedPd != null && selectedPd.product != null)
+            UIManagerAR.instance.SelectModel(selectedPd);
+
         CategoryManager.Instance.GetComponent<SlideUpPanel>().HidePanel();
     }
 
@@ -329,39 +333,51 @@ public class HandItemSelector : MonoBehaviour
         state.isDownloading = false;
         state.isReady = true;
 
+        if (pd != null && pd.product != null)
+            UIManagerAR.instance.SelectModel(pd);
+
         CategoryManager.Instance.mv.FrameObject(modelToView);
 
         Transform parent = spawnParents[category];
 
-        ResetSpawnParent(category);
+        //ResetSpawnParent(category);
 
-        model.transform.localRotation = Quaternion.identity;
+        //model.transform.localRotation = Quaternion.identity;
 
-        if (category == CategoryType.Rings)
-        {
-            float scaleFactor = HandItemsScaler.RingScaleFromBounds(
-                model.GetComponentInChildren<Renderer>());
+        //if (category == CategoryType.Rings)
+        //{
+        //    float scaleFactor = HandItemsScaler.RingScaleFromBounds(
+        //        model.GetComponentInChildren<Renderer>());
 
-            model.transform.localScale = Vector3.one * scaleFactor;
-        }
-        else
-        {
-            float scaleFactor = HandItemsScaler.WatchScaleFromBounds(
-                model.GetComponentInChildren<Renderer>());
+        //    model.transform.localScale = Vector3.one * scaleFactor;
+        //}
+        //else
+        //{
+        //    float scaleFactor = HandItemsScaler.WatchScaleFromBounds(
+        //        model.GetComponentInChildren<Renderer>());
 
-            model.transform.localScale = Vector3.one * scaleFactor;
-        }
+        //    model.transform.localScale = Vector3.one * scaleFactor;
+        //}
 
-        model.transform.localEulerAngles = new Vector3(0, 180, 0);
+        //model.transform.localEulerAngles = new Vector3(0, 180, 0);
 
-        if (category == CategoryType.Rings)
-            parent.localEulerAngles = new Vector3(90, 0, 0);
+        //if (category == CategoryType.Rings)
+        //    parent.localEulerAngles = new Vector3(90, 0, 0);
 
         foreach (Transform obj in parent)
             obj.gameObject.SetActive(false);
 
+        //model.transform.localScale = Vector3.one;
         model.transform.SetParent(parent);
-        model.transform.localPosition = Vector3.zero + GetComponent<HandTrackingVisualizer>().wristOffset;
+        //if(category == CategoryType.Watches)
+        //    model.transform.localPosition = Vector3.zero + GetComponent<HandTrackingVisualizer>().wristOffset;
+        //else
+        //{
+            model.transform.localPosition = Vector3.zero;
+            model.transform.localEulerAngles = new Vector3(0, 0, 0);
+            model.transform.localScale = Vector3.one;
+        //}
+        //model.transform.localRotation = Quaternion.identity;
 
         if (category == CategoryType.Watches)
         {
@@ -369,8 +385,8 @@ public class HandItemSelector : MonoBehaviour
                 model.GetComponentInChildren<MeshRenderer>().bounds.size.x;
         }
 
-        if (category == CategoryType.Rings)
-            parent.localEulerAngles = new Vector3(0, 0, 0);
+        //if (category == CategoryType.Rings)
+        //    parent.localEulerAngles = new Vector3(0, 0, 0);
 
         if(CategoryManager.Instance.isDebugMode)Debug.Log("category : " + category);
 
@@ -494,20 +510,29 @@ public class HandItemSelector : MonoBehaviour
             else
                 child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
         }
+        
+        ProductDetails targetPd = UIManagerAR.instance.selectedModelDetails;
+        if (targetPd == null) return;
 
-        if (index >= UIManagerAR.instance.selectedModelDetails.textures.Count)
-            return;
+        targetPd.selectedColorIndex = index;
+        if (index >= 0 && index < targetPd.textures.Count)
+        {
+            Material mat = targetPd.GetComponentInChildren<MeshRenderer>().material;
+            mat.mainTexture = targetPd.textures[index];
+            targetPd.GetComponentInChildren<MeshRenderer>().material = mat;
 
-        UIManagerAR.instance.selectedModelDetails.selectedColorIndex = index;
-        Material mat = UIManagerAR.instance.selectedModelDetails.GetComponentInChildren<MeshRenderer>().material;
+            var modelView = UIManagerAR.instance.UI_3D_Models.Find(m =>
+                m.GetComponent<ProductDetails>().product.id == targetPd.product.id);
+            if (modelView != null)
+            {
+                MeshRenderer mvRenderer = modelView.GetComponentInChildren<MeshRenderer>();
+                if (mvRenderer != null)
+                    mvRenderer.material = mat;
+            }
+        }
 
-        //Color newColor1;
-        //ColorUtility.TryParseHtmlString(selectedProduct.product.colors[index].code, out newColor1);
-        //mat.color = newColor1;
-
-        mat.mainTexture = UIManagerAR.instance.selectedModelDetails.textures[index];
-
-        UIManagerAR.instance.selectedModelDetails.GetComponentInChildren<MeshRenderer>().material = mat;
+        UIManagerAR.instance.UpdateDetailData(targetPd);
+        Canvas.ForceUpdateCanvases();
     }
 
     #endregion
@@ -643,11 +668,14 @@ public class HandItemSelector : MonoBehaviour
             foreach (Transform t in parent)
             {
                 var details = t.GetComponent<ProductDetails>();
-                var canvas = details.plusCanvas;
-
-                if (canvas != null)
+                if (details != null)
                 {
-                    Destroy(canvas);
+                    var canvas = details.plusCanvas;
+
+                    if (canvas != null)
+                    {
+                        Destroy(canvas);
+                    }
                 }
 
                 Destroy(t.gameObject);
