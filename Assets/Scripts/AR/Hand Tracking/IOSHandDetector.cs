@@ -52,9 +52,9 @@ public class IOSHandDetector : MonoBehaviour
     private static HandTrackingVisualizer cachedVisualizer;
     private static float[] landmarks = new float[21 * 3];
 
-#if UNITY_IOS
     private void Start()
     {
+#if UNITY_IOS
         if (cameraManager == null)
             cameraManager = FindObjectOfType<ARCameraManager>();
 
@@ -69,15 +69,19 @@ public class IOSHandDetector : MonoBehaviour
         }
 
         StartTutorial();
+#endif
     }
 
     public void StartTutorial()
     {
+#if UNITY_IOS
         tutorialRoutine = StartCoroutine(TutorialFlow());
 
         Invoke(nameof(EnableObjects), 5f);
-    }
+#endif
+}
 
+#if UNITY_IOS
     IEnumerator TutorialFlow()
     {
         tutorialActive = true;

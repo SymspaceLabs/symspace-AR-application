@@ -38,6 +38,7 @@ public class OnBoardingUI : MonoBehaviour
     private UserProfile user = new UserProfile();
 
     public GameObject discovery_Panel;
+    public GameObject discovery_PanelBlur;
 
     [Header("On Boarding Panels")]
     public GameObject getStarted_Panel;
@@ -114,13 +115,13 @@ public class OnBoardingUI : MonoBehaviour
             catch (Exception e)
             {
                 ShowStatus("Invalid date: " + e.Message, true);
-                //Debug.LogError("Invalid date: " + e.Message);
+                //if (CategoriesUI.Instance.isDebug) Debug.LogError("Invalid date: " + e.Message);
             }
         }
         else
         {
             ShowStatus("Invalid date: One or more date fields are invalid.", true);
-            //Debug.LogError("One or more date fields are invalid.");
+            //if (CategoriesUI.Instance.isDebug) Debug.LogError("One or more date fields are invalid.");
         }
     }
 
@@ -200,10 +201,49 @@ public class OnBoardingUI : MonoBehaviour
         EnablePanel(success_Panel);
     }
 
+    public void GoBack()
+    {
+        if (success_Panel.activeSelf)
+        {
+            success_Panel.SetActive(false);
+            ShowScreen(UIScreenType.gender);
+            EnablePanel(gender_Panel);
+            return;
+        }
+
+        for (int i = 0; i < screens.Count; i++)
+        {
+            if (screens[i].mainPanel != null && screens[i].mainPanel.activeSelf)
+            {
+                if (i <= 1) return;
+
+                UIScreenType prev = screens[i - 1].type;
+                ShowScreen(prev);
+                PanelForScreen(i - 1);
+                return;
+            }
+        }
+    }
+
+    void PanelForScreen(int screenIndex)
+    {
+        if (screenIndex <= 1)
+            EnablePanel(getStarted_Panel);
+        else if (screenIndex == 2)
+            EnablePanel(height_Panel);
+        else if (screenIndex == 3)
+            EnablePanel(weight_Panel);
+        else if (screenIndex == 4)
+            EnablePanel(size_Panel);
+        else if (screenIndex == 5)
+            EnablePanel(gender_Panel);
+    }
+
     public void BeginSimulation()
     {
         PlayerPrefs.SetInt("OnBoarding", 1);
         discovery_Panel.SetActive(true);
+        discovery_PanelBlur.SetActive(true);
         HideAll();
         foreach (var screen in screens)
             if (screen.backPanel) screen.backPanel.SetActive(false);
@@ -287,6 +327,7 @@ public class OnBoardingUI : MonoBehaviour
             loadingPanel.SetActive(false);
 
         discovery_Panel.SetActive(PlayerPrefs.GetInt("OnBoarding", 0) == 0 ? false : true);
+        discovery_PanelBlur.SetActive(PlayerPrefs.GetInt("OnBoarding", 0) == 0 ? false : true);
         getStarted_Panel.SetActive(PlayerPrefs.GetInt("OnBoarding", 0) == 0 ? true : false);
 
         HideAll();
@@ -313,13 +354,13 @@ public class OnBoardingUI : MonoBehaviour
             (response) =>
             {
                 ResponseData responseData = JsonUtility.FromJson<ResponseData>(response);
-                Debug.Log("Onboarding Successful: " + responseData.message);
+                if (CategoriesUI.Instance.isDebug) Debug.Log("Onboarding Successful: " + responseData.message);
 
                 loadingPanel.SetActive(false);
             },
             (error) =>
             {
-                Debug.LogError("Sign Up Failed: " + error);
+                if (CategoriesUI.Instance.isDebug) Debug.LogError("Sign Up Failed: " + error);
 
                 FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
 

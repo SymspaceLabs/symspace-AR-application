@@ -1,209 +1,221 @@
 using UnityEngine;
-//using Facebook.Unity;
-//using System.Collections.Generic;
-//using System;
-//using UnityEngine.SceneManagement;
-//using TMPro;
+
+#if UNITY_IOS
+using Facebook.Unity;
+#endif
+using UnityEngine.SceneManagement;
+using System.Collections.Generic;
+using System;
+using TMPro;
 
 public class FacebookLoginManager : MonoBehaviour
 {
-    //public static FacebookLoginManager Instance;
+    public static FacebookLoginManager Instance;
 
-    //string facebookLoginURL = AuthAPI.api + "login/facebook";
+    string facebookLoginURL = AuthAPI.api + "login/facebook";
 
-    //[Header("Debug")]
-    //[SerializeField] private bool autoInitOnStart = true;
+    [Header("Debug")]
+    [SerializeField] private bool autoInitOnStart = true;
 
-    //public TextMeshProUGUI errorMessage;
+    public TextMeshProUGUI errorMessage;
 
-    //void Awake()
-    //{
-    //    // Singleton
-    //    if (Instance != null && Instance != this)
-    //    {
-    //        Destroy(gameObject);
-    //        return;
-    //    }
+    void Awake()
+    {
+        // Singleton
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
 
-    //    Instance = this;
-    //    DontDestroyOnLoad(gameObject);
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
 
-    //    if (autoInitOnStart)
-    //    {
-    //        InitFacebook();
-    //    }
-    //}
+        if (autoInitOnStart)
+        {
+            InitFacebook();
+        }
+    }
 
-    ///// <summary>
-    ///// Initialize Facebook SDK
-    ///// </summary>
-    //public void InitFacebook()
-    //{
-    //    if (!FB.IsInitialized)
-    //    {
-    //        FB.Init(OnFacebookInitialized, OnHideUnity);
-    //    }
-    //    else
-    //    {
-    //        FB.ActivateApp();
-    //    }
-    //}
+    /// <summary>
+    /// Initialize Facebook SDK
+    /// </summary>
+    public void InitFacebook()
+    {
+        #if UNITY_IOS
+        if (!FB.IsInitialized)
+        {
+            FB.Init(OnFacebookInitialized, OnHideUnity);
+        }
+        else
+        {
+            FB.ActivateApp();
+        }
+#endif
+    }
 
-    //private void OnFacebookInitialized()
-    //{
-    //    if (FB.IsInitialized)
-    //    {
-    //        Debug.Log("Facebook SDK Initialized");
-    //        FB.ActivateApp();
-    //    }
-    //    else
-    //    {
-    //        Debug.LogError("Failed to initialize Facebook SDK");
-    //    }
-    //}
+#if UNITY_IOS
+    private void OnFacebookInitialized()
+    {
+        if (FB.IsInitialized)
+        {
+            Debug.Log("Facebook SDK Initialized");
+            FB.ActivateApp();
+        }
+        else
+        {
+            Debug.LogError("Failed to initialize Facebook SDK");
+        }
+    }
 
-    //private void OnHideUnity(bool isGameShown)
-    //{
-    //    Time.timeScale = isGameShown ? 1 : 0;
-    //}
+    private void OnHideUnity(bool isGameShown)
+    {
+        Time.timeScale = isGameShown ? 1 : 0;
+    }
 
-    ///// <summary>
-    ///// Call this from a UI button
-    ///// </summary>
-    //public void Login()
-    //{
-    //    if (!FB.IsInitialized)
-    //    {
-    //        Debug.LogWarning("FB not initialized yet");
-    //        return;
-    //    }
+#endif
 
-    //    var permissions = new List<string>
-    //    {
-    //        "public_profile",
-    //        "email"
-    //    };
+        /// <summary>
+        /// Call this from a UI button
+        /// </summary>
+    public void Login()
+    {
+#if UNITY_IOS
+        if (!FB.IsInitialized)
+        {
+            Debug.LogWarning("FB not initialized yet");
+            return;
+        }
 
-    //    FB.LogInWithReadPermissions(permissions, OnLoginResult);
-    //}
+        var permissions = new List<string>
+        {
+            "public_profile",
+            "email"
+        };
 
-    //private void OnLoginResult(ILoginResult result)
-    //{
-    //    if (FB.IsLoggedIn)
-    //    {
-    //        Debug.Log("Facebook login successful");
+        FB.LogInWithReadPermissions(permissions, OnLoginResult);
+#endif
+    }
 
-    //        APILogin(AccessToken.CurrentAccessToken.TokenString);
-    //        //FetchUserProfile();
-    //    }
-    //    else
-    //    {
-    //        Debug.LogWarning("Facebook login cancelled or failed");
+#if UNITY_IOS
+    private void OnLoginResult(ILoginResult result)
+    {
+        if (FB.IsLoggedIn)
+        {
+            Debug.Log("Facebook login successful");
 
-    //        if (!string.IsNullOrEmpty(result.Error))
-    //        {
-    //            Debug.LogError("FB Error: " + result.Error);
-    //        }
-    //    }
-    //}
+            APILogin(AccessToken.CurrentAccessToken.TokenString);
+            //FetchUserProfile();
+        }
+        else
+        {
+            Debug.LogWarning("Facebook login cancelled or failed");
 
-    //void APILogin(string accessToken)
-    //{
-    //    LoginBody body = new LoginBody();
-    //    body.acessToken = accessToken;
+            if (!string.IsNullOrEmpty(result.Error))
+            {
+                Debug.LogError("FB Error: " + result.Error);
+            }
+        }
+    }
 
-    //    string jsonBody = JsonUtility.ToJson(body);
+    void APILogin(string accessToken)
+    {
+        LoginBody body = new LoginBody();
+        body.acessToken = accessToken;
 
-    //    MenuManager.Instance.loadingPanel.SetActive(true);
+        string jsonBody = JsonUtility.ToJson(body);
 
-    //    StartCoroutine(AuthAPI.PostRequest(facebookLoginURL, jsonBody,
-    //        (response) =>
-    //        {
-    //            Response responseData = JsonUtility.FromJson<Response>(response);
-    //            Debug.Log("Facebook login success");
+        MenuManager.Instance.loadingPanel.SetActive(true);
 
-    //            PlayerPrefs.SetString("id", responseData.user.id);
-    //            PlayerPrefs.SetInt("RememberMe", 1);
-    //            SceneManager.LoadScene("Blogs");
-    //        },
-    //        (error) =>
-    //        {
-    //            Debug.LogError("facebook login failed: " + error);
-    //            FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
-    //            // if (errorResponse.statusCode == 401)
-    //            // {
-    //            MenuManager.Instance.ShowError(errorResponse.message);
-    //            // }
-    //            MenuManager.Instance.loadingPanel.SetActive(false);
-    //        }
-    //        ));
-    //}
+        StartCoroutine(AuthAPI.PostRequest(facebookLoginURL, jsonBody,
+            (response) =>
+            {
+                Response responseData = JsonUtility.FromJson<Response>(response);
+                Debug.Log("Facebook login success");
 
-    ///// <summary>
-    ///// Fetch basic profile info
-    ///// </summary>
-    //private void FetchUserProfile()
-    //{
-    //    FB.API(
-    //        "/me?fields=id,name,email",
-    //        HttpMethod.GET,
-    //        OnProfileResult
-    //    );
-    //}
+                PlayerPrefs.SetString("id", responseData.user.id);
+                PlayerPrefs.SetInt("RememberMe", 1);
+                SceneManager.LoadScene("Blogs");
+            },
+            (error) =>
+            {
+                Debug.LogError("facebook login failed: " + error);
+                FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
+                // if (errorResponse.statusCode == 401)
+                // {
+                MenuManager.Instance.ShowError(errorResponse.message);
+                // }
+                MenuManager.Instance.loadingPanel.SetActive(false);
+            }
+            ));
+    }
 
-    //private void OnProfileResult(IGraphResult result)
-    //{
-    //    if (result.Error != null)
-    //    {
-    //        Debug.LogError("Graph API Error: " + result.Error);
-    //        return;
-    //    }
+    /// <summary>
+    /// Fetch basic profile info
+    /// </summary>
+    private void FetchUserProfile()
+    {
+        FB.API(
+            "/me?fields=id,name,email",
+            HttpMethod.GET,
+            OnProfileResult
+        );
+    }
 
-    //    // Example JSON fields:
-    //    // id, name, email
-    //}
+    private void OnProfileResult(IGraphResult result)
+    {
+        if (result.Error != null)
+        {
+            Debug.LogError("Graph API Error: " + result.Error);
+            return;
+        }
 
-    ///// <summary>
-    ///// Logout
-    ///// </summary>
-    //public void Logout()
-    //{
-    //    if (FB.IsLoggedIn)
-    //    {
-    //        FB.LogOut();
-    //        Debug.Log("Facebook logged out");
-    //    }
-    //}
+        // Example JSON fields:
+        // id, name, email
+    }
 
-    //private void ShowError(string message, TMP_InputField field = null)
-    //{
-    //    errorMessage.gameObject.SetActive(true);
-    //    errorMessage.text = message;
-    //}
+    /// <summary>
+    /// Logout
+    /// </summary>
+    public void Logout()
+    {
+        if (FB.IsLoggedIn)
+        {
+            FB.LogOut();
+            Debug.Log("Facebook logged out");
+        }
+    }
 
-    //[Serializable]
-    //public class LoginBody
-    //{
-    //    public string acessToken;
-    //}
+    private void ShowError(string message, TMP_InputField field = null)
+    {
+        errorMessage.gameObject.SetActive(true);
+        errorMessage.text = message;
+    }
 
-    //[Serializable]
-    //public class Response
-    //{
-    //    public string acessToken;
-    //    public User user;
-    //}
+    [Serializable]
+    public class LoginBody
+    {
+        public string acessToken;
+    }
 
-    //[Serializable]
-    //public class User
-    //{
-    //    public string id;
-    //    public string email;
-    //    public string firstName;
-    //    public string lastName;
-    //    public string role;
-    //    public string avatar;
-    //    public bool isOnboardingFormFilled;
-    //    public string token;
-    //}
+    [Serializable]
+    public class Response
+    {
+        public string acessToken;
+        public User user;
+    }
+
+    [Serializable]
+    public class User
+    {
+        public string id;
+        public string email;
+        public string firstName;
+        public string lastName;
+        public string role;
+        public string avatar;
+        public bool isOnboardingFormFilled;
+        public string token;
+    }
+#endif
 }

@@ -65,7 +65,8 @@ public class SignUpUI : MonoBehaviour
             (error) =>
             {
                 FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
-                MenuManager.Instance.ShowError(errorResponse.message);
+                MenuManager.Instance.ShowError($"Post API req respone : {errorResponse.message}");
+                Debug.Log(errorResponse.message);
 
                 MenuManager.Instance.loadingPanel.SetActive(false);
             }));

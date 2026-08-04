@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -16,8 +15,12 @@ public class CategoriesUI : MonoBehaviour
 {
     public static CategoriesUI Instance;
 
+    #region API Endpoints
+    private string getAllProductsURL = "/products";
     private string getProductsURL = "/products?subcategory";
     private string getProductBySlug = "/products/slug/";
+    #endregion
+
 
     public enum UIScreenType_Shop
     {
@@ -26,85 +29,165 @@ public class CategoriesUI : MonoBehaviour
     }
 
     public List<UIScreen> screens;
-    public GameObject whiteBG;
 
-    #region Parameters
-    [Header("UI Elements")]
-    public Transform contentParent;
-    public GameObject productPrefab;
-    public Button refreshButton;
-    public TextMeshProUGUI statusText;
-    #endregion
+
+    #region Main UI References
+
+    [Header("Global UI")]
+    public GameObject whiteBG;
 
     public GameObject supplyPanel;
     public GameObject shopPanel;
-    public GameObject itemDetailPanel;
-    public GameObject itemDetailPanelBG;
     public GameObject loadingPanel;
 
+    #endregion
+
+
+    #region Product Listing
+
+    [Header("Product List")]
+    public Transform contentParent;
+    public GameObject productPrefab;
+
+    public Button refreshButton;
+    public TextMeshProUGUI statusText;
+
+    #endregion
+
+
+    #region Category Navigation
+
+    [Header("Category Tabs")]
     public Image[] categoriesTabs;
+    public ScrollRect categorySlideView;
 
     public TextMeshProUGUI categoryTitle;
 
+    [Header("Category Colors")]
     public Color selectedColor;
     public Color unSelectedColor;
 
-    public GameObject loadingIcon;
+    #endregion
 
-    [Header("Detail Item Panel")]
+
+    #region Product Detail Panel
+
+    [Header("Detail Panel")]
+    public GameObject itemDetailPanel;
+    public GameObject itemDetailPanelBG;
+
+    [Header("Product Information")]
     public TextMeshProUGUI itemName;
     public TextMeshProUGUI itemType;
     public TextMeshProUGUI itemPrice;
     public TextMeshProUGUI itemDiscountPrice;
     public TextMeshProUGUI itemDiscription;
-    public TextMeshProUGUI companyDiscription;
-    public Button arRoomBtn;
 
+    [Header("Company Information")]
+    public TextMeshProUGUI companyDiscription;
+
+    [Header("Actions")]
+    public Button arRoomBtn;
+    public Button addToCartBtn;
+
+    #endregion
+
+
+    #region 3D Model Viewer
+
+    [Header("3D Model")]
     public GameObject targetModel;
     public GameObject modelPrefab;
     public GameObject UI_3D_Models_Parent;
-    //private string localPath;
-
-    public Transform colorsParent;
-    public GameObject colorPrefab;
-
-    //public GameObject colorVariant1Parent;
-    //public GameObject colorVariant2Parent;
-    //public GameObject colorVariant3Parent;
-
-    //public Image colorVariant1;
-    //public Image colorVariant2;
-    //public Image colorVariant3;
-
-    public TMP_Dropdown sizes;
 
     public ModelViewer mv;
 
+    [Header("Camera Settings")]
     public float cameraOffset = 1.2f;
 
-    public ProductDetails selectedProduct;
-    public int selectedMatIndex;
+    [Header("Downloaded Models")]
+    public List<GameObject> downloadedModels;
 
+    #endregion
+
+
+    #region Product Variants
+
+    [Header("Colors")]
+    public Transform colorsParent;
+    public GameObject colorPrefab;
+
+    [Header("Sizes")]
+    public TMP_Dropdown sizes;
+
+    #endregion
+
+
+    #region Item Viewer UI
+
+    [Header("360 View")]
     public RawImage modelViewer3D;
     public GameObject txt360View;
     public Image modelViewerImage;
 
-    public List<GameObject> downloadedModels;
-    Coroutine currentCoroutine;
-    UnityWebRequest currentRequest;
-
     public GameObject itemViewBG;
     public GameObject itemViewPanel;
 
+    #endregion
+
+
+    #region Product Data
+
+    [Header("Selected Product")]
+    public ProductDetails selectedProduct;
+    public int selectedMatIndex;
+
+    public CategoryManager.ProductResponse allProductsData;
+
+    #endregion
+
+
+    #region Selection State
+
+    [Header("Selection")]
     public bool isSizeSelected = false;
     public int selectedSizeIndex = 0;
     public int maxStocks = 0;
 
     public TextMeshProUGUI stocksSelected;
 
+    public string currentProductID;
+
+    private string lastResolvedVariantId;
+
+    #endregion
+
+
+    #region Search
+
+    [Header("Search")]
+    public TMP_InputField searchInputField;
+
+    #endregion
+
+
+    #region Runtime
+
+    [Header("Runtime References")]
+    public Coroutine currentCoroutine;
     public Coroutine tempCoroutine;
 
-    public string currentProductID;
+    public UnityWebRequest currentRequest;
+
+    #endregion
+
+
+    #region Debug
+
+    [Header("Debug")]
+    public bool isDebug = false;
+
+    #endregion
 
     private void Awake()
     {
@@ -114,17 +197,32 @@ public class CategoriesUI : MonoBehaviour
     private void OnEnable()
     {
         statusText.gameObject.SetActive(false);
-        //LoadCategories();
     }
 
-    void Start()
+    private void Start()
     {
-        //localPath = Path.Combine(Application.persistentDataPath, "tempModel.glb");
         if (refreshButton != null)
         {
-            //refreshButton.onClick.AddListener(LoadCategories);
+            // Reserved for future refresh functionality
         }
+
+        if (addToCartBtn != null)
+            addToCartBtn.onClick.AddListener(AddCurrentToCart);
+
+        if (searchInputField != null)
+            searchInputField.onValueChanged.AddListener(OnSearchTextChanged);
+
+        GetAllProducts();
     }
+
+    private void AddCurrentToCart()
+    {
+        if (CartManager.Instance != null)
+            CartManager.Instance.AddCurrentToCart();
+    }
+
+
+    #region Screen Management
 
     public void ShowScreen(UIScreenType_Shop type)
     {
@@ -132,13 +230,19 @@ public class CategoriesUI : MonoBehaviour
 
         foreach (var screen in screens)
         {
-            if (screen.type == type)
-            {
-                if (screen.mainPanel) screen.mainPanel.SetActive(true);
-                if (screen.blurPanel) screen.blurPanel.SetActive(true);
-                if (screen.backPanel) screen.backPanel.SetActive(true);
-                break;
-            }
+            if (screen.type != type)
+                continue;
+
+            if (screen.mainPanel)
+                screen.mainPanel.SetActive(true);
+
+            if (screen.blurPanel)
+                screen.blurPanel.SetActive(true);
+
+            if (screen.backPanel)
+                screen.backPanel.SetActive(true);
+
+            break;
         }
     }
 
@@ -146,11 +250,21 @@ public class CategoriesUI : MonoBehaviour
     {
         foreach (var screen in screens)
         {
-            if (screen.mainPanel) screen.mainPanel.SetActive(false);
-            if (screen.blurPanel) screen.blurPanel.SetActive(false);
-            if (screen.backPanel) screen.backPanel.SetActive(false);
+            if (screen.mainPanel)
+                screen.mainPanel.SetActive(false);
+
+            if (screen.blurPanel)
+                screen.blurPanel.SetActive(false);
+
+            if (screen.backPanel)
+                screen.backPanel.SetActive(false);
         }
     }
+
+    #endregion
+
+
+    #region Category & Search
 
     public void SelectCategory(string url)
     {
@@ -160,227 +274,374 @@ public class CategoriesUI : MonoBehaviour
         LoadCategories(url);
     }
 
+    public void OnSearchTextChanged(string text)
+    {
+        CategoryManager.ProductResponse response = SearchProducts(text);
+
+        ClearProducts();
+        PopulateItems(response.products);
+
+        UnselectedAllCategories();
+    }
+
+    public CategoryManager.ProductResponse SearchProducts(string query)
+    {
+        if (string.IsNullOrEmpty(query))
+            return allProductsData;
+
+        string[] searchWords = query
+            .ToLower()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+
+        var filteredProducts = allProductsData.products
+            .Where(product =>
+            {
+                string searchableText =
+                    $"{product.name} " +
+                    $"{product.company.entityName} " +
+                    $"{product.category.name} " +
+                    $"{product.material} " +
+                    $"{product.category.parent.name} " +
+                    $"{product.category.parent.parent.name} " +
+                    $"{product.category.parent.parent.parent.name}"
+                    .ToLower();
+
+
+                return searchWords.Any(word =>
+                    searchableText.Contains(word));
+            })
+            .ToList();
+
+
+        return new CategoryManager.ProductResponse
+        {
+            products = filteredProducts
+        };
+    }
+
+    #endregion
+
     #region API Call
-    public void LoadCategories(string categoryURL)
+
+    private void GetAllProducts()
+    {
+        StartCoroutine(AuthAPI.PostRequest(
+            getAllProductsURL,
+            "",
+            (response) =>
+            {
+                CategoryManager.ProductResponse responseData =
+                    JsonUtility.FromJson<CategoryManager.ProductResponse>(response);
+
+                allProductsData = responseData;
+            },
+            (error) =>
+            {
+                if (isDebug)
+                    Debug.LogError("Failed to load all products: " + error);
+            },
+            "GET"));
+    }
+
+
+    public void UnselectedAllCategories()
     {
         foreach (var category in categoriesTabs)
+        {
             category.color = unSelectedColor;
-
-        foreach(var category in categoriesTabs)
-            if(categoryURL.Contains(category.name))
-            {
-                category.color = selectedColor;
-                categoryTitle.text = category.name;
-            }
+        }
+    }
 
 
-        loadingIcon.SetActive(true);
+    public void SelectedCategoryIndex(int index)
+    {
+        UnselectedAllCategories();
 
-        //MenuManager.Instance.loadingPanel.SetActive(true);
-        ClearCategories();
+        if (index < 0 || index >= categoriesTabs.Length)
+            return;
+
+        categoriesTabs[index].color = selectedColor;
+        categoryTitle.text = categoriesTabs[index].name;
+    }
+
+
+    public void ScrollToSelectedHorizontal(int selectedIndex)
+    {
+        if (categorySlideView == null || categorySlideView.content == null)
+            return;
+
+        int totalItems = categorySlideView.content.childCount;
+
+        if (totalItems <= 1)
+            return;
+
+
+        selectedIndex = Mathf.Clamp(
+            selectedIndex,
+            0,
+            totalItems - 1);
+
+
+        float normalizedPosition =
+            (float)selectedIndex / (totalItems - 1);
+
+
+        categorySlideView.horizontalNormalizedPosition =
+            Mathf.Clamp01(normalizedPosition);
+    }
+
+
+    public void LoadCategories(string categoryURL)
+    {
+        ClearProducts();
+
 
         if (tempCoroutine != null)
             StopCoroutine(tempCoroutine);
 
-        tempCoroutine = StartCoroutine(AuthAPI.PostRequest(getProductsURL + categoryURL, "", // Empty string for no body
-            (response) =>
-            {
-                Debug.Log("Categories loaded: " + response);
 
-                // Parse the response
-                CategoryManager.ProductResponse responseData = JsonUtility.FromJson<CategoryManager.ProductResponse>(response);
-
-                if (responseData.products != null && responseData.products.Count > 0)
+        tempCoroutine = StartCoroutine(
+            AuthAPI.PostRequest(
+                getProductsURL + categoryURL,
+                "",
+                (response) =>
                 {
-                    PopulateItems(responseData.products);
-                    statusText.gameObject.SetActive(false);
-                }
-                else
-                {
-                    ShowStatus("No categories found", false);
-                }
+                    if (isDebug)
+                        Debug.Log("Categories loaded: " + response);
 
-                loadingIcon.SetActive(false);
-                loadingPanel.SetActive(false);
-            },
-            (error) =>
-            {
-                loadingIcon.SetActive(false);
-                loadingPanel.SetActive(false);
-                Debug.LogError("Failed to load categories: " + error);
-                ShowStatus("Failed to load categories", true);
-                //MenuManager.Instance.loadingPanel.SetActive(false);
-            }, "GET"));
+
+                    CategoryManager.ProductResponse responseData =
+                        JsonUtility.FromJson<CategoryManager.ProductResponse>(response);
+
+
+                    if (responseData.products != null &&
+                        responseData.products.Count > 0)
+                    {
+                        PopulateItems(responseData.products);
+                        statusText.gameObject.SetActive(false);
+                    }
+                    else
+                    {
+                        ShowStatus("No categories found", false);
+                    }
+
+
+                    loadingPanel.SetActive(false);
+                },
+                (error) =>
+                {
+                    loadingPanel.SetActive(false);
+
+                    if (isDebug)
+                        Debug.LogError("Failed to load categories: " + error);
+
+                    ShowStatus("Failed to load categories", true);
+                },
+                "GET"));
     }
 
-    IEnumerator DownloadAndAssign(string url, GameObject targetObject, CategoryManager.Products p)
+    #endregion
+    #region Model Loading
+
+    private IEnumerator DownloadAndAssign(
+        string url,
+        GameObject targetObject,
+        CategoryManager.Products p)
     {
         yield return null;
 
-        var state = targetObject.GetComponent<DownloadState>();
+
+        DownloadState state = targetObject.GetComponent<DownloadState>();
+
+        if (state == null)
+            state = targetObject.AddComponent<DownloadState>();
+
+
         state.isDownloading = true;
         state.isReady = false;
+
+
         GameObject loadedRoot = null;
-        yield return StartCoroutine(ModelLoaderService.DownloadAndLoad(url, (model) => { loadedRoot = model; }));
 
-        //string localPath = Path.Combine(Application.persistentDataPath, p.id + ".glb");
 
-        //using (UnityWebRequest www = UnityWebRequest.Get(url))
-        //{
-        //    currentRequest = www;
-        //    www.downloadHandler = new DownloadHandlerFile(localPath);
-        //    yield return www.SendWebRequest();
+        yield return StartCoroutine(
+            ModelLoaderService.DownloadAndLoad(
+                url,
+                (model) =>
+                {
+                    loadedRoot = model;
+                }));
 
-        //    if (www.result != UnityWebRequest.Result.Success)
-        //    {
-        //        Debug.LogError("Download failed: " + www.error);
-        //        state.isDownloading = false; // allow retry
-        //        yield break;
-        //    }
-        //}
 
-        //// --- Step 2: Load GLB with UnityGLTF ---
-        //using (FileStream stream = new FileStream(localPath, FileMode.Open, FileAccess.Read))
-        //{
-        //    var importOptions = new ImportOptions();
-        //    var importer = new GLTFSceneImporter(stream, importOptions);
-        //    yield return importer.LoadSceneAsync();
-
-        //    GameObject loadedRoot = importer.LastLoadedScene;
-
-        //    if (loadedRoot == null)
-        //    {
-        //        Debug.LogError("Failed to load GLB: no root GameObject returned");
-        //        state.isDownloading = false;
-        //        yield break;
-        //    }
-
-        MeshFilter srcMF = loadedRoot.GetComponentInChildren<MeshFilter>();
-        MeshRenderer srcMR = loadedRoot.GetComponentInChildren<MeshRenderer>();
-        SkinnedMeshRenderer srcSK = loadedRoot.GetComponentInChildren<SkinnedMeshRenderer>();
-
-        Mesh mesh = null;
-        Material[] mats = null;
-
-        // Normal mesh
-        if (srcMF != null && srcMR != null)
+        if (loadedRoot == null)
         {
-            mesh = srcMF.sharedMesh;
-            mats = srcMR.materials;
-        }
-        // Skinned mesh
-        else if (srcSK != null)
-        {
-            mesh = srcSK.sharedMesh;
-            mats = srcSK.materials;
-        }
-        else
-        {
-            Debug.LogError("Loaded model has no renderable mesh!");
+            if (isDebug)
+                Debug.LogError("Failed to load model");
+
             state.isDownloading = false;
             yield break;
         }
 
-        // Assign mesh/material to target
-        Transform visual = targetObject.transform.Find("Visual");
+
+        MeshFilter sourceMeshFilter =
+            loadedRoot.GetComponentInChildren<MeshFilter>();
+
+        MeshRenderer sourceMeshRenderer =
+            loadedRoot.GetComponentInChildren<MeshRenderer>();
+
+        SkinnedMeshRenderer sourceSkinnedRenderer =
+            loadedRoot.GetComponentInChildren<SkinnedMeshRenderer>();
+
+
+        Mesh mesh = null;
+        Material[] materials = null;
+
+
+        if (sourceMeshFilter != null &&
+            sourceMeshRenderer != null)
+        {
+            mesh = sourceMeshFilter.sharedMesh;
+            materials = sourceMeshRenderer.materials;
+        }
+        else if (sourceSkinnedRenderer != null)
+        {
+            mesh = sourceSkinnedRenderer.sharedMesh;
+            materials = sourceSkinnedRenderer.materials;
+        }
+        else
+        {
+            if (isDebug)
+                Debug.LogError("Loaded model has no renderable mesh!");
+
+            state.isDownloading = false;
+
+            Destroy(loadedRoot);
+            yield break;
+        }
+
+
+        Transform visual =
+            targetObject.transform.Find("Visual");
+
 
         if (visual == null)
         {
             visual = new GameObject("Visual").transform;
-            visual.parent = targetObject.transform;
+
+            visual.SetParent(targetObject.transform);
             visual.localPosition = Vector3.zero;
+            visual.localRotation = Quaternion.identity;
+            visual.localScale = Vector3.one;
         }
 
-        MeshFilter targetMF =
-            visual.GetComponent<MeshFilter>() ??
-            visual.gameObject.AddComponent<MeshFilter>();
 
-        MeshRenderer targetMR =
-            visual.GetComponent<MeshRenderer>() ??
-            visual.gameObject.AddComponent<MeshRenderer>();
+        MeshFilter targetMeshFilter =
+            visual.GetComponent<MeshFilter>();
 
-        targetMF.mesh = Instantiate(mesh);
-        targetMR.materials = mats;
+        if (targetMeshFilter == null)
+            targetMeshFilter = visual.gameObject.AddComponent<MeshFilter>();
 
-        //for (int matIdx = 0; matIdx < targetMR.materials.Length; matIdx++)
-        //{
-        //    Material mat = targetMR.materials[matIdx];
-        //    Material srcMat = srcMR.materials[matIdx];
 
-        //    foreach (string prop in srcMat.GetTexturePropertyNames())
-        //    {
-        //        Texture tex = srcMat.GetTexture(prop);
-        //        if (tex == null) continue;
+        MeshRenderer targetMeshRenderer =
+            visual.GetComponent<MeshRenderer>();
 
-        //        if (tex is Texture2D srcTex)
-        //        {
-        //            Texture2D copy = new Texture2D(srcTex.width, srcTex.height, srcTex.format, srcTex.mipmapCount > 1);
-        //            Graphics.CopyTexture(srcTex, copy);
-        //            copy.wrapMode = srcTex.wrapMode;
-        //            copy.filterMode = srcTex.filterMode;
-        //            copy.anisoLevel = srcTex.anisoLevel;
-        //            copy.Apply();
-        //            mat.SetTexture(prop, copy);
-        //        }
-        //    }
-        //}
+        if (targetMeshRenderer == null)
+            targetMeshRenderer = visual.gameObject.AddComponent<MeshRenderer>();
 
-        Debug.Log("Mesh and materials assigned!");
 
-        if (currentProductID == p.id)
-            targetObject.SetActive(true);
-        else
-            targetObject.SetActive(false);
+        targetMeshFilter.mesh = Instantiate(mesh);
+        targetMeshRenderer.materials = materials;
+
+
+        if (isDebug)
+            Debug.Log("Mesh and materials assigned!");
+
+
+        targetObject.SetActive(currentProductID == p.id);
+
 
         if (!downloadedModels.Contains(targetObject))
             downloadedModels.Add(targetObject);
 
+
         state.isDownloading = false;
         state.isReady = true;
 
+
         mv.FrameObject(targetObject);
 
+
         Destroy(loadedRoot);
-        //}
     }
 
 
-    public void UpdateObjectScale(CategoryManager.Products p, GameObject newObject, bool isVertical = false)
+    public void UpdateObjectScale(
+        CategoryManager.Products p,
+        GameObject newObject,
+        bool isVertical = false)
     {
-        Vector3 modelOriginalHeight;
+        Vector3 modelOriginalHeight =
+            newObject.GetComponentInChildren<MeshRenderer>()
+            .bounds.size;
 
-        // Get original bounds size of the mesh renderer
-        modelOriginalHeight = newObject.GetComponentInChildren<MeshRenderer>().bounds.size;
-
-        // Calculate scale ratios for each axis according to desired size
 
         if (isVertical)
         {
             float temp = p.sizes[0].dimensions.length;
-            p.sizes[0].dimensions.length = p.sizes[0].dimensions.height;
-            p.sizes[0].dimensions.height = p.sizes[0].dimensions.width;
+
+            p.sizes[0].dimensions.length =
+                p.sizes[0].dimensions.height;
+
+            p.sizes[0].dimensions.height =
+                p.sizes[0].dimensions.width;
+
             p.sizes[0].dimensions.width = temp;
         }
 
-        Vector3 finalScale = new Vector3(ConvertToUnityScale(p.sizes[0].dimensions.length, p.sizes[0].dimensions.unit) / modelOriginalHeight.x,
-            ConvertToUnityScale(p.sizes[0].dimensions.height, p.sizes[0].dimensions.unit) / modelOriginalHeight.y,
-            ConvertToUnityScale(p.sizes[0].dimensions.width, p.sizes[0].dimensions.unit) / modelOriginalHeight.z
-            );
+
+        Vector3 finalScale = new Vector3(
+            ConvertToUnityScale(
+                p.sizes[0].dimensions.length,
+                p.sizes[0].dimensions.unit)
+                / modelOriginalHeight.x,
+
+            ConvertToUnityScale(
+                p.sizes[0].dimensions.height,
+                p.sizes[0].dimensions.unit)
+                / modelOriginalHeight.y,
+
+            ConvertToUnityScale(
+                p.sizes[0].dimensions.width,
+                p.sizes[0].dimensions.unit)
+                / modelOriginalHeight.z
+        );
+
 
         newObject.transform.localScale = finalScale;
     }
-    float ConvertToUnityScale(float inputSize, string unit)
+
+
+    private float ConvertToUnityScale(
+        float inputSize,
+        string unit)
     {
         switch (unit.ToLower())
         {
             case "cm":
-                return inputSize / 100f;  // 100 cm = 1 m
+                return inputSize / 100f;
+
             case "in":
-                return inputSize * 0.0254f; // 1 inch = 0.0254 m
+                return inputSize * 0.0254f;
+
             case "m":
-                return inputSize; // already in meters
+                return inputSize;
+
             default:
-                Debug.LogWarning("Unknown unit, defaulting to meters");
+                if (isDebug)
+                    Debug.LogWarning(
+                        "Unknown unit, defaulting to meters");
+
                 return inputSize;
         }
     }
@@ -388,73 +649,178 @@ public class CategoriesUI : MonoBehaviour
     #endregion
 
     #region UI Methods
-    private void PopulateItems(List<CategoryManager.Products> Products)
+
+    private void PopulateItems(List<CategoryManager.Products> products)
     {
-        foreach (CategoryManager.Products product in Products)
+        foreach (CategoryManager.Products product in products)
         {
-            GameObject newItem = Instantiate(productPrefab, contentParent);
+            GameObject newItem = Instantiate(
+                productPrefab,
+                contentParent);
 
-            newItem.transform.Find("Item Name").GetComponent<TextMeshProUGUI>().text = product.company.entityName;
-            newItem.transform.Find("Item Name").GetComponent<TextMeshProUGUI>().enabled = true;
 
-            newItem.transform.Find("Item Type").GetComponent<TextMeshProUGUI>().text = product.name;
-            newItem.transform.Find("Item Type").GetComponent<TextMeshProUGUI>().enabled = true;
+            TextMeshProUGUI itemNameText =
+                newItem.transform
+                .Find("Item Name")
+                .GetComponent<TextMeshProUGUI>();
 
-            if (product.displayPrice.hasSale)
+            TextMeshProUGUI itemTypeText =
+                newItem.transform
+                .Find("Item Type")
+                .GetComponent<TextMeshProUGUI>();
+
+            TextMeshProUGUI originalPriceText =
+                newItem.transform
+                .Find("Original Price")
+                .GetComponent<TextMeshProUGUI>();
+
+            TextMeshProUGUI discountPriceText =
+                newItem.transform
+                .Find("Discounted Price")
+                .GetComponent<TextMeshProUGUI>();
+
+
+            itemNameText.text = product.company.entityName;
+            itemNameText.enabled = true;
+
+
+            itemTypeText.text = product.name;
+            itemTypeText.enabled = true;
+
+
+            if (product.displayPrice.hasSale &&
+                product.displayPrice.salePrice <
+                product.displayPrice.price)
             {
-                if (product.displayPrice.salePrice < product.displayPrice.price)
-                {
-                    newItem.transform.Find("Original Price").GetComponent<TextMeshProUGUI>().text = "<s>$" + product.displayPrice.price + "</s>";
-                    newItem.transform.Find("Original Price").GetComponent<TextMeshProUGUI>().color = new Color(0.7f, 0.7f, 0.7f);
-                }
+                originalPriceText.text =
+                    "<s>$" + product.displayPrice.price + "</s>";
+
+                originalPriceText.color =
+                    new Color(0.7f, 0.7f, 0.7f);
             }
             else
             {
-                newItem.transform.Find("Original Price").GetComponent<TextMeshProUGUI>().text = "$" + product.displayPrice.price + "";
-                newItem.transform.Find("Original Price").GetComponent<TextMeshProUGUI>().color = new Color(0, 0, 0);
+                originalPriceText.text =
+                    "$" + product.displayPrice.price;
+
+                originalPriceText.color =
+                    Color.black;
             }
 
-            newItem.transform.Find("Original Price").GetComponent<TextMeshProUGUI>().enabled = true;
-            
+
+            originalPriceText.enabled = true;
+
+
             if (product.displayPrice.salePrice > 0)
             {
-                newItem.transform.Find("Discounted Price").GetComponent<TextMeshProUGUI>().text = "$" + product.displayPrice.salePrice;
-                newItem.transform.Find("Discounted Price").GetComponent<TextMeshProUGUI>().enabled = true;
+                discountPriceText.text =
+                    "$" + product.displayPrice.salePrice;
+
+                discountPriceText.enabled = true;
             }
 
-            if(product.thumbnail.Length > 0)
-                StartCoroutine(DownloadImage(product.thumbnail, newItem.GetComponentsInChildren<Transform>(true)
-                            .FirstOrDefault(t => t.name == "Item Icon").GetComponent<Image>(), newItem.transform.Find("Loading Icon").gameObject));
-    
-            newItem.GetComponent<Button>().onClick.AddListener(() => {
-                ShowItemDetail(product);
-            });
-           
+
+            if (product.thumbnail.Length > 0)
+            {
+                Image iconImage =
+                    newItem
+                    .GetComponentsInChildren<Transform>(true)
+                    .FirstOrDefault(t => t.name == "Item Icon")
+                    ?.GetComponent<Image>();
+
+
+                GameObject loadingIcon =
+                    newItem.transform
+                    .Find("Loading Icon")
+                    ?.gameObject;
+
+
+                if (iconImage != null)
+                {
+                    StartCoroutine(
+                        DownloadImage(
+                            product.thumbnail,
+                            iconImage,
+                            loadingIcon));
+                }
+            }
+
+
+            Button button =
+                newItem.GetComponent<Button>();
+
+            if (button != null)
+            {
+                button.onClick.AddListener(() =>
+                {
+                    ShowItemDetail(product);
+                });
+            }
         }
     }
 
-    public IEnumerator DownloadImage(string url, UnityEngine.UI.Image imageComponent, GameObject loadingIcon)
+
+    public IEnumerator DownloadImage(
+        string url,
+        Image imageComponent,
+        GameObject loadingIcon)
     {
-        UnityWebRequest request = UnityWebRequest.Get(url);
+        UnityWebRequest request =
+            UnityWebRequest.Get(url);
+
+
         yield return request.SendWebRequest();
+
 
         if (request.result == UnityWebRequest.Result.Success)
         {
-            byte[] imageData = request.downloadHandler.data;
+            byte[] imageData =
+                request.downloadHandler.data;
 
-            // 🔍 Check what kind of data we actually got
-            string textPreview = System.Text.Encoding.UTF8.GetString(imageData);
-            Debug.Log("Response preview: " + textPreview.Substring(0, Mathf.Min(200, textPreview.Length)));
 
-            Debug.Log("Content-Type: " + request.GetResponseHeader("Content-Type"));
-            Debug.Log("Data length: " + imageData.Length);
+            if (isDebug)
+            {
+                string textPreview =
+                    System.Text.Encoding.UTF8
+                    .GetString(imageData);
 
-            Texture2D texture = new Texture2D(2, 2);
+                Debug.Log(
+                    "Response preview: " +
+                    textPreview.Substring(
+                        0,
+                        Mathf.Min(
+                            200,
+                            textPreview.Length)));
+
+                Debug.Log(
+                    "Content-Type: " +
+                    request.GetResponseHeader(
+                        "Content-Type"));
+
+                Debug.Log(
+                    "Data length: " +
+                    imageData.Length);
+            }
+
+
+            Texture2D texture =
+                new Texture2D(2, 2);
+
+
             if (texture.LoadImage(imageData))
             {
-                Sprite sprite = Sprite.Create(texture,
-                    new Rect(0, 0, texture.width, texture.height),
-                    new Vector2(0.5f, 0.5f));
+                Sprite sprite =
+                    Sprite.Create(
+                        texture,
+                        new Rect(
+                            0,
+                            0,
+                            texture.width,
+                            texture.height),
+                        new Vector2(
+                            0.5f,
+                            0.5f));
+
 
                 if (imageComponent != null)
                 {
@@ -464,634 +830,1164 @@ public class CategoriesUI : MonoBehaviour
             }
             else
             {
-                Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
+                if (isDebug)
+                {
+                    Debug.LogError(
+                        url +
+                        "\nFailed to decode image bytes.");
+                }
             }
         }
         else
         {
-            Debug.LogError($"Failed to download image: {request.error}");
+            if (isDebug)
+            {
+                Debug.LogError(
+                    "Failed to download image: " +
+                    request.error);
+            }
         }
 
-        if(loadingIcon != null)
+
+        if (loadingIcon != null)
             loadingIcon.SetActive(false);
     }
 
+    #endregion
+
+    #region Product Detail
+
     public void ShowItemDetail(CategoryManager.Products product)
     {
-        StartCoroutine(AuthAPI.PostRequest(getProductBySlug + product.slug, "", // Empty string for no body
-            (response) =>
-            {
-                Debug.Log("Categories loaded: " + response);
-
-                // Parse the response
-                CategoryManager.Products products = JsonUtility.FromJson<CategoryManager.Products>(response);
-
-                Debug.Log("Products : " + products.variants.Count);
-                if (products != null)
+        StartCoroutine(
+            AuthAPI.PostRequest(
+                getProductBySlug + product.slug,
+                "",
+                (response) =>
                 {
-                    targetModel = null;
-                    itemDetailPanel.SetActive(true);
-                    itemDetailPanelBG.SetActive(true);
-                    shopPanel.SetActive(false);
-
-                    foreach (Transform obj in UI_3D_Models_Parent.transform)
-                        obj.gameObject.SetActive(false);
-                    //Destroy(obj.gameObject);
-                    currentProductID = products.id;
-                    GameObject downloaded = downloadedModels.Find(m => m.GetComponent<ProductDetails>().product.id == products.id);
+                    if (isDebug)
+                        Debug.Log("Product loaded: " + response);
 
 
-                    //bool allowDownload = downloaded == null;
+                    CategoryManager.Products products =
+                        JsonUtility.FromJson<CategoryManager.Products>(response);
 
 
-                    if (downloaded != null)
+                    if (products == null)
                     {
-                        targetModel = downloaded;      // reuse downloaded prefab
-                                                       //allowDownload = false;
-                    }
-                    else
-                    {
-                        // Check if a prefab for this product is currently downloading
-                        foreach (Transform obj in UI_3D_Models_Parent.transform)
-                        {
-                            if (obj.GetComponent<ProductDetails>() && obj.GetComponent<ProductDetails>().product.id == products.id)
-                            {
-                                Debug.Log("target = " + targetModel == null);
-                                targetModel = obj.gameObject;
-                                Debug.Log("ID Found : " + obj.GetComponent<ProductDetails>().product.id);
-                                //allowDownload = false;
-                            }
-                        }
-
-                        //targetModel = UI_3D_Models_Parent.<DownloadState>()
-                        //    .FirstOrDefault(s => s.GetComponent<ProductDetails>()?.product.id == product.id)
-                        //    ?.gameObject;
-                        Debug.Log("product ID: " + products.id);
+                        ShowStatus("No product found", false);
+                        loadingPanel.SetActive(false);
+                        return;
                     }
 
-                    // Decide if we need to instantiate
-                    if (targetModel == null)
-                    {
-                        Debug.Log("target is null");
-                        //allowDownload = true;
-                        targetModel = Instantiate(modelPrefab);
-                    }
 
-                    products.colors.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
-                    products.images.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
-                    products.sizes.Sort((a, b) => a.sortOrder.CompareTo(b.sortOrder));
-                    products.threeDModels.Sort((a, b) =>
-                    {
-                        int indexA = products.colors.FindIndex(c => c.code == a.colorCode);
-                        int indexB = products.colors.FindIndex(c => c.code == b.colorCode);
+                    OpenProductDetailPanel();
 
-                        return indexA.CompareTo(indexB);
-                    });
+                    SetupProductModel(products);
 
-                    products.variants.Sort((a, b) =>
-                    {
-                        int indexA = products.sizes.FindIndex(c => c.sortOrder == a.size.sortOrder);
-                        int indexB = products.sizes.FindIndex(c => c.sortOrder == b.size.sortOrder);
+                    SetupProductData(products);
 
-                        return indexA.CompareTo(indexB);
-                    });
+                    SetupProductVariants(products);
 
-                    //products.variants.Sort((a, b) =>
-                    //{
-                    //    int indexA = products.sizes.FindIndex(c => c.id == a.id);
-                    //    int indexB = products.sizes.FindIndex(c => c.id == b.id);
+                    SetupProductImages(products);
 
-                    //    return indexA.CompareTo(indexB);
-                    //});
+                    SetupProductUI(products);
 
 
-                    targetModel.transform.parent = UI_3D_Models_Parent.transform;
-                    targetModel.transform.localPosition = Vector3.zero;
-                    targetModel.SetActive(true);
+                    loadingPanel.SetActive(false);
 
-                    foreach (Transform obj in colorsParent)
-                        Destroy(obj.gameObject);
 
-                    for (int i = 0; i < products.colors.Count; i++)
-                    {
-                        Color newColor1;
-                        ColorUtility.TryParseHtmlString(products.colors[i].code, out newColor1);
-                        ModelVariant mv = Instantiate(colorPrefab, colorsParent).GetComponent<ModelVariant>();
-                        mv.img.color = newColor1;
-                        mv.index = i;
-                    }
-
-                    isSizeSelected = false;
-                    sizes.ClearOptions();
-
-                    if (products.sizes.Count == 1)
-                    {
-                        sizes.options.Add(new TMP_Dropdown.OptionData(products.sizes[0].size));
-                    }
-                    else
-                    {
-                        sizes.options.Add(new TMP_Dropdown.OptionData("Size"));
-                        foreach (var option in products.sizes)
-                        {
-                            sizes.options.Add(new TMP_Dropdown.OptionData(option.size));
-                        }
-                    }
-
-                    
-
-                    var stateCheck = targetModel.GetComponent<DownloadState>() ?? targetModel.AddComponent<DownloadState>();
-                    Debug.Log("stateCheck is Ready " + stateCheck.isReady + ", isdownloading : " + stateCheck.isDownloading, targetModel.gameObject);
-                    if (!stateCheck.isReady && !stateCheck.isDownloading)
-                    {
-                        Debug.Log("inside stateCheck is Ready " + stateCheck.isReady + ", isdownloading : " + stateCheck.isDownloading, targetModel.gameObject);
-                        currentCoroutine = StartCoroutine(DownloadAndAssign(products.threeDModels[0].url, targetModel, products));
-                    }
-                    else if (stateCheck.isReady)
-                        mv.FrameObject(targetModel);
-
-                    selectedProduct = targetModel.GetComponent<ProductDetails>() ?? targetModel.AddComponent<ProductDetails>();
-                    selectedProduct.imagesUrl.Clear();
-                    foreach (var img in products.images)
-                        selectedProduct.imagesUrl.Add(img.url);
-
-                    selectedProduct.texturesUrl.Clear();
-                    foreach(var model in products.threeDModels)
-                        selectedProduct.texturesUrl.Add(model.texture);
-
-                    selectedProduct.product = products;
-                    if(downloaded == null)
-                        StartCoroutine(SetProductImages(selectedProduct));
-
-                    sizes.value = 0;
-                    if (product.sizes.Count == 1)
-                        ChangeSize();
-
-                    sizes.RefreshShownValue();
-
-                    ChangeModelTexture(0);
-
-                    itemName.text = products.name;
-                    itemType.text = products.company.entityName;
-                    stocksSelected.text = "1";
-
-                    //if (product.displayPrice.hasSale)
-                    //{
-                    //    if (product.displayPrice.salePrice < product.displayPrice.price)
-                    //    {
-                    //        itemPrice.text = "$" + "<s>" + product.displayPrice.price + "</s>";
-                    //        itemPrice.color = new Color(0.7f, 0.7f, 0.7f);
-                    //    }
-                    //}
-                    //else
-                    //{
-                        itemPrice.text = products.displayPrice.range;
-                        itemPrice.color = new Color(0, 0, 0);
-
-                    itemDiscountPrice.gameObject.SetActive(false);
-                    //}
-
-                    //if (product.displayPrice.hasSale)
-                    //    if (product.displayPrice.salePrice > 0)
-                    //        itemDiscountPrice.text = "$" + product.displayPrice.salePrice;
-
-                    itemDiscription.text = products.description;
-                    companyDiscription.text = products.company.description;
-
-                    if (arRoomBtn != null)
-                    {
-                        arRoomBtn.onClick.RemoveAllListeners();
-                        arRoomBtn.onClick.AddListener(() => CheckObjectScene(products));
-
-                    }
-
-                    modelViewerImage.enabled = false;
-                    modelViewer3D.enabled = true;
-                    currentImage = 0;
-                }
-                else
+                    if (FavoritesManager.Instance != null)
+                        FavoritesManager.Instance.RefreshCurrentToggleIcon();
+                },
+                (error) =>
                 {
-                    ShowStatus("No categories found", false);
-                }
+                    loadingPanel.SetActive(false);
 
-                loadingIcon.SetActive(false);
-                loadingPanel.SetActive(false);
-            },
-            (error) =>
-            {
-                loadingIcon.SetActive(false);
-                loadingPanel.SetActive(false);
-                Debug.LogError("Failed to load categories: " + error);
-                ShowStatus("Failed to load categories", true);
-                //MenuManager.Instance.loadingPanel.SetActive(false);
-            }, "GET"));
+                    if (isDebug)
+                        Debug.LogError(
+                            "Failed to load product: " + error);
+
+                    ShowStatus(
+                        "Failed to load product",
+                        true);
+                },
+                "GET"));
     }
+
+
+
+    private void OpenProductDetailPanel()
+    {
+        targetModel = null;
+
+        itemDetailPanel.SetActive(true);
+        itemDetailPanelBG.SetActive(true);
+
+        shopPanel.SetActive(false);
+
+
+        foreach (Transform obj in UI_3D_Models_Parent.transform)
+        {
+            obj.gameObject.SetActive(false);
+        }
+    }
+
+
+
+    private void SetupProductModel(
+        CategoryManager.Products products)
+    {
+        currentProductID = products.id;
+
+
+        GameObject downloaded =
+            downloadedModels.Find(m =>
+                m.GetComponent<ProductDetails>() != null &&
+                m.GetComponent<ProductDetails>()
+                .product.id == products.id);
+
+
+
+        if (downloaded != null)
+        {
+            targetModel = downloaded;
+        }
+        else
+        {
+            foreach (Transform obj in UI_3D_Models_Parent.transform)
+            {
+                ProductDetails details =
+                    obj.GetComponent<ProductDetails>();
+
+                if (details != null &&
+                    details.product.id == products.id)
+                {
+                    targetModel = obj.gameObject;
+                    break;
+                }
+            }
+        }
+
+
+        if (targetModel == null)
+        {
+            targetModel = Instantiate(modelPrefab);
+        }
+
+
+        targetModel.transform.SetParent(
+            UI_3D_Models_Parent.transform);
+
+        targetModel.transform.localPosition =
+            Vector3.zero;
+
+        targetModel.transform.localRotation =
+            Quaternion.identity;
+
+
+        targetModel.SetActive(true);
+    }
+
+    #endregion
+
+    #region Product Setup
+    private void SetupProductVariants(
+    CategoryManager.Products products)
+    {
+        products.colors.Sort((a, b) =>
+            a.sortOrder.CompareTo(b.sortOrder));
+
+
+        products.images.Sort((a, b) =>
+            a.sortOrder.CompareTo(b.sortOrder));
+
+
+        products.sizes.Sort((a, b) =>
+            a.sortOrder.CompareTo(b.sortOrder));
+
+
+        products.threeDModels.Sort((a, b) =>
+        {
+            int indexA =
+                products.colors.FindIndex(
+                    c => c.code == a.colorCode);
+
+            int indexB =
+                products.colors.FindIndex(
+                    c => c.code == b.colorCode);
+
+
+            return indexA.CompareTo(indexB);
+        });
+
+
+        products.variants.Sort((a, b) =>
+        {
+            int indexA =
+                products.sizes.FindIndex(
+                    c => c.sortOrder == a.size.sortOrder);
+
+            int indexB =
+                products.sizes.FindIndex(
+                    c => c.sortOrder == b.size.sortOrder);
+
+
+            return indexA.CompareTo(indexB);
+        });
+
+
+
+        foreach (Transform obj in colorsParent)
+        {
+            Destroy(obj.gameObject);
+        }
+
+
+        for (int i = 0; i < products.colors.Count; i++)
+        {
+            Color color;
+
+            ColorUtility.TryParseHtmlString(
+                products.colors[i].code,
+                out color);
+
+
+            ModelVariant variant =
+                Instantiate(
+                    colorPrefab,
+                    colorsParent)
+                .GetComponent<ModelVariant>();
+
+
+            variant.img.color = color;
+            variant.index = i;
+        }
+
+
+
+        SetupSizeDropdown(products);
+    }
+
+
+
+    private void SetupSizeDropdown(
+        CategoryManager.Products products)
+    {
+        isSizeSelected = false;
+
+
+        SizeDropdownHandler handler =
+            sizes.GetComponent<SizeDropdownHandler>();
+
+        if (handler != null)
+            handler.Reset();
+
+
+        sizes.ClearOptions();
+
+
+
+        if (products.sizes.Count == 1)
+        {
+            isSizeSelected = true;
+            sizes.interactable = false;
+
+            sizes.options.Add(
+                new TMP_Dropdown.OptionData(
+                    products.sizes[0].size));
+        }
+        else
+        {
+            sizes.interactable = true;
+
+
+            sizes.options.Add(
+                new TMP_Dropdown.OptionData(
+                    "Size"));
+
+
+            foreach (var option in products.sizes)
+            {
+                sizes.options.Add(
+                    new TMP_Dropdown.OptionData(
+                        option.size));
+            }
+        }
+
+
+        sizes.value = 0;
+        sizes.RefreshShownValue();
+
+
+        SizeDropdownHandler sizeHandler =
+            sizes.GetComponent<SizeDropdownHandler>();
+
+        if (sizeHandler != null)
+            sizeHandler.RefreshButtonSprite();
+    }
+
+
+
+    private void SetupProductData(
+        CategoryManager.Products products)
+    {
+        DownloadState state =
+            targetModel.GetComponent<DownloadState>();
+
+
+        if (state == null)
+        {
+            state =
+                targetModel.AddComponent<DownloadState>();
+        }
+
+
+        if (isDebug)
+        {
+            Debug.Log(
+                "Model Ready: " +
+                state.isReady +
+                " Downloading: " +
+                state.isDownloading);
+        }
+
+
+
+        if (!state.isReady &&
+            !state.isDownloading)
+        {
+            currentCoroutine =
+                StartCoroutine(
+                    DownloadAndAssign(
+                        products.threeDModels[0].url,
+                        targetModel,
+                        products));
+        }
+        else if (state.isReady)
+        {
+            mv.FrameObject(targetModel);
+        }
+
+
+
+        selectedProduct =
+            targetModel.GetComponent<ProductDetails>();
+
+
+        if (selectedProduct == null)
+        {
+            selectedProduct =
+                targetModel.AddComponent<ProductDetails>();
+        }
+
+
+
+        selectedProduct.imagesUrl.Clear();
+
+
+        foreach (var image in products.images)
+        {
+            selectedProduct.imagesUrl.Add(image.url);
+        }
+
+
+
+        selectedProduct.texturesUrl.Clear();
+
+
+        foreach (var model in products.threeDModels)
+        {
+            selectedProduct.texturesUrl.Add(
+                model.texture);
+        }
+
+
+        selectedProduct.product = products;
+    }
+    private void SetupProductImages(
+        CategoryManager.Products products)
+    {
+        if (selectedProduct == null)
+            return;
+
+
+        if (selectedProduct.sprites.Count == 0)
+        {
+            StartCoroutine(SetProductImages(selectedProduct));
+        }
+    }
+
+    private void SetupProductUI(
+        CategoryManager.Products products)
+    {
+        itemName.text =
+            products.company.entityName;
+
+
+        itemType.text =
+            products.name;
+
+
+        stocksSelected.text = "1";
+
+
+        itemPrice.text =
+            products.displayPrice.range;
+
+
+        itemPrice.color =
+            Color.black;
+
+
+        itemDiscountPrice.gameObject.SetActive(false);
+
+
+        itemDiscription.text =
+            products.description;
+
+
+        companyDiscription.text =
+            products.company.description;
+
+
+
+        if (arRoomBtn != null)
+        {
+            arRoomBtn.onClick.RemoveAllListeners();
+
+            arRoomBtn.onClick.AddListener(() =>
+            {
+                CheckObjectScene(products);
+            });
+        }
+
+
+
+        modelViewerImage.enabled = false;
+
+        modelViewer3D.enabled = true;
+
+
+        currentImage = 0;
+
+
+        txt360View.SetActive(true);
+
+
+        if (IsInvoking(nameof(Disable360Hand)))
+            CancelInvoke(nameof(Disable360Hand));
+
+
+        Invoke(
+            nameof(Disable360Hand),
+            3f);
+
+
+        ChangeModelTexture(0);
+    }
+
+#endregion
+
+    #region Product Selection
+
 
     public void ChangeSize()
     {
         isSizeSelected = true;
+
         selectedSizeIndex = sizes.value;
 
-        int tempSizeIndex = selectedSizeIndex;
 
-        if (selectedProduct.product.sizes.Count == 1)
-            tempSizeIndex = selectedSizeIndex;
-        else
-            tempSizeIndex = selectedSizeIndex - 1;
-
-        if (selectedProduct.product.sizes.Count > 1 && selectedSizeIndex == 0)
-            return;
-        else if (selectedProduct.product.sizes.Count == 0)
-            return;
-
-        if (selectedProduct.product.variants[tempSizeIndex].salePrice > 0 && selectedProduct.product.variants[tempSizeIndex].price > selectedProduct.product.variants[tempSizeIndex].salePrice)
-        {
-            itemPrice.text = "<s>$" + selectedProduct.product.variants[tempSizeIndex].price + "<s>";
-            itemPrice.color = new Color(0.7f, 0.7f, 0.7f);
-            itemDiscountPrice.text = "$" + selectedProduct.product.variants[tempSizeIndex].salePrice;
-            itemDiscountPrice.gameObject.SetActive(true);
-        }
-        else
-        {
-            itemPrice.text = "$" + selectedProduct.product.variants[tempSizeIndex].price;
-            itemPrice.color = new Color(0f, 0f, 0f);
-            itemDiscountPrice.gameObject.SetActive(false);
-        }
-
-        maxStocks = selectedProduct.product.variants[tempSizeIndex].stock;
-
-        //if(maxStocks > 0)
-        //    stocksSelected.text = "1";
-        //else
-            stocksSelected.text = "1";
+        UpdateVariantForSelection();
     }
+
+
 
     public void ChangeItemAmount(int value)
     {
-        int currentStocks = int.Parse(stocksSelected.text);
+        int currentStocks =
+            int.Parse(stocksSelected.text);
+
 
         currentStocks += value;
 
-        if (currentStocks < 1)
-            currentStocks = 1;
+
+        int minStocks = maxStocks > 0 ? 1 : 0;
+
+
+        if (currentStocks < minStocks)
+            currentStocks = minStocks;
+
+
         if (currentStocks > maxStocks)
             currentStocks = maxStocks;
 
-        if(currentStocks < 1)
-            currentStocks = 1;
 
-       stocksSelected.text = currentStocks.ToString();
+        if (currentStocks < minStocks)
+            currentStocks = minStocks;
+
+
+        stocksSelected.text =
+            currentStocks.ToString();
     }
 
-    void DisableFirstItem(TMP_Dropdown dropdown)
+
+
+    private void DisableFirstItem(
+        TMP_Dropdown dropdown)
     {
-        Canvas canvas = dropdown.GetComponentInChildren<Canvas>();
-        if (!canvas) return;
+        Canvas canvas =
+            dropdown.GetComponentInChildren<Canvas>();
 
-        Toggle[] toggles = canvas.GetComponentsInChildren<Toggle>();
+
+        if (!canvas)
+            return;
+
+
+        Toggle[] toggles =
+            canvas.GetComponentsInChildren<Toggle>();
+
+
         if (toggles.Length > 0)
-        {
             toggles[0].interactable = false;
-        }
     }
 
-    int currentImage = 0;
+
+    #endregion
+
+    #region Image Viewer
+
+
+    private int currentImage = 0;
+
 
     public void NextPreviousImage(int index)
     {
-        string code = selectedProduct.product.colors[selectedMatIndex].code;
+        string code =
+            selectedProduct.product
+            .colors[selectedMatIndex]
+            .code;
+
 
         currentImage += index;
-        Debug.Log("current Index Before : " + currentImage);
 
-        int count = selectedProduct.sprites.Count;
 
-        // Wrap including model index (-1)
+        int count =
+            selectedProduct.sprites.Count;
+
+
         if (currentImage < -1)
             currentImage = count - 1;
+
 
         if (currentImage >= count)
             currentImage = -1;
 
-        Debug.Log("Selected sprites Count : " + count);
 
-        // Only filter when we're on an image (not model)
+
         if (currentImage != -1)
         {
             int startIndex = currentImage;
 
-            while (selectedProduct.product.images[currentImage].colorCode != code)
+
+            while (
+                selectedProduct.product.images[currentImage]
+                .colorCode != code)
             {
                 currentImage += index;
 
-                // Wrap again
+
                 if (currentImage < -1)
                     currentImage = count - 1;
+
 
                 if (currentImage >= count)
                     currentImage = -1;
 
-                // Stop if we loop back to model or full cycle
-                if (currentImage == -1 || currentImage == startIndex)
+
+                if (currentImage == -1 ||
+                    currentImage == startIndex)
                     break;
             }
         }
 
-        Debug.Log("current Index : " + currentImage);
 
-        // Display logic
+
         if (currentImage == -1)
         {
             modelViewerImage.enabled = false;
+
             modelViewer3D.enabled = true;
+
+
+            txt360View.SetActive(true);
+
+
+            if (IsInvoking(nameof(Disable360Hand)))
+                CancelInvoke(nameof(Disable360Hand));
+
+
+            Invoke(
+                nameof(Disable360Hand),
+                3f);
         }
         else
         {
             modelViewer3D.enabled = false;
+
             modelViewerImage.enabled = true;
 
+
+            txt360View.SetActive(false);
+
+
             if (selectedProduct.sprites[currentImage] != null)
-                modelViewerImage.sprite = selectedProduct.sprites[currentImage];
+            {
+                modelViewerImage.sprite =
+                    selectedProduct.sprites[currentImage];
+            }
         }
     }
 
+
+
+    private void Disable360Hand()
+    {
+        txt360View.SetActive(false);
+    }
+
+
+    #endregion
+
+
+
+    #region Product Images
+
+
+    private IEnumerator SetProductImages(
+        ProductDetails pd)
+    {
+        yield return null;
+
+
+        pd.sprites.Clear();
+
+
+        for (int i = 0; i < pd.imagesUrl.Count; i++)
+        {
+            pd.sprites.Add(null);
+        }
+
+
+        for (int i = 0; i < pd.imagesUrl.Count; i++)
+        {
+            yield return StartCoroutine(
+                DownloadSpriteCoroutine(
+                    pd.imagesUrl[i],
+                    pd.sprites,
+                    i));
+        }
+
+
+
+        pd.textures.Clear();
+
+
+        for (int i = 0; i < pd.texturesUrl.Count; i++)
+        {
+            pd.textures.Add(null);
+        }
+
+
+        for (int i = 0; i < pd.texturesUrl.Count; i++)
+        {
+            yield return StartCoroutine(
+                DownloadTextureCoroutine(
+                    pd.texturesUrl[i],
+                    pd.textures,
+                    i));
+        }
+
+
+        ChangeModelTexture(0);
+    }
+
+
+
+    public IEnumerator DownloadSpriteCoroutine(
+        string url,
+        List<Sprite> spritesList,
+        int index)
+    {
+        UnityWebRequest request =
+            UnityWebRequest.Get(url);
+
+
+        yield return request.SendWebRequest();
+
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            if (isDebug)
+                Debug.LogError(request.error);
+
+            yield break;
+        }
+
+
+
+        Texture2D texture =
+            new Texture2D(2, 2);
+
+
+
+        if (texture.LoadImage(
+            request.downloadHandler.data))
+        {
+            spritesList[index] =
+                Sprite.Create(
+                    texture,
+                    new Rect(
+                        0,
+                        0,
+                        texture.width,
+                        texture.height),
+                    new Vector2(
+                        0.5f,
+                        0.5f));
+        }
+        else if (isDebug)
+        {
+            Debug.LogError(
+                url +
+                "\nFailed to decode image bytes.");
+        }
+    }
+
+
+
+    public IEnumerator DownloadTextureCoroutine(
+        string url,
+        List<Texture2D> texturesList,
+        int index)
+    {
+        UnityWebRequest request =
+            UnityWebRequest.Get(url);
+
+
+        yield return request.SendWebRequest();
+
+
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            if (isDebug)
+                Debug.LogError(request.error);
+
+            yield break;
+        }
+
+
+
+        Texture2D texture =
+            new Texture2D(2, 2);
+
+
+
+        if (texture.LoadImage(
+            request.downloadHandler.data))
+        {
+            texturesList[index] = texture;
+        }
+        else if (isDebug)
+        {
+            Debug.LogError(
+                url +
+                "\nFailed to decode texture bytes.");
+        }
+    }
+
+
+    #endregion
+
+    #region Model Variants
+
+
+    public void ChangeModelTexture(int index)
+    {
+        foreach (Transform child in colorsParent)
+        {
+            ModelVariant variant =
+                child.GetComponent<ModelVariant>();
+
+            if (variant == null)
+                continue;
+
+
+            variant.selectedImg.SetActive(
+                variant.index == index);
+        }
+
+
+
+        if (selectedProduct == null)
+            return;
+
+
+        selectedMatIndex = index;
+
+
+        UpdateVariantForSelection();
+
+
+
+        if (index >= selectedProduct.textures.Count)
+            return;
+
+
+        Transform visual =
+            targetModel.transform.Find("Visual");
+
+
+        if (visual == null)
+            return;
+
+
+        MeshRenderer renderer =
+            visual.GetComponent<MeshRenderer>();
+
+
+        if (renderer == null)
+            return;
+
+
+
+        Material material =
+            renderer.material;
+
+
+        material.mainTexture =
+            selectedProduct.textures[index];
+
+
+        renderer.material =
+            material;
+
+
+
+        if (FavoritesManager.Instance != null)
+            FavoritesManager.Instance.RefreshCurrentToggleIcon();
+    }
+
+
+
+    public void ChangeModelVariant()
+    {
+        modelViewerImage.enabled = false;
+
+        modelViewer3D.enabled = true;
+
+        currentImage = 0;
+    }
+
+
+    private void UpdateVariantForSelection()
+    {
+        if (selectedProduct == null ||
+            selectedProduct.product == null)
+            return;
+
+        if (selectedMatIndex < 0 ||
+            selectedMatIndex >= selectedProduct.product.colors.Count)
+            return;
+
+        bool multiSize =
+            selectedProduct.product.sizes.Count > 1;
+
+        string colorId =
+            selectedProduct.product.colors[selectedMatIndex].id;
+
+        if (multiSize && !isSizeSelected)
+        {
+            maxStocks = 0;
+            lastResolvedVariantId = null;
+            stocksSelected.text = "0";
+            itemPrice.text =
+                selectedProduct.product.displayPrice.range;
+            itemPrice.color =
+                Color.black;
+            itemDiscountPrice.gameObject.SetActive(false);
+            return;
+        }
+
+        string sizeId = null;
+
+        if (multiSize)
+        {
+            int realIdx = selectedSizeIndex - 1;
+
+            if (realIdx < 0 ||
+                realIdx >= selectedProduct.product.sizes.Count)
+            {
+                maxStocks = 0;
+                lastResolvedVariantId = null;
+                stocksSelected.text = "0";
+                return;
+            }
+
+            sizeId =
+                selectedProduct.product.sizes[realIdx].id;
+        }
+        else if (selectedProduct.product.sizes.Count == 1)
+        {
+            sizeId =
+                selectedProduct.product.sizes[0].id;
+        }
+
+        CategoryManager.Variants variant = null;
+
+        foreach (var v in selectedProduct.product.variants)
+        {
+            if (v.color.id != colorId)
+                continue;
+
+            if (string.IsNullOrEmpty(sizeId))
+            {
+                if (v.size == null)
+                {
+                    variant = v;
+                    break;
+                }
+            }
+            else if (v.size != null &&
+                     v.size.id == sizeId)
+            {
+                variant = v;
+                break;
+            }
+        }
+
+        if (variant == null)
+        {
+            maxStocks = 0;
+            lastResolvedVariantId = null;
+            stocksSelected.text = "0";
+            return;
+        }
+
+        maxStocks = variant.stock;
+
+        if (variant.id != lastResolvedVariantId)
+        {
+            lastResolvedVariantId = variant.id;
+            stocksSelected.text = maxStocks > 0 ? "1" : "0";
+        }
+
+        if (variant.salePrice > 0 &&
+            variant.price > variant.salePrice)
+        {
+            itemPrice.text =
+                "<s>$" + variant.price + "</s>";
+
+            itemPrice.color =
+                new Color(
+                    0.7f,
+                    0.7f,
+                    0.7f);
+
+            itemDiscountPrice.text =
+                "$" + variant.salePrice;
+
+            itemDiscountPrice.gameObject.SetActive(true);
+        }
+        else
+        {
+            itemPrice.text =
+                "$" + variant.price;
+
+            itemPrice.color =
+                Color.black;
+
+            itemDiscountPrice.gameObject.SetActive(false);
+        }
+    }
+
+
+    #endregion
+
+    #region Navigation
     public void BackToShop()
     {
         shopPanel.SetActive(true);
         itemViewBG.SetActive(false);
         itemViewPanel.SetActive(false);
 
-        // Hide or clean up 3D models
         foreach (Transform obj in UI_3D_Models_Parent.transform)
         {
             var state = obj.GetComponent<DownloadState>();
+
             if (state != null)
             {
                 if (state.isReady)
                 {
-                    // Already downloaded → just hide
                     obj.gameObject.SetActive(false);
                 }
                 else if (!state.isDownloading)
                 {
-                    // Download failed → safe to destroy
                     Destroy(obj.gameObject);
                 }
                 else
                 {
-                    // Download in progress → keep it running, just hide
                     obj.gameObject.SetActive(false);
                 }
             }
             else
             {
-                // No state component → just destroy to be safe
                 Destroy(obj.gameObject);
             }
         }
-
-        //if (currentRequest != null && currentRequest.isDone)
-        //    currentRequest.Abort();
-
-        //if(currentCoroutine != null)
-        //    StopCoroutine(currentCoroutine);
-
-        //currentCoroutine = null;
-        //currentRequest = null;
     }
 
-    IEnumerator SetProductImages(ProductDetails pd)
+    #endregion
+
+    #region AR
+    private void CheckObjectScene(
+        CategoryManager.Products p)
     {
-        yield return null;
-        pd.sprites.Clear();
-        for (int i = 0; i < pd.imagesUrl.Count; i++)
-        {
-            pd.sprites.Add(null);
-        }
-
-        for (int i = 0; i < pd.imagesUrl.Count; i++)
-        {
-            yield return StartCoroutine(DownloadSpriteCoroutine(pd.imagesUrl[i], pd.sprites, i));
-        }
-
-        pd.textures.Clear();
-        for (int i = 0; i < pd.texturesUrl.Count; i++)
-        {
-            pd.textures.Add(null);
-        }
-
-        for (int i = 0; i < pd.texturesUrl.Count; i++)
-        {
-            yield return StartCoroutine(DownloadTextureCoroutine(pd.texturesUrl[i], pd.textures, i));
-            Debug.Log("texture downloading");
-        }
-        Debug.Log("texture Finish");
-        ChangeModelTexture(0);
-    }
-
-    public IEnumerator DownloadSpriteCoroutine(string url, List<Sprite> spritesList, int index)
-    {
-        UnityWebRequest req = UnityWebRequest.Get(url);
-        yield return req.SendWebRequest();
-
-        if (req.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError(req.error);
-
-            yield break;
-        }
-
-        byte[] imageData = req.downloadHandler.data;
-        Texture2D texture = new Texture2D(2, 2);
-
-        if (texture.LoadImage(imageData))
-        {
-            Sprite sprite = Sprite.Create(texture,
-                new Rect(0, 0, texture.width, texture.height),
-                new Vector2(0.5f, 0.5f));
-            spritesList[index] = sprite;
-        }
-        else
-        {
-            Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
-        }
-    }
-
-    public IEnumerator DownloadTextureCoroutine(string url, List<Texture2D> texturesList, int index)
-    {
-        UnityWebRequest req = UnityWebRequest.Get(url);
-        yield return req.SendWebRequest();
-
-        if (req.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError(req.error);
-
-            yield break;
-        }
-
-        byte[] imageData = req.downloadHandler.data;
-        Texture2D texture = new Texture2D(2, 2);
-
-        if (texture.LoadImage(imageData))
-        {
-            texturesList[index] = texture;
-        }
-        else
-        {
-            Debug.LogError(url + "\n❌ Failed to decode image bytes. Response is not a valid PNG/JPG.");
-        }
-    }
-
-    public void ChangeModelTexture(int index)
-    {
-        foreach (Transform child in colorsParent)
-        {
-            if (child.GetComponent<ModelVariant>()?.index == index)
-                child.GetComponent<ModelVariant>().selectedImg.SetActive(true);
-            else
-                child.GetComponent<ModelVariant>()?.selectedImg.SetActive(false);
-        }
-
-        if (index >= selectedProduct.textures.Count)
-            return;
-
-        selectedMatIndex = index;
-        Material mat = targetModel.transform.Find("Visual").GetComponent<MeshRenderer>().material;
-
-        //Color newColor1;
-        //ColorUtility.TryParseHtmlString(selectedProduct.product.colors[index].code, out newColor1);
-        //mat.color = newColor1;
-        
-        mat.mainTexture = selectedProduct.textures[index];
-
-        targetModel.transform.Find("Visual").GetComponent<MeshRenderer>().material = mat;
-
-        if(isSizeSelected)
-        {
-            isSizeSelected = true;
-            selectedSizeIndex = sizes.value;
-
-            int tempSizeIndex = selectedSizeIndex;
-
-            if (selectedProduct.product.sizes.Count == 1)
-                tempSizeIndex = selectedSizeIndex;
-            else
-                tempSizeIndex = selectedSizeIndex - 1;
-
-            if (selectedProduct.product.sizes.Count > 1 && selectedSizeIndex == 0)
-                return;
-            else if (selectedProduct.product.sizes.Count == 0)
-                return;
-
-            if (selectedProduct.product.variants[tempSizeIndex].salePrice > 0 && selectedProduct.product.variants[tempSizeIndex].price > selectedProduct.product.variants[tempSizeIndex].salePrice)
-            {
-                itemPrice.text = "<s>$" + selectedProduct.product.variants[tempSizeIndex].price + "<s>";
-                itemPrice.color = new Color(0.7f, 0.7f, 0.7f);
-                itemDiscountPrice.text = "$" + selectedProduct.product.variants[tempSizeIndex].salePrice;
-                itemDiscountPrice.gameObject.SetActive(true);
-            }
-            else
-            {
-                itemPrice.text = "$" + selectedProduct.product.variants[tempSizeIndex].price;
-                itemPrice.color = new Color(0f, 0f, 0f);
-                itemDiscountPrice.gameObject.SetActive(false);
-            }
-
-            foreach (var v in selectedProduct.product.variants)
-            {
-                if (v.color.id == selectedProduct.product.colors[selectedMatIndex].id)
-                {
-                    maxStocks = v.stock;
-                    
-                    if(v.salePrice > 0 && v.salePrice < v.price)
-                    {
-                        itemPrice.text = "<s>$" + v.price + "<s>";
-                        itemPrice.color = new Color(0.7f, 0.7f, 0.7f);
-                        itemDiscountPrice.text = v.salePrice.ToString();
-                        itemDiscountPrice.gameObject.SetActive(true);
-                    }
-                    else
-                    {
-                        itemPrice.text = v.price.ToString();
-                        itemPrice.color = new Color(0, 0, 0);
-
-                        itemDiscountPrice.gameObject.SetActive(false);
-                    }
-                }
-            }
-
-            //if (maxStocks > 0)
-            //    stocksSelected.text = "1";
-            //else
-                stocksSelected.text = "1";
-        }
-        else
-        {
-            itemPrice.text = selectedProduct.product.displayPrice.range;
-            itemPrice.color = new Color(0, 0, 0);
-
-            itemDiscountPrice.gameObject.SetActive(false);
-
-            stocksSelected.text = "1";
-        }
-
-    }
-
-    public void ChangeModelVariant()
-    {
-        modelViewerImage.enabled = false;
-        modelViewer3D.enabled = true;
-        //txt360View.SetActive(true);
-        currentImage = 0;
-    }
-
-    void CheckObjectScene(CategoryManager.Products p)
-    {
-        if (p.ar_type.Equals("vertical-plane detection") || p.ar_type.Equals("horizontal-plane detection"))
+        if (p.ar_type.Equals(
+            "vertical-plane detection") ||
+            p.ar_type.Equals(
+            "horizontal-plane detection"))
         {
             ProductSelection.ClearSelection();
-            ProductSelection.SetSelection(p, false, "", p.ar_type.Equals("horizontal-plane detection"), p.threeDModels[0].url);
-            SceneManager.LoadScene(SceneNames.ARScene);
+
+
+            ProductSelection.SetSelection(
+                p,
+                false,
+                "",
+                p.ar_type.Equals(
+                    "horizontal-plane detection"),
+                p.threeDModels[0].url);
+
+
+            SceneManager.LoadScene(
+                SceneNames.ARScene);
         }
         else if (p.ar_type.Equals("face-tracking"))
         {
             CategoryType category;
-            ProductSelection.TryParseObjectType(p.name, out category);
+
+            ProductSelection.TryParseObjectType(
+                p.name,
+                out category);
+
+
             ProductSelection.ClearSelection();
-            ProductSelection.SetSelection(p, true, p.category.name, false, p.threeDModels[0].url);
-            SceneManager.LoadScene(SceneNames.ARFace);
+
+
+            ProductSelection.SetSelection(
+                p,
+                true,
+                p.category.name,
+                false,
+                p.threeDModels[0].url);
+
+
+            SceneManager.LoadScene(
+                SceneNames.ARFace);
         }
+
 #if UNITY_IOS
-        else if(p.ar_type.Equals("hand-tracking"))
+
+    else if (p.ar_type.Equals("hand-tracking"))
+    {
+        CategoryType category;
+
+        ProductSelection.TryParseObjectType(
+            p.name,
+            out category);
+
+
+        ProductSelection.ClearSelection();
+
+
+        ProductSelection.SetSelection(
+            p,
+            true,
+            p.category.name,
+            false,
+            p.threeDModels[0].url);
+
+
+        SceneManager.LoadScene(
+            SceneNames.HandTracking);
+    }
+
+
+    else if (p.ar_type.Equals("body-tracking"))
+    {
+        if (!SceneManager
+            .GetActiveScene()
+            .name
+            .Equals(SceneNames.ARBodyTrackingMars))
         {
             CategoryType category;
-            ProductSelection.TryParseObjectType(p.name, out category);
+
+            ProductSelection.TryParseObjectType(
+                p.name,
+                out category);
+
+
             ProductSelection.ClearSelection();
-            ProductSelection.SetSelection(p, true, p.category.name, false, p.threeDModels[0].url);
-            SceneManager.LoadScene(SceneNames.HandTracking);
-        }
-        else if (p.ar_type.Equals("body-tracking"))
-        {
-            if (!SceneManager.GetActiveScene().name.Equals(SceneNames.ARBodyTrackingMars))
-            {
-                CategoryType category;
-                ProductSelection.TryParseObjectType(p.name, out category);
-                ProductSelection.ClearSelection();
-                ProductSelection.SetSelection(p, false, p.category.name, false, p.threeDModels[0].url);
 
-                LoaderUtility.Deinitialize();
 
-                SceneManager.LoadScene(SceneNames.ARBodyTrackingMars);
-            }
+            ProductSelection.SetSelection(
+                p,
+                false,
+                p.category.name,
+                false,
+                p.threeDModels[0].url);
+
+
+            LoaderUtility.Deinitialize();
+
+
+            SceneManager.LoadScene(
+                SceneNames.ARBodyTrackingMars);
         }
+    }
+
 #endif
     }
 
+    public void LoadARScene()
+    {
+        SceneManager.LoadScene(SceneNames.ARScene);
+    }
+
+    #endregion
+
+
+
+    #region Cleanup
+
+
     public void ChangeModelColor(Image img)
     {
-        targetModel.GetComponentInChildren<MeshRenderer>().material.color = img.color;
-    }    
+        MeshRenderer renderer =
+            targetModel
+            .GetComponentInChildren<MeshRenderer>();
 
-    private void ClearCategories()
+
+        if (renderer != null)
+            renderer.material.color = img.color;
+    }
+
+
+
+    private void ClearProducts()
     {
         foreach (Transform child in contentParent)
         {
@@ -1099,20 +1995,38 @@ public class CategoriesUI : MonoBehaviour
         }
     }
 
-    private void ShowStatus(string message, bool isError)
+
+
+    private void ShowStatus(
+        string message,
+        bool isError)
     {
         statusText.gameObject.SetActive(true);
-        statusText.text = message;
-        statusText.color = isError ? Color.red : Color.white;
+
+        statusText.text =
+            message;
+
+
+        statusText.color =
+            isError
+                ? Color.red
+                : Color.white;
     }
-#endregion
+
+
+    #endregion
+
+
 
     #region Structure Classes
+
+
     [System.Serializable]
     private class CategoriesResponse
     {
         public CategoryData[] categories;
     }
+
 
     [System.Serializable]
     private class CategoryData
@@ -1120,20 +2034,30 @@ public class CategoriesUI : MonoBehaviour
         public string id;
         public string name;
     }
-    #endregion
+
+
 
     [System.Serializable]
     public class UIScreen
     {
         public UIScreenType_Shop type;
+
         public GameObject mainPanel;
+
         public GameObject blurPanel;
+
         public GameObject backPanel;
     }
 
+
+
     public class DownloadState : MonoBehaviour
     {
-        public bool isDownloading = false;  // true while downloading
-        public bool isReady = false;        // true if successfully downloaded
+        public bool isDownloading = false;
+
+        public bool isReady = false;
     }
+
+
+    #endregion
 }

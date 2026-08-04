@@ -75,10 +75,12 @@ public class GhostPlacementController : MonoBehaviour
         //HologramPreview hp = ghostInstance.AddComponent<HologramPreview>();
         MeshRenderer renderer = ghostInstance.GetComponentInChildren<MeshRenderer>();
 
-        GltfMaterialCopier.CopyAllTextures(renderer.material, transparentMat);
+        Material mat = new Material(transparentMat);
+
+        GltfMaterialCopier.CopyAllTextures(renderer.material, mat);
 
         // assign
-        renderer.material = transparentMat;
+        renderer.material = mat;
 
         Outline outliner = ghostInstance.AddComponent<Outline>();
         outliner.OutlineMode = Outline.Mode.OutlineAll;
@@ -88,7 +90,7 @@ public class GhostPlacementController : MonoBehaviour
         UIManagerAR.instance.SelectModel(ghostInstance.GetComponent<ProductDetails>());
         //UIManagerAR.instance.smallDetail.SetActive(true);
 
-        //hp.transparentMat = transparentMat;
+        //hp.transparentMat = mat;
         ghostInstance.SetActive(false);
         if(CategoryManager.Instance.isDebugMode)Debug.Log("Ghost item available", ghostInstance);
         if (tapToPlaceHint != null)
@@ -189,9 +191,10 @@ public class GhostPlacementController : MonoBehaviour
                 euler.x = 0f;
 
                 rotation = Quaternion.Euler(euler);
+                spawnPoint = spawnPoint + offset;
             }
 
-            ghostInstance.transform.SetPositionAndRotation(spawnPoint + offset, rotation);
+            ghostInstance.transform.SetPositionAndRotation(spawnPoint, rotation);
         }
         else
         {
