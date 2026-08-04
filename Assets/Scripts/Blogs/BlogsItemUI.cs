@@ -34,7 +34,7 @@ public class BlogsItemUI : MonoBehaviour
 
         if (request.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("Failed to load image: " + request.error);
+            if (CategoriesUI.Instance.isDebug) Debug.LogError("Failed to load image: " + request.error);
         }
         else
         {
@@ -45,7 +45,7 @@ public class BlogsItemUI : MonoBehaviour
             Vector2 pivot = new Vector2(0.5f, 0.5f);
             Sprite sprite = Sprite.Create(texture, rect, pivot);
 
-            Debug.Log("width : " + sprite.rect.width + ", Height: " + sprite.rect.height);
+            if (CategoriesUI.Instance.isDebug) Debug.Log("width : " + sprite.rect.width + ", Height: " + sprite.rect.height);
 
             //maskParent.sizeDelta = new Vector2(maskParent.sizeDelta.x, sprite.rect.height);
             if (blogImage != null)
@@ -74,8 +74,8 @@ public class BlogsItemUI : MonoBehaviour
         float multiplier = Mathf.Max(scaleX, scaleY);
         //float multiplier = scaleY;
 
-        Debug.Log("image width: " + imgWidth + ", Height : " + imgHeight + ", multiplayer : " + multiplier, image.gameObject);
+        if(CategoriesUI.Instance.isDebug) Debug.Log("image width: " + imgWidth + ", Height : " + imgHeight + ", multiplayer : " + multiplier, image.gameObject);
         rectTransform.sizeDelta = new Vector2(imgWidth * multiplier, imgHeight * multiplier);
-        Debug.Log("rectTransform: " + rectTransform.sizeDelta.x + ", " + rectTransform.sizeDelta.y, image.gameObject);
+        if(CategoriesUI.Instance.isDebug) Debug.Log("rectTransform: " + rectTransform.sizeDelta.x + ", " + rectTransform.sizeDelta.y, image.gameObject);
     }
 }

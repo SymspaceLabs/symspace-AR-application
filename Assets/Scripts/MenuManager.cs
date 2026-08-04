@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -22,11 +23,13 @@ public class MenuManager : MonoBehaviour
     public GameObject loadingPanel;
 
     [Space(20)]
-    public GameObject lastActivePanel;
-
-    [Space(20)]
     public TextMeshProUGUI errorMessage;
     public GameObject errorMessageParent;
+
+    private Stack<GameObject> panelHistory = new Stack<GameObject>();
+    private bool isBackNavigation;
+
+    [Space(10)] public List<GameObject> appleBtns;
 
     private void Awake()
     {
@@ -38,14 +41,34 @@ public class MenuManager : MonoBehaviour
             loadingPanel.SetActive(true);
             SceneManager.LoadSceneAsync(SceneNames.Blogs);
         }
+
+#if UNITY_IOS
+        foreach(GameObject obj in appleBtns)
+            obj.SetActive(true);
+#elif UNITY_ANDROID
+        foreach (GameObject obj in appleBtns)
+            obj.SetActive(false);
+#endif
     }
 
     public void EnablePanel(GameObject activePanel)
     {
-        // Store the currently active panel before switching
-        lastActivePanel = GetCurrentlyActivePanel();
+        GameObject current = GetCurrentlyActivePanel();
 
-        // Disable all panels
+        if (!isBackNavigation && current != null && current != activePanel)
+        {
+            if (panelHistory.Count > 0 && panelHistory.Peek() == activePanel)
+            {
+                panelHistory.Pop();
+            }
+            else
+            {
+                panelHistory.Push(current);
+            }
+        }
+
+        isBackNavigation = false;
+
         signUpInPanel.SetActive(false);
         signUpPanel.SetActive(false);
         signUpOTPVerifyPanel.SetActive(false);
@@ -57,10 +80,8 @@ public class MenuManager : MonoBehaviour
         contactUsPanel.SetActive(false);
         homePanel.SetActive(false);
 
-        // Enable the requested panel
         activePanel.SetActive(true);
     }
-
 
     private GameObject GetCurrentlyActivePanel()
     {
@@ -78,14 +99,10 @@ public class MenuManager : MonoBehaviour
 
     public void GoBackToLastPanel()
     {
-        if (lastActivePanel != null)
-        {
-            EnablePanel(lastActivePanel);
-        }
-        else
-        {
-            Debug.LogWarning("No previous panel stored.");
-        }
+        if (panelHistory.Count == 0) return;
+
+        isBackNavigation = true;
+        EnablePanel(panelHistory.Pop());
     }
 
     public void ShowError(string message)

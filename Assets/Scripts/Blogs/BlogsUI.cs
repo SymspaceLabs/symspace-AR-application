@@ -1,28 +1,36 @@
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using System.Collections.Generic;
-using System.Linq;
-using System.Collections;
-using UnityEngine.Networking;
-using System.Globalization;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text.RegularExpressions;
+using TMPro;
+using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class BlogsUI : MonoBehaviour
 {
     #region Parameters
     [Header("UI Elements")]
     public Transform contentParent;
+    public Transform blurContentTransform;
+    public GameObject blurBlogsPanel;
     public GameObject blogItemPrefab;
     public Button refreshButton;
     public TextMeshProUGUI statusText;
 
+    [Space(10)]
     private string blogsURL = "/blogs";
     List<BlogsData> currentBlogsData;
+    private BlogsResponse cachedResponse;
 
-    public GameObject blogPage;
+    public GameObject blogDetailPage;
+    public GameObject blurBlogDetailPage;
 
+    [Space(10)]
+    [Header("Blog Detail UI Elements")]
     public Image blogImg;
     public TextMeshProUGUI titleText;
     public TextMeshProUGUI authorText;
@@ -32,6 +40,17 @@ public class BlogsUI : MonoBehaviour
     public GameObject detailLoadingIcon;
     public Sprite blurImage;
 
+    [Space(10)]
+    [Header("Blur Blog Detail UI Elements")]
+    public Image blurBlogImg;
+    public TextMeshProUGUI blurTitleText;
+    public TextMeshProUGUI blurAuthorText;
+    public Button blurOriginalPostBtn;
+    public TextMeshProUGUI blurDateText;
+    public TextMeshProUGUI blurContentText;
+
+    [Space(10)]
+    public TMP_InputField searchText;
     public List<GameObject> bottomBtns;
 
     public Image homeBtn;
@@ -44,7 +63,24 @@ public class BlogsUI : MonoBehaviour
     public Sprite shopBlue;
 
     public GameObject loadingPanel;
+
+    private bool wasBlurBlogsPanelActive;
+    private bool wasBlurBlogDetailActive;
     #endregion
+
+    public void HideBlurPanels()
+    {
+        wasBlurBlogsPanelActive = blurBlogsPanel != null && blurBlogsPanel.activeSelf;
+        wasBlurBlogDetailActive = blurBlogDetailPage != null && blurBlogDetailPage.activeSelf;
+        if (blurBlogsPanel != null) blurBlogsPanel.SetActive(false);
+        if (blurBlogDetailPage != null) blurBlogDetailPage.SetActive(false);
+    }
+
+    public void RestoreBlurPanels()
+    {
+        if (blurBlogsPanel != null) blurBlogsPanel.SetActive(wasBlurBlogsPanelActive);
+        if (blurBlogDetailPage != null) blurBlogDetailPage.SetActive(wasBlurBlogDetailActive);
+    }
 
     private void OnEnable()
     {
@@ -58,6 +94,10 @@ public class BlogsUI : MonoBehaviour
 
         homeBtn.transform.GetChild(0).gameObject.SetActive(true);
         shopBtn.transform.GetChild(0).gameObject.SetActive(false);
+
+        searchText.text = ""; // Clear the search text when the UI is enabled
+
+        searchText.onValueChanged.AddListener(OnSearchValueChanged);
     }
 
     void Start()
@@ -72,6 +112,40 @@ public class BlogsUI : MonoBehaviour
         GetComponentInParent<Canvas>().renderMode = RenderMode.ScreenSpaceCamera;
     }
 
+    public void OnSearchValueChanged(string value)
+    {
+        BlogsResponse filteredResponse = SearchBlogs(value);
+        ClearBlogs();
+        PopulateBlogs(filteredResponse.blogs);
+    }
+
+    public BlogsResponse SearchBlogs(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return cachedResponse;
+
+        string search = query.Trim().ToLower();
+
+        var filteredBlogs = cachedResponse.blogs.Where(blog =>
+        {
+            string search = Regex.Replace(query.ToLower(), @"\s+", " ").Trim();
+
+            string searchableText = Regex.Replace(
+                $"{blog.title} {blog.author} {blog.nickname}".ToLower(),
+                @"\s+",
+                " "
+            ).Trim();
+
+            return searchableText.Contains(search);
+        }).ToList();
+
+        return new BlogsResponse
+        {
+            blogs = filteredBlogs
+        };
+    }
+
+
     #region API Call
     public void LoadBlogs()
     {
@@ -81,12 +155,14 @@ public class BlogsUI : MonoBehaviour
         StartCoroutine(AuthAPI.PostRequest(blogsURL, "", // Empty string for no body
             (response) =>
             {
-                //Debug.Log("Blogs loaded: " + response);
+                //if (CategoriesUI.Instance.isDebug) Debug.Log("Blogs loaded: " + response);
 
                 // Parse the response
                 string fixedJson = "{\"blogs\":" + response + "}";
                 BlogsResponse responseData = JsonUtility.FromJson<BlogsResponse>(fixedJson);
-                Debug.Log("Blogs loaded: " + responseData);
+                if (CategoriesUI.Instance.isDebug) Debug.Log("Blogs loaded: " + responseData);
+
+                cachedResponse = responseData; // Cache the response
 
                 if (responseData.blogs != null && responseData.blogs.Count > 0)
                 {
@@ -109,8 +185,8 @@ public class BlogsUI : MonoBehaviour
             (error) =>
             {
                 FirebaseAuthManager.ErrorResponse response = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
-                Debug.LogError("Failed to load categories: " + error);
-                Debug.LogError("Message: " + response.message);
+                if (CategoriesUI.Instance.isDebug) Debug.LogError("Failed to load categories: " + error);
+                if (CategoriesUI.Instance.isDebug) Debug.LogError("Message: " + response.message);
                 ShowStatus("Failed to load categories", true);
                 loadingPanel.SetActive(false);
             }, "GET"));
@@ -125,33 +201,64 @@ public class BlogsUI : MonoBehaviour
             GameObject item = Instantiate(blogItemPrefab, contentParent);
             BlogsItemUI itemUI = item.GetComponent<BlogsItemUI>();
 
-            
-
-            if (itemUI != null)
+            GameObject blurItem = Instantiate(blogItemPrefab, blurContentTransform);
+            BlogsItemUI blurItemUI = blurItem.GetComponent<BlogsItemUI>();
+            if (blurItemUI != null)
             {
-                itemUI.Initialize(blog.nickname, blog.image);
+                blurItemUI.Initialize(blog.nickname, blog.image);
+                //blurItemUI.blogImage.raycastTarget = false; // Disable raycast for the blur item
+                blurItemUI.blogImage.color = new Color(1f, 1f, 1f, 0.01f); // Set the alpha to 0.01 for blur effect
 
-                Debug.Log("Before button Add click " + itemUI.blogBtn.name);
-                itemUI.blogBtn.onClick.AddListener(() =>
+                blurItemUI.transform.Find("Spinner 6").gameObject.SetActive(false); // Disable the loading spinner for the blur item
+                //blurItemUI.blogBtn.interactable = false; // Disable the button for the blur item
+                blurItemUI.blogBtn.onClick.AddListener(() =>
                 {
-                    authorText.GetComponent<Button>().onClick.RemoveAllListeners();
-                    originalPostBtn.onClick.RemoveAllListeners();
-                    Debug.Log("Button Pressed");
-                    blogPage.SetActive(true);
+                    //authorText.GetComponent<Button>().onClick.RemoveAllListeners();
+                    //originalPostBtn.onClick.RemoveAllListeners();
+                    if (CategoriesUI.Instance.isDebug) Debug.Log("Button Pressed");
+                    blogDetailPage.SetActive(true);
+                    blurBlogsPanel.SetActive(true);
                     titleText.text = blog.title;
                     authorText.text = blog.author;
-                    authorText.GetComponent<Button>().onClick.AddListener(() =>
-                    {
-                        Application.OpenURL(blog.author_url);
-                    });
-                    originalPostBtn.onClick.AddListener(() =>
-                    {
-                        Application.OpenURL(blog.article_source_url);
-                    });
+                    //authorText.GetComponent<Button>().onClick.AddListener(() =>
+                    //{
+                    //    Application.OpenURL(blog.author_url);
+                    //});
+                    //originalPostBtn.onClick.AddListener(() =>
+                    //{
+                    //    Application.OpenURL(blog.article_source_url);
+                    //});
                     dateText.text = ConvertToReadableDate(blog.createdAt);
                     contentText.text = blog.content;
                     StartCoroutine(LoadImageFromURL(blog.image, blogImg));
+
+                    blurAuthorText.GetComponent<Button>().onClick.RemoveAllListeners();
+                    blurOriginalPostBtn.onClick.RemoveAllListeners();
+                    blurBlogDetailPage.SetActive(true);
+                    blurBlogsPanel.SetActive(false);
+                    blurTitleText.text = blog.title;
+                    blurAuthorText.text = blog.author;
+                    blurAuthorText.GetComponent<Button>().onClick.AddListener(() =>
+                    {
+                        Application.OpenURL(blog.author_url);
+                    });
+                    blurOriginalPostBtn.onClick.AddListener(() =>
+                    {
+                        Application.OpenURL(blog.article_source_url);
+                    });
+                    blurDateText.text = ConvertToReadableDate(blog.createdAt);
+                    blurContentText.text = blog.content;
+                    StartCoroutine(LoadImageFromURL(blog.image, blurBlogImg));
                 });
+            }
+            if (itemUI != null)
+            {
+                itemUI.Initialize("", blog.image);
+                itemUI.transform.Find("Title BG").GetComponent<Image>().enabled = false; // Disable the title background image
+
+                if (CategoriesUI.Instance.isDebug) Debug.Log("Before button Add click " + itemUI.blogBtn.name);
+                
+                
             }
             else
             {
@@ -176,8 +283,8 @@ public class BlogsUI : MonoBehaviour
 
         if (request.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError("Failed to load image: " + request.error + ", Bytes");
-            Debug.LogError("Message: " + request.downloadHandler.text);
+            if (CategoriesUI.Instance.isDebug) Debug.LogError("Failed to load image: " + request.error + ", Bytes");
+            if (CategoriesUI.Instance.isDebug) Debug.LogError("Message: " + request.downloadHandler.text);
         }
         else
         {
@@ -222,6 +329,11 @@ public class BlogsUI : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
+
+        foreach(Transform child in blurContentTransform)
+        {
+            Destroy(child.gameObject);
+        }
     }
 
     private void ShowStatus(string message, bool isError)
@@ -251,23 +363,25 @@ public class BlogsUI : MonoBehaviour
 
     private void OnDisable()
     {
-        homeBtn.sprite = homeBlack;
-        shopBtn.sprite = shopBlue;
+        //homeBtn.sprite = homeBlack;
+        //shopBtn.sprite = shopBlue;
 
-        homeBtn.transform.GetChild(0).gameObject.SetActive(false);
-        shopBtn.transform.GetChild(0).gameObject.SetActive(true);
+        //homeBtn.transform.GetChild(0).gameObject.SetActive(false);
+        //shopBtn.transform.GetChild(0).gameObject.SetActive(true);
+
+        searchText.onValueChanged.RemoveListener(OnSearchValueChanged);
     }
     #endregion
 
     #region Structure Classes
     [System.Serializable]
-    private class BlogsResponse
+    public class BlogsResponse
     {
         public List<BlogsData> blogs;
     }
 
     [System.Serializable]
-    private class BlogsData
+    public class BlogsData
     {
         public string id;
         public string title;

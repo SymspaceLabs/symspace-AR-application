@@ -79,6 +79,20 @@ public class UIManagerAR : MonoBehaviour
 
     public GameObject eventSystem;
 
+    [Space(10)]
+    [Header("Cart")]
+    public Button addToCartBtn_SD;
+    public Button addToCartBtn_LD;
+    public GameObject cartPanel;
+    public Button cartOpenBtn;
+
+    [Space(5)]
+    [Header("Favorites")]
+    public Button favoriteBtn_SD;
+    public Button favoriteBtn_LD;
+    public Image favoriteIcon_SD;
+    public Image favoriteIcon_LD;
+
     [Header("Product Short Detail Parameters")]
     public TextMeshProUGUI SD_CompanyName;
     public TextMeshProUGUI SD_ProductName;
@@ -308,11 +322,14 @@ public class UIManagerAR : MonoBehaviour
         objectDiscription.SetActive(true);
         slidePanel.ShowPanel();
 
-
         modelViewerImage.enabled = false;
         modelViewer3D.enabled = true;
         txt360View.SetActive(true);
         currentImage = 0;
+
+        if (IsInvoking(nameof(Disable360Hand)))
+            CancelInvoke(nameof(Disable360Hand));
+        Invoke(nameof(Disable360Hand), 3f);
     }
 
     public void ShowShop()
@@ -321,11 +338,15 @@ public class UIManagerAR : MonoBehaviour
         objectDiscription.SetActive(false);
         slidePanel.ShowPanel();
         smallDetail.SetActive(false);
+        if(IsInvoking(nameof(Disable360Hand)))
+            CancelInvoke(nameof(Disable360Hand));
+        Invoke(nameof(Disable360Hand), 3f);
     }
 
     public void CloseLargeDetail()
     {
         slidePanel.HidePanel();
+        cartPanel.SetActive(false);
     }
 
     #region Toggle ARPlane Visual
@@ -403,13 +424,24 @@ public class UIManagerAR : MonoBehaviour
 
         SD_sizes.ClearOptions();
 
+        var ldReset = LD_sizes.GetComponent<SizeDropdownHandler>();
+        if (ldReset != null) ldReset.Reset();
+        var sdReset = SD_sizes.GetComponent<SizeDropdownHandler>();
+        if (sdReset != null) sdReset.Reset();
+
         if (product.sizes.Count == 1)
         {
+            LD_sizes.interactable = false;
+            SD_sizes.interactable = false;
+
             LD_sizes.options.Add(new TMP_Dropdown.OptionData(product.variants[0].size.size));
             SD_sizes.options.Add(new TMP_Dropdown.OptionData(product.variants[0].size.size));
         }
         else
         {
+            LD_sizes.interactable = true;
+            SD_sizes.interactable = true;
+
             LD_sizes.options.Add(new TMP_Dropdown.OptionData("Size"));
             foreach (var option in product.variants)
             {
@@ -436,6 +468,12 @@ public class UIManagerAR : MonoBehaviour
 
         LD_sizes.value = selectedModelDetails.selectedSizeIndex;
         SD_sizes.value = selectedModelDetails.selectedSizeIndex;
+
+        var ldHandler = LD_sizes.GetComponent<SizeDropdownHandler>();
+        if (ldHandler != null) ldHandler.RefreshButtonSprite();
+        var sdHandler = SD_sizes.GetComponent<SizeDropdownHandler>();
+        if (sdHandler != null) sdHandler.RefreshButtonSprite();
+
         if (product.displayPrice.salePrice < product.displayPrice.price)
         {
             SD_SalePrice.text = "$" + product.displayPrice.salePrice.ToString();
@@ -517,12 +555,9 @@ public class UIManagerAR : MonoBehaviour
         UpdateDetailData(pd);
 
         ChangeModelVariant();
-        //UIModel.GetComponentInChildren<MeshRenderer>().material.mainTexture = model.GetComponent<ProductDetails>().textures[textureIndex];
-                //break;
-        //    }
-        //}
 
-        //spawner.ObjectSelected(index);
+        if (FavoritesManager.Instance != null)
+            FavoritesManager.Instance.RefreshCurrentToggleIcon();
     }
 
     public void UpdateDetailData(ProductDetails pd = null)
@@ -620,7 +655,7 @@ public class UIManagerAR : MonoBehaviour
             //if (maxStocks > 0)
             //    stocksSelected.text = "1";
             //else
-            stocksSelected.text = "1";
+            stocksSelected.text = maxStocks > 0 ? "1" : "0";
         }
         else
         {
@@ -633,7 +668,7 @@ public class UIManagerAR : MonoBehaviour
             LD_SalePrice.gameObject.SetActive(false);
 
 
-            stocksSelected.text = "1";
+            stocksSelected.text = "0";
         }
     }
 
@@ -721,7 +756,7 @@ public class UIManagerAR : MonoBehaviour
         //if (maxStocks > 0)
         //    stocksSelected.text = "1";
         //else
-        stocksSelected.text = "1";
+        stocksSelected.text = maxStocks > 0 ? "1" : "0";
 
         if(GhostPlacementController.Instance != null && GhostPlacementController.Instance.spawnedObjects.Contains(selectedModelDetails.gameObject))
             CategoryManager.Instance.UpdateObjectScale(selectedModelDetails, GhostPlacementController.Instance.spawnedObjects[objectSelectedIndex], 
@@ -750,7 +785,7 @@ public class UIManagerAR : MonoBehaviour
 
         UpdateDetailUI();
 
-        stocksSelected.text = "1";
+        stocksSelected.text = maxStocks > 0 ? "1" : "0";
 
         var arDimensions = FindObjectsByType<ARDimensionVisualizer>(FindObjectsSortMode.None);
         foreach (var arDimension in arDimensions)
@@ -764,13 +799,15 @@ public class UIManagerAR : MonoBehaviour
 
         currentStocks += value;
 
-        if (currentStocks < 1)
-            currentStocks = 1;
+        int minStocks = maxStocks > 0 ? 1 : 0;
+
+        if (currentStocks < minStocks)
+            currentStocks = minStocks;
         if (currentStocks > maxStocks)
             currentStocks = maxStocks;
 
-        if (currentStocks < 1)
-            currentStocks = 1;
+        if (currentStocks < minStocks)
+            currentStocks = minStocks;
 
         stocksSelected.text = currentStocks.ToString();
     }
@@ -829,6 +866,9 @@ public class UIManagerAR : MonoBehaviour
             modelViewerImage.enabled = false;
             modelViewer3D.enabled = true;
             txt360View.SetActive(true);
+            if(IsInvoking(nameof(Disable360Hand)))
+                CancelInvoke(nameof(Disable360Hand));
+            Invoke(nameof(Disable360Hand), 3f);
         }
         else
         {
@@ -841,6 +881,11 @@ public class UIManagerAR : MonoBehaviour
                 modelViewerImage.sprite = selectedModelDetails.sprites[currentImage];
         }
 
+    }
+
+    void Disable360Hand()
+    {
+        txt360View.SetActive(false);
     }
 
     public bool arController = true;

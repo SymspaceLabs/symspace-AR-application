@@ -20,4 +20,16 @@ public static class GltfMaterialCopier
             }
         }
     }
+
+    public static void DeleteTextures(Material mat)
+    {
+        mat.SetTexture("_BaseMap", null);
+        mat.SetTexture("_BumpMap", null);
+        mat.SetTexture("_MetallicGlossMap", null);
+        mat.SetTexture("_OcclusionMap", null);
+        mat.SetTexture("_EmissionMap", null);
+
+        mat.DisableKeyword("_NORMALMAP");
+        mat.DisableKeyword("_EMISSION");
+    }
 }
