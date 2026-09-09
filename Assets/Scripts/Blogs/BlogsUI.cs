@@ -64,22 +64,38 @@ public class BlogsUI : MonoBehaviour
 
     public GameObject loadingPanel;
 
-    private bool wasBlurBlogsPanelActive;
+    private bool wasBlurBlogsPageActive;
     private bool wasBlurBlogDetailActive;
     #endregion
 
     public void HideBlurPanels()
     {
-        wasBlurBlogsPanelActive = blurBlogsPanel != null && blurBlogsPanel.activeSelf;
+        var blurBlogsPage = GetBlurBlogsPage();
+        wasBlurBlogsPageActive = blurBlogsPage != null && blurBlogsPage.activeSelf;
         wasBlurBlogDetailActive = blurBlogDetailPage != null && blurBlogDetailPage.activeSelf;
-        if (blurBlogsPanel != null) blurBlogsPanel.SetActive(false);
+        if (blurBlogsPage != null) blurBlogsPage.SetActive(false);
         if (blurBlogDetailPage != null) blurBlogDetailPage.SetActive(false);
     }
 
     public void RestoreBlurPanels()
     {
-        if (blurBlogsPanel != null) blurBlogsPanel.SetActive(wasBlurBlogsPanelActive);
+        var blurBlogsPage = GetBlurBlogsPage();
+        if (blurBlogsPage != null) blurBlogsPage.SetActive(wasBlurBlogsPageActive);
         if (blurBlogDetailPage != null) blurBlogDetailPage.SetActive(wasBlurBlogDetailActive);
+    }
+
+    private GameObject GetBlurBlogsPage()
+    {
+        if (blurBlogsPanel == null) return null;
+        var parent = blurBlogsPanel.transform.parent;
+        return parent != null ? parent.gameObject : blurBlogsPanel;
+    }
+
+    public void ShowBlurBlogsList()
+    {
+        var blurBlogsPage = GetBlurBlogsPage();
+        if (blurBlogsPage != null) blurBlogsPage.SetActive(true);
+        if (blurBlogsPanel != null) blurBlogsPanel.SetActive(true);
     }
 
     private void OnEnable()
@@ -97,7 +113,7 @@ public class BlogsUI : MonoBehaviour
 
         searchText.text = ""; // Clear the search text when the UI is enabled
 
-        searchText.onValueChanged.AddListener(OnSearchValueChanged);
+        searchText.onSubmit.AddListener(OnSearchValueChanged);
     }
 
     void Start()
@@ -110,6 +126,9 @@ public class BlogsUI : MonoBehaviour
         foreach (GameObject obj in bottomBtns)
             obj.SetActive(true);
         GetComponentInParent<Canvas>().renderMode = RenderMode.ScreenSpaceCamera;
+
+        if (searchText != null && searchText.GetComponent<SearchBarInteraction>() == null)
+            searchText.gameObject.AddComponent<SearchBarInteraction>();
     }
 
     public void OnSearchValueChanged(string value)
@@ -217,6 +236,7 @@ public class BlogsUI : MonoBehaviour
                     //originalPostBtn.onClick.RemoveAllListeners();
                     if (CategoriesUI.Instance.isDebug) Debug.Log("Button Pressed");
                     blogDetailPage.SetActive(true);
+                    blogDetailPage.transform.SetAsLastSibling();
                     blurBlogsPanel.SetActive(true);
                     titleText.text = blog.title;
                     authorText.text = blog.author;
@@ -235,6 +255,7 @@ public class BlogsUI : MonoBehaviour
                     blurAuthorText.GetComponent<Button>().onClick.RemoveAllListeners();
                     blurOriginalPostBtn.onClick.RemoveAllListeners();
                     blurBlogDetailPage.SetActive(true);
+                    blurBlogDetailPage.transform.SetAsLastSibling();
                     blurBlogsPanel.SetActive(false);
                     blurTitleText.text = blog.title;
                     blurAuthorText.text = blog.author;
@@ -356,7 +377,7 @@ public class BlogsUI : MonoBehaviour
     public void SignOut()
     {
         PlayerPrefs.SetInt("RememberMe", 0);
-        PlayerPrefs.SetInt("OnBoarding", 0);
+        //PlayerPrefs.SetInt("OnBoarding", 0);
         PlayerPrefs.DeleteKey("id");
         SceneManager.LoadScene(SceneNames.Home);
     }
@@ -369,7 +390,7 @@ public class BlogsUI : MonoBehaviour
         //homeBtn.transform.GetChild(0).gameObject.SetActive(false);
         //shopBtn.transform.GetChild(0).gameObject.SetActive(true);
 
-        searchText.onValueChanged.RemoveListener(OnSearchValueChanged);
+        searchText.onSubmit.RemoveListener(OnSearchValueChanged);
     }
     #endregion
 

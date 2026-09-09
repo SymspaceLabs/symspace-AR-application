@@ -816,8 +816,11 @@ public class UIManagerAR : MonoBehaviour
     {
         modelViewerImage.enabled = false;
         modelViewer3D.enabled = true;
-        txt360View.SetActive(true);
         currentImage = 0;
+        txt360View.SetActive(true);
+        if (IsInvoking(nameof(Disable360Hand)))
+            CancelInvoke(nameof(Disable360Hand));
+        Invoke(nameof(Disable360Hand), 3f);
     }
 
     int currentImage = 0;

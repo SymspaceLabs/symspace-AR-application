@@ -17,9 +17,9 @@ public class SignUpOTPVerifyUI : MonoBehaviour
 
     [Space(5)]
     public Sprite normalSprite;
-    public Sprite errorInputFieldSprite;
-    public TextMeshProUGUI errorMessage;
-    public GameObject errorMessageParent;
+    //public Sprite errorInputFieldSprite;
+    //public TextMeshProUGUI errorMessage;
+    //public GameObject errorMessageParent;
     public GameObject successMessage;
 
     //[Space(5)]
@@ -49,7 +49,7 @@ public class SignUpOTPVerifyUI : MonoBehaviour
         //    return;
 
         MenuManager.Instance.loadingPanel.SetActive(true);
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
 
         JsonDataStructure jsonData = new JsonDataStructure();
         jsonData.email = PlayerPrefs.GetString("Email");
@@ -109,7 +109,7 @@ public class SignUpOTPVerifyUI : MonoBehaviour
     // Validate input data before sending to the server
     public bool CheckInputData()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(otpInput.text))
@@ -125,13 +125,13 @@ public class SignUpOTPVerifyUI : MonoBehaviour
 
     public void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessageParent.SetActive(false);
-        errorMessageParent.SetActive(true);
-        errorMessage.text = message;
+        MenuManager.Instance.errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(true);
+        MenuManager.Instance.errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
         if(field != null)
-            field.GetComponent<Image>().sprite = errorInputFieldSprite;
+            field.GetComponent<Image>().sprite = MenuManager.Instance.errorInputFieldSprite;
         //verifyButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 

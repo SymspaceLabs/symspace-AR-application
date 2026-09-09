@@ -15,10 +15,10 @@ public class SignInUI : MonoBehaviour
 
     [Space(5)]
     public Sprite normalSprite;
-    public TextMeshProUGUI errorMessage;
-    public GameObject errorMessageParent;
+    //public TextMeshProUGUI errorMessage;
+    //public GameObject errorMessageParent;
 
-    public Sprite errorInputFieldSprite;
+    //public Sprite errorInputFieldSprite;
 
 
     public SignUpOTPVerifyUI signUpOTPVerifyUI;
@@ -29,7 +29,7 @@ public class SignInUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
     }
 
     void Start()
@@ -83,7 +83,7 @@ public class SignInUI : MonoBehaviour
     // Validate input data before sending to the server
     public bool CheckInputData()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(emailInput.text))
@@ -111,13 +111,13 @@ public class SignInUI : MonoBehaviour
 
     private void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessageParent.SetActive(false);
-        errorMessageParent.SetActive(true);
-        errorMessage.text = message;
+        MenuManager.Instance.errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(true);
+        MenuManager.Instance.errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
         if(field != null)
-            field.GetComponent<Image>().sprite = errorInputFieldSprite;
+            field.GetComponent<Image>().sprite = MenuManager.Instance.errorInputFieldSprite;
         //signInButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 

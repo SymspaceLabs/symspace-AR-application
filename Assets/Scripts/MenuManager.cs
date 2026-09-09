@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
@@ -25,6 +26,7 @@ public class MenuManager : MonoBehaviour
     [Space(20)]
     public TextMeshProUGUI errorMessage;
     public GameObject errorMessageParent;
+    public Sprite errorInputFieldSprite;
 
     private Stack<GameObject> panelHistory = new Stack<GameObject>();
     private bool isBackNavigation;
@@ -105,10 +107,13 @@ public class MenuManager : MonoBehaviour
         EnablePanel(panelHistory.Pop());
     }
 
-    public void ShowError(string message)
+    public void ShowError(string message, TMP_InputField inputField = null)
     {
         errorMessageParent.SetActive(false);
         errorMessageParent.SetActive(true);
         errorMessage.text = message;
+
+        if(inputField != null)
+            inputField.GetComponent<Image>().sprite = errorInputFieldSprite;
     }
 }

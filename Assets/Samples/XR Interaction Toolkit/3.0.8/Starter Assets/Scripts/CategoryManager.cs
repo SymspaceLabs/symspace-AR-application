@@ -70,6 +70,9 @@ public class CategoryManager : MonoBehaviour
 
     public TMP_InputField searchInputField;
 
+    private DebouncedSearchInput searchHandler;
+    private bool searchWired;
+
     public bool isDebugMode = false;
 
     #region Private Variables
@@ -83,13 +86,62 @@ public class CategoryManager : MonoBehaviour
         Instance = this;
     }
 
+    private void OnEnable()
+    {
+        WireSearchInput();
+    }
+
     private void Start()
     {
         localPath = Path.Combine(Application.persistentDataPath, "tempModel.glb");
-        searchInputField.onValueChanged.AddListener(OnSearchTextChange);
+
         GetAllCategories();
         GetAllProducts();
         StartCoroutine(InitialProductSelection());
+    }
+
+    private void OnDisable()
+    {
+        UnwireSearchInput();
+    }
+
+    private void WireSearchInput()
+    {
+        if (searchWired)
+            return;
+
+        if (searchInputField == null)
+        {
+            Debug.LogWarning(
+                "CategoryManager: searchInputField is not assigned - search will not work.", this);
+            return;
+        }
+
+        if (searchInputField.GetComponent<SearchBarInteraction>() == null)
+            searchInputField.gameObject.AddComponent<SearchBarInteraction>();
+
+        searchHandler = searchInputField.GetComponent<DebouncedSearchInput>();
+
+        if (searchHandler != null)
+            searchHandler.onSearchExecuted += OnSearchTextChange;
+        else
+            searchInputField.onValueChanged.AddListener(OnSearchTextChange);
+
+        searchWired = true;
+    }
+
+    private void UnwireSearchInput()
+    {
+        if (!searchWired)
+            return;
+
+        if (searchHandler != null)
+            searchHandler.onSearchExecuted -= OnSearchTextChange;
+        else if (searchInputField != null)
+            searchInputField.onValueChanged.RemoveListener(OnSearchTextChange);
+
+        searchHandler = null;
+        searchWired = false;
     }
     #endregion
 
@@ -106,11 +158,6 @@ public class CategoryManager : MonoBehaviour
                 ProductSelection.productData.ar_type,
                 ProductSelection.fetchedSprite));
         }
-    }
-
-    private void OnDisable()
-    {
-        searchInputField.onValueChanged.RemoveListener(OnSearchTextChange);
     }
     #endregion
 
@@ -161,13 +208,28 @@ public class CategoryManager : MonoBehaviour
         {
             ProductResponse responseData = JsonUtility.FromJson<ProductResponse>(response);
             allProductsData = responseData;
-            if (isDebugMode)
-                Debug.Log("Products loaded");
+            if (allProductsData.products != null)
+            {
+                var removedNoModel = allProductsData.products
+                    .Where(p => p.threeDModels == null || p.threeDModels.Count == 0)
+                    .Select(p => p.id)
+                    .ToList();
+
+                allProductsData.products = allProductsData.products
+                    .Where(p => p.threeDModels != null && p.threeDModels.Count > 0)
+                    .ToList();
+
+                if (isDebugMode)
+                    Debug.Log("[AR GetAllProducts] count=" + allProductsData.products.Count +
+                              " removedNoModel=" + string.Join(",", removedNoModel));
+            }
         },
         (error) =>
         {
             if (isDebugMode)
-                Debug.LogError("Failed to load categories: " + error);
+                Debug.LogError("Failed to load all products: " + error);
+            else
+                Debug.LogWarning("GetAllProducts failed: " + error + " - search will not work until this succeeds.");
         }, "GET"));
     }
     #endregion
@@ -1222,6 +1284,12 @@ public class CategoryManager : MonoBehaviour
 
     public void OnSearchTextChange(string text)
     {
+        if (allProductsData == null || allProductsData.products == null)
+        {
+            Debug.LogWarning("CategoryManager: search ignored, products not loaded yet.", this);
+            return;
+        }
+
         ProductResponse response = SearchProducts(text);
         PopulateProducts(response);
         ClearSubCategoriesUI();
@@ -1240,7 +1308,9 @@ public class CategoryManager : MonoBehaviour
         var filteredProducts = allProductsData.products.Where(product =>
         {
             string searchableText =
-                $"{product.name} {product.company.entityName} {product.category.name} {product.material} {product.category.parent.name} {product.category.parent.parent.name} {product.category.parent.parent.parent.name}"
+                (
+                    $"{product.name} {product.company?.entityName} {product.category?.name} {product.material} {product.category?.parent?.name} {product.category?.parent?.parent?.name} {product.category?.parent?.parent?.parent?.name}"
+                )
                 .ToLower();
 
             return searchWords.Any(word =>
@@ -1282,7 +1352,7 @@ public class CategoryManager : MonoBehaviour
     #endregion
 
     #region Products Population
-    bool PopulateProducts(ProductResponse response)
+    public bool PopulateProducts(ProductResponse response)
     {
         ClearTransform(productContainer);
 
@@ -1539,7 +1609,7 @@ public class CategoryManager : MonoBehaviour
         public List<Products> products;
         public List<Brand> brands;
         public PriceRange priceRange;
-        public List<Category> category;
+        public List<CategoryWithChild> category;
         public List<string> genders;
         public List<string> availabilities;
         public List<ColorInfo> colors;

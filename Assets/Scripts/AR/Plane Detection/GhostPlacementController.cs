@@ -17,6 +17,11 @@ public class GhostPlacementController : MonoBehaviour
     [SerializeField] private GameObject tapToPlaceHint; // "Tap to place" text overlay
 
     private GameObject ghostInstance;
+    private Renderer[] ghostRenderers = System.Array.Empty<Renderer>();
+    private Canvas[] ghostCanvases = System.Array.Empty<Canvas>();
+    private ARDimensionVisualizer[] ghostDimensions = System.Array.Empty<ARDimensionVisualizer>();
+    private bool ghostVisibilityInitialized;
+    private bool ghostVisible;
     private List<ARRaycastHit> hits = new List<ARRaycastHit>();
     private bool isPlaced = false;
     private bool isVerticalProduct = false;
@@ -91,7 +96,11 @@ public class GhostPlacementController : MonoBehaviour
         //UIManagerAR.instance.smallDetail.SetActive(true);
 
         //hp.transparentMat = mat;
-        ghostInstance.SetActive(false);
+        ghostRenderers = ghostInstance.GetComponentsInChildren<Renderer>(true);
+        ghostCanvases = ghostInstance.GetComponentsInChildren<Canvas>(true);
+        ghostDimensions = ghostInstance.GetComponentsInChildren<ARDimensionVisualizer>(true);
+        ghostInstance.SetActive(true);
+        SetGhostVisible(false);
         if(CategoryManager.Instance.isDebugMode)Debug.Log("Ghost item available", ghostInstance);
         if (tapToPlaceHint != null)
             tapToPlaceHint.SetActive(true);
@@ -134,11 +143,11 @@ public class GhostPlacementController : MonoBehaviour
 
             if (validPlane == null)
             {
-                ghostInstance.SetActive(false);
+                SetGhostVisible(false);
                 return;
             }
 
-            ghostInstance.SetActive(true);
+            SetGhostVisible(true);
 
             Vector3 spawnPoint = validPose.position;
             Vector3 spawnNormal = validPlane.normal;
@@ -198,7 +207,7 @@ public class GhostPlacementController : MonoBehaviour
         }
         else
         {
-            ghostInstance.SetActive(false);
+            SetGhostVisible(false);
         }
 
         //Tap to confirm placement (ignore UI clicks)
@@ -263,10 +272,44 @@ public class GhostPlacementController : MonoBehaviour
         if (ghostInstance != null)
             Destroy(ghostInstance);
         ghostInstance = null;
+        ghostRenderers = System.Array.Empty<Renderer>();
+        ghostCanvases = System.Array.Empty<Canvas>();
+        ghostDimensions = System.Array.Empty<ARDimensionVisualizer>();
+        ghostVisibilityInitialized = false;
         isPlaced = false;
         if (tapToPlaceHint != null)
             tapToPlaceHint.SetActive(false);
         UIManagerAR.instance.smallDetail.SetActive(false);
+    }
+
+    private void SetGhostVisible(bool visible)
+    {
+        if (ghostInstance == null)
+            return;
+
+        if (ghostVisibilityInitialized && ghostVisible == visible)
+            return;
+
+        ghostVisibilityInitialized = true;
+        ghostVisible = visible;
+
+        foreach (Renderer renderer in ghostRenderers)
+        {
+            if (renderer != null)
+                renderer.enabled = visible;
+        }
+
+        foreach (Canvas canvas in ghostCanvases)
+        {
+            if (canvas != null)
+                canvas.enabled = visible;
+        }
+
+        foreach (ARDimensionVisualizer dimensions in ghostDimensions)
+        {
+            if (dimensions != null)
+                dimensions.SetPlacementVisible(visible);
+        }
     }
 
     public void ChangeTextureByIndex(int index)

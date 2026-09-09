@@ -168,6 +168,10 @@ public class CategoriesUI : MonoBehaviour
     [Header("Search")]
     public TMP_InputField searchInputField;
 
+    public float searchDebounceSeconds = 0.3f;
+
+    private Coroutine searchDebounceRoutine;
+
     #endregion
 
 
@@ -210,7 +214,16 @@ public class CategoriesUI : MonoBehaviour
             addToCartBtn.onClick.AddListener(AddCurrentToCart);
 
         if (searchInputField != null)
-            searchInputField.onValueChanged.AddListener(OnSearchTextChanged);
+        {
+            //searchInputField.onValueChanged.AddListener(OnSearchTextChangedDebounced);
+            searchInputField.onSubmit.AddListener(OnSearchCommitted);
+
+            SearchBarInteraction interaction =
+                searchInputField.GetComponent<SearchBarInteraction>() ??
+                searchInputField.gameObject.AddComponent<SearchBarInteraction>();
+
+            interaction.onRecentSelected = OnSearchCommitted;
+        }
 
         GetAllProducts();
     }
@@ -284,6 +297,46 @@ public class CategoriesUI : MonoBehaviour
         UnselectedAllCategories();
     }
 
+    public void OnSearchCommitted(string text)
+    {
+        if (searchDebounceRoutine != null)
+        {
+            StopCoroutine(searchDebounceRoutine);
+            searchDebounceRoutine = null;
+        }
+
+        RecentSearches.Add(text);
+        OnSearchTextChanged(text);
+    }
+
+    private void OnSearchTextChangedDebounced(string text)
+    {
+        if (searchDebounceRoutine != null)
+            StopCoroutine(searchDebounceRoutine);
+
+        searchDebounceRoutine = StartCoroutine(SearchDebounceRoutine(text));
+    }
+
+    private IEnumerator SearchDebounceRoutine(string text)
+    {
+        yield return new WaitForSeconds(searchDebounceSeconds);
+        searchDebounceRoutine = null;
+        OnSearchTextChanged(text);
+    }
+
+    public void ShowFilteredProducts(CategoryManager.ProductResponse response)
+    {
+        if (response == null)
+            return;
+
+        ClearProducts();
+
+        if (response.products != null)
+            PopulateItems(response.products);
+
+        UnselectedAllCategories();
+    }
+
     public CategoryManager.ProductResponse SearchProducts(string query)
     {
         if (string.IsNullOrEmpty(query))
@@ -298,13 +351,15 @@ public class CategoriesUI : MonoBehaviour
             .Where(product =>
             {
                 string searchableText =
-                    $"{product.name} " +
-                    $"{product.company.entityName} " +
-                    $"{product.category.name} " +
-                    $"{product.material} " +
-                    $"{product.category.parent.name} " +
-                    $"{product.category.parent.parent.name} " +
-                    $"{product.category.parent.parent.parent.name}"
+                    (
+                        $"{product.name} " +
+                        $"{product.company?.entityName} " +
+                        $"{product.category?.name} " +
+                        $"{product.material} " +
+                        $"{product.category?.parent?.name} " +
+                        $"{product.category?.parent?.parent?.name} " +
+                        $"{product.category?.parent?.parent?.parent?.name}"
+                    )
                     .ToLower();
 
 
@@ -335,6 +390,22 @@ public class CategoriesUI : MonoBehaviour
                     JsonUtility.FromJson<CategoryManager.ProductResponse>(response);
 
                 allProductsData = responseData;
+
+                if (allProductsData.products != null)
+                {
+                    var removedNoModel = allProductsData.products
+                        .Where(p => p.threeDModels == null || p.threeDModels.Count == 0)
+                        .Select(p => p.id)
+                        .ToList();
+
+                    allProductsData.products = allProductsData.products
+                        .Where(p => p.threeDModels != null && p.threeDModels.Count > 0)
+                        .ToList();
+
+                    if (isDebug)
+                        Debug.Log("[Blogs GetAllProducts] count=" + allProductsData.products.Count +
+                                  " removedNoModel=" + string.Join(",", removedNoModel));
+                }
             },
             (error) =>
             {
@@ -756,6 +827,10 @@ public class CategoriesUI : MonoBehaviour
                     ShowItemDetail(product);
                 });
             }
+
+            PressableCard pressable = newItem.GetComponent<PressableCard>();
+            if (pressable == null)
+                pressable = newItem.AddComponent<PressableCard>();
         }
     }
 
@@ -926,11 +1001,95 @@ public class CategoriesUI : MonoBehaviour
 
         shopPanel.SetActive(false);
 
+        PlayDetailTransition(false);
+
+        if (FavoritesManager.Instance != null)
+            FavoritesManager.Instance.RefreshCurrentToggleIcon();
 
         foreach (Transform obj in UI_3D_Models_Parent.transform)
         {
             obj.gameObject.SetActive(false);
         }
+    }
+
+    private Coroutine detailTransition;
+
+    private void PlayDetailTransition(bool closing, System.Action onComplete = null)
+    {
+        if (itemDetailPanel == null)
+        {
+            if (onComplete != null)
+                onComplete();
+            return;
+        }
+
+        if (detailTransition != null)
+            StopCoroutine(detailTransition);
+
+        RectTransform main = itemDetailPanel.GetComponent<RectTransform>();
+        RectTransform bg = itemDetailPanelBG != null ? itemDetailPanelBG.GetComponent<RectTransform>() : null;
+
+        const float duration = 0.32f;
+        float width = main != null ? main.rect.width : Screen.width;
+        float target = closing ? width : 0f;
+        float start = closing ? 0f : width;
+
+        if (main != null)
+        {
+            Vector2 pos = main.anchoredPosition;
+            pos.x = start;
+            main.anchoredPosition = pos;
+        }
+
+        if (bg != null)
+        {
+            float bgStart = closing ? 0f : width * 0.3f;
+            Vector2 pos2 = bg.anchoredPosition;
+            pos2.x = bgStart;
+            bg.anchoredPosition = pos2;
+        }
+
+        detailTransition = StartCoroutine(UIAnim.CoTween(
+            duration,
+            closing ? UIAnim.EaseInCubic : UIAnim.EaseOutCubic,
+            (t) =>
+            {
+                if (main != null)
+                {
+                    Vector2 pos = main.anchoredPosition;
+                    pos.x = Mathf.LerpUnclamped(start, target, t);
+                    main.anchoredPosition = pos;
+                }
+
+                if (bg != null)
+                {
+                    float bgStart = closing ? 0f : width * 0.3f;
+                    float bgTarget = closing ? width * 0.3f : 0f;
+                    Vector2 pos2 = bg.anchoredPosition;
+                    pos2.x = Mathf.LerpUnclamped(bgStart, bgTarget, t);
+                    bg.anchoredPosition = pos2;
+                }
+            }));
+
+        if (closing)
+        {
+            StartCoroutine(ResetDetailPosition(main, bg, onComplete));
+        }
+    }
+
+    private IEnumerator ResetDetailPosition(RectTransform main, RectTransform bg, System.Action onComplete)
+    {
+        yield return new WaitForSeconds(0.32f);
+
+        if (main != null)
+            main.anchoredPosition = Vector2.zero;
+        if (bg != null)
+            bg.anchoredPosition = Vector2.zero;
+
+        detailTransition = null;
+
+        if (onComplete != null)
+            onComplete();
     }
 
 
@@ -1159,10 +1318,9 @@ public class CategoriesUI : MonoBehaviour
         {
             currentCoroutine =
                 StartCoroutine(
-                    DownloadAndAssign(
-                        products.threeDModels[0].url,
-                        targetModel,
-                        products));
+                    LoadModelAfterDetailSlide(
+                        products,
+                        state));
         }
         else if (state.isReady)
         {
@@ -1205,6 +1363,23 @@ public class CategoriesUI : MonoBehaviour
 
         selectedProduct.product = products;
     }
+
+    private IEnumerator LoadModelAfterDetailSlide(
+        CategoryManager.Products products,
+        DownloadState state)
+    {
+        yield return new WaitForSeconds(0.4f);
+
+        if (state == null || state.isReady || state.isDownloading)
+            yield break;
+
+        yield return StartCoroutine(
+            DownloadAndAssign(
+                products.threeDModels[0].url,
+                targetModel,
+                products));
+    }
+
     private void SetupProductImages(
         CategoryManager.Products products)
     {
@@ -1820,8 +1995,6 @@ public class CategoriesUI : MonoBehaviour
     public void BackToShop()
     {
         shopPanel.SetActive(true);
-        itemViewBG.SetActive(false);
-        itemViewPanel.SetActive(false);
 
         foreach (Transform obj in UI_3D_Models_Parent.transform)
         {
@@ -1847,6 +2020,14 @@ public class CategoriesUI : MonoBehaviour
                 Destroy(obj.gameObject);
             }
         }
+
+        PlayDetailTransition(true, () =>
+        {
+            if (itemViewBG != null)
+                itemViewBG.SetActive(false);
+            if (itemViewPanel != null)
+                itemViewPanel.SetActive(false);
+        });
     }
 
     #endregion

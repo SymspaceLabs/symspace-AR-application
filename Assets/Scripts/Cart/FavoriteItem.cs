@@ -13,4 +13,13 @@ public class FavoriteItem
     public string colorCode;
     public string imageUrl;
     [NonSerialized] public Sprite productImage;
+
+    public string variantId;
+    public string sizeName;
+    public int colorIndex;
+    public int sizeIndex;
+    public float price;
+    public float salePriceFloat;
+    public int maxStock;
+    public bool hasVariant;
 }

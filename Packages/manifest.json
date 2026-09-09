@@ -12,6 +12,7 @@
     "com.unity.mars-nav-mesh": "2.0.0",
     "com.unity.mobile.android-logcat": "1.4.6",
     "com.unity.multiplayer.center": "1.0.0",
+    "com.unity.pipeline": "0.6.0-exp.1",
     "com.unity.render-pipelines.universal": "17.2.0",
     "com.unity.shadergraph": "17.2.0",
     "com.unity.timeline": "1.8.9",

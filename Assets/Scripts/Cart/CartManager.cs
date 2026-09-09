@@ -35,6 +35,12 @@ public class CartManager : MonoBehaviour
     public Button shopBtn;
 
     [Space]
+    [Header("Checkout")]
+    public GameObject checkoutPanel;
+    public TextMeshProUGUI checkoutSubtotalPrice;
+    public TextMeshProUGUI checkoutTotalPrice;
+
+    [Space]
     [Header("Empty Cart")]
     public GameObject noItemsInCart;
     public Button addToCartBtn_SD;
@@ -56,6 +62,7 @@ public class CartManager : MonoBehaviour
 
     private List<CartItem> items = new();
     private Dictionary<string, CartItemUI> rowMap = new();
+    private bool wasCartPanelActive;
 
     #endregion
 
@@ -111,7 +118,6 @@ public class CartManager : MonoBehaviour
         if (UIManagerAR.instance != null)
             UIManagerAR.instance.ShowShop();
         //RefreshCartUI();
-        HideBlurPanels();
         if (OnCartOpened != null) OnCartOpened();
     }
 
@@ -119,20 +125,21 @@ public class CartManager : MonoBehaviour
     {
         if (cartPanel == null || !cartPanel.activeSelf) return;
         cartPanel.SetActive(false);
-        RestoreBlurPanels();
         if (OnCartClosed != null) OnCartClosed();
     }
 
-    void HideBlurPanels()
+    void Update()
     {
-        var blogs = FindFirstObjectByType<BlogsUI>();
-        if (blogs != null) blogs.HideBlurPanels();
-    }
+        if (cartPanel == null) return;
 
-    void RestoreBlurPanels()
-    {
-        var blogs = FindFirstObjectByType<BlogsUI>();
-        if (blogs != null) blogs.RestoreBlurPanels();
+        bool isActive = cartPanel.activeSelf;
+        if (isActive == wasCartPanelActive) return;
+        wasCartPanelActive = isActive;
+
+        if (isActive)
+            BlurPanelManager.Cover();
+        else
+            BlurPanelManager.Uncover();
     }
 
     public void AddCurrentToCart()
@@ -188,14 +195,6 @@ public class CartManager : MonoBehaviour
         int stock = matchedVariant.stock;
         if (stock < 1) return;
 
-        string variantId = matchedVariant.id;
-        var existing = items.FirstOrDefault(i => i.variantId == variantId);
-
-        int currentQtyInCart = existing?.quantity ?? 0;
-        if (currentQtyInCart >= stock) return;
-
-        int newQty = Mathf.Min(currentQtyInCart + addQty, stock);
-
         string colorCode = pd.product.colors[colorIdx].code;
         Sprite productSprite = null;
         string imageUrl = "";
@@ -208,48 +207,62 @@ public class CartManager : MonoBehaviour
                 imageUrl = pd.imagesUrl[imgIndex];
         }
 
+        var cartItem = new CartItem
+        {
+            productId = pd.product.id,
+            variantId = matchedVariant.id,
+            productName = pd.product.name,
+            colorName = pd.product.colors[colorIdx].name,
+            colorCode = colorCode,
+            sizeName = matchedVariant.size?.size ?? "",
+            colorIndex = colorIdx,
+            sizeIndex = tempSizeIdx,
+            quantity = addQty,
+            price = matchedVariant.price,
+            salePrice = matchedVariant.salePrice,
+            maxStock = matchedVariant.stock,
+            productImage = productSprite,
+            imageUrl = imageUrl
+        };
+
+        AddItem(cartItem);
+    }
+
+    public bool AddItem(CartItem ci)
+    {
+        if (ci == null) return false;
+
+        var existing = items.FirstOrDefault(i => i.variantId == ci.variantId);
+
         if (existing != null)
         {
+            if (existing.quantity >= ci.maxStock) return false;
+
+            int newQty = Mathf.Min(existing.quantity + ci.quantity, ci.maxStock);
             existing.quantity = newQty;
-            if (rowMap.TryGetValue(variantId, out var row) && row != null)
+            if (rowMap.TryGetValue(ci.variantId, out var row) && row != null)
                 row.RefreshQuantity(existing.quantity);
         }
         else
         {
-            var newItem = new CartItem
-            {
-                productId = pd.product.id,
-                variantId = variantId,
-                productName = pd.product.name,
-                colorName = pd.product.colors[colorIdx].name,
-                colorCode = colorCode,
-                sizeName = matchedVariant.size?.size ?? "",
-                colorIndex = colorIdx,
-                sizeIndex = tempSizeIdx,
-                quantity = newQty,
-                price = matchedVariant.price,
-                salePrice = matchedVariant.salePrice,
-                maxStock = matchedVariant.stock,
-                productImage = productSprite,
-                imageUrl = imageUrl
-            };
-            items.Add(newItem);
+            items.Add(ci);
             if (cartItemsParent != null)
             {
                 GameObject row = Instantiate(cartItemPrefab, cartItemsParent);
                 var ctrl = row.GetComponent<CartItemUI>();
-                if (ctrl != null) ctrl.Setup(newItem, this);
-                rowMap[variantId] = ctrl;
+                if (ctrl != null) ctrl.Setup(ci, this);
+                rowMap[ci.variantId] = ctrl;
             }
         }
 
-        noItemsInCart.SetActive(false);
-        shopBtn.gameObject.SetActive(false);
-        checkoutSummary.SetActive(true);
+        if (noItemsInCart != null) noItemsInCart.SetActive(false);
+        if (shopBtn != null) shopBtn.gameObject.SetActive(false);
+        if (checkoutSummary != null) checkoutSummary.SetActive(true);
+        if (proceedToCheckoutBtn != null) proceedToCheckoutBtn.gameObject.SetActive(true);
 
-        //RefreshCartUI();
         UpdateTotals();
         SaveCart();
+        return true;
     }
 
     public void ChangeQuantity(string variantId, int delta)
@@ -297,6 +310,8 @@ public class CartManager : MonoBehaviour
         {
             if (checkoutSummary != null)
                 checkoutSummary.SetActive(false);
+            if (proceedToCheckoutBtn != null)
+                proceedToCheckoutBtn.gameObject.SetActive(false);
             if(noItemsInCart != null)
                 noItemsInCart.SetActive(true);
             if(shopBtn != null)
@@ -311,6 +326,8 @@ public class CartManager : MonoBehaviour
                shopBtn.gameObject.SetActive(false);
             if(checkoutSummary != null)
                 checkoutSummary.SetActive(true);
+            if (proceedToCheckoutBtn != null)
+                proceedToCheckoutBtn.gameObject.SetActive(true);
         }
 
         foreach (var ci in items)
@@ -365,5 +382,17 @@ public class CartManager : MonoBehaviour
     void OnProceedToCheckout()
     {
         if ((UIManagerAR.instance != null && CategoryManager.Instance.isDebugMode) || (CategoriesUI.Instance != null && CategoriesUI.Instance.isDebug)) Debug.Log("Proceed to checkout clicked");
+
+        if (checkoutPanel != null)
+            checkoutPanel.SetActive(true);
+
+        float shipping = items.Count > 0 ? 5.00f : 0.00f;
+        float subtotal = items.Sum(i => i.LineTotal);
+        float total = subtotal + shipping;
+
+        if (checkoutSubtotalPrice != null)
+            checkoutSubtotalPrice.text = "$" + subtotal.ToString("F2");
+        if (checkoutTotalPrice != null)
+            checkoutTotalPrice.text = "$" + total.ToString("F2");
     }
 }

@@ -21,6 +21,8 @@ public class OnBoardingUI : MonoBehaviour
 
     public List<UIScreen> screens;
 
+    public GameObject gradientBackground;
+
     public Button getStartBtn;
     public Button continueBtn_heightPanel;
     public Button continueBtn_weightPanel;
@@ -41,6 +43,7 @@ public class OnBoardingUI : MonoBehaviour
     public GameObject discovery_PanelBlur;
 
     [Header("On Boarding Panels")]
+    public GameObject[] onBoardingPanels;
     public GameObject getStarted_Panel;
     public GameObject age_Panel;
     public GameObject height_Panel;
@@ -55,8 +58,18 @@ public class OnBoardingUI : MonoBehaviour
     public TMP_InputField year_input;
 
     [Space(20)]
-    public TMP_InputField height_input;
-    public TMP_InputField weight_input;
+    public TextMeshProUGUI height_input;
+    public TextMeshProUGUI weight_input;
+
+    [Space(20)]
+    public TextMeshProUGUI heightValueText;
+    public TextMeshProUGUI weightValueText;
+    public TextMeshProUGUI measurementValueText;
+    public TextMeshProUGUI styleValueText;
+    public TextMeshProUGUI descriptionText;
+
+    [Space(20)]
+    public CompletionAnimation completionAnimation;
 
     [Space(20)]
     public TMP_InputField chest_input;
@@ -65,6 +78,52 @@ public class OnBoardingUI : MonoBehaviour
     public TMP_InputField armLength_input;
     public TMP_InputField shoeSize_input;
     #endregion
+
+    void SetupPlaceholders()
+    {
+        AttachPlaceholder(month_input);
+        AttachPlaceholder(day_input);
+        AttachPlaceholder(year_input);
+        AttachPlaceholder(chest_input);
+        AttachPlaceholder(waist_input);
+        AttachPlaceholder(shoulders_input);
+        AttachPlaceholder(armLength_input);
+        AttachPlaceholder(shoeSize_input);
+    }
+
+    void SetupBackButtons()
+    {
+        foreach (var screen in screens)
+        {
+            WireBackButtonsIn(screen.backPanel);
+            WireBackButtonsIn(screen.mainPanel);
+        }
+        WireBackButtonsIn(age_Panel);
+        WireBackButtonsIn(height_Panel);
+        WireBackButtonsIn(weight_Panel);
+        WireBackButtonsIn(size_Panel);
+        WireBackButtonsIn(gender_Panel);
+    }
+
+    void WireBackButtonsIn(GameObject root)
+    {
+        if (root == null) return;
+        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name != "Back Btn") continue;
+            Button b = t.GetComponent<Button>();
+            if (b == null) b = t.gameObject.AddComponent<Button>();
+            b.onClick.RemoveListener(GoBack);
+            b.onClick.AddListener(GoBack);
+        }
+    }
+
+    static void AttachPlaceholder(TMP_InputField field)
+    {
+        if (field == null) return;
+        if (field.GetComponent<PlaceholderInput>() == null)
+            field.gameObject.AddComponent<PlaceholderInput>();
+    }
 
     public void ShowScreen(UIScreenType type)
     {
@@ -129,7 +188,7 @@ public class OnBoardingUI : MonoBehaviour
     {
         if (!ValidateData(height_input.text))
         {
-            ShowStatus("Height input field is empty or invalid", true);
+            ShowStatus("Height value must be greater than 0", true);
             return;
         }
 
@@ -192,30 +251,89 @@ public class OnBoardingUI : MonoBehaviour
         user.Gender = gender;
     }
 
+    void WireGenderButtons()
+    {
+        WireGenderButton("Male Btn", "Male");
+        WireGenderButton("Female Btn", "Female");
+        WireGenderButton("Both Btn", "Both");
+        WireGenderButton("Prefer not to say Btn", "PreferNotToSay");
+    }
+
+    void WireGenderButton(string btnName, string gender)
+    {
+        foreach (Transform t in transform.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name != btnName) continue;
+            Button b = t.GetComponent<Button>();
+            if (b == null) b = t.gameObject.AddComponent<Button>();
+            string value = gender;
+            b.onClick.RemoveAllListeners();
+            b.onClick.AddListener(delegate { SetGender(value); });
+            return;
+        }
+    }
+
     public void CompleteBtn()
     {
         //Call API here
+        if (string.IsNullOrEmpty(user.Gender)) user.Gender = "Male";
+        PopulateSummary();
 
         //Go to next panel if API is successfull
         PlayerPrefs.SetInt("OnBoarding", 1);
         EnablePanel(success_Panel);
+        HideBackButtons(success_Panel);
+        if (completionAnimation) completionAnimation.Play();
+    }
+
+    void HideBackButtons(GameObject root)
+    {
+        if (root == null) return;
+        foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name != "Back Btn") continue;
+            t.gameObject.SetActive(false);
+        }
+    }
+
+    void PopulateSummary()
+    {
+        if (heightValueText) heightValueText.text = user.Height + " cm";
+        if (weightValueText) weightValueText.text = user.Weight + " kg";
+        if (measurementValueText) measurementValueText.text = FilledSizeCount() + " of 5";
+        if (styleValueText) styleValueText.text = string.IsNullOrEmpty(user.Gender) ? "-" : user.Gender;
+        if (descriptionText) descriptionText.text = FormatDate();
+    }
+
+    int FilledSizeCount()
+    {
+        int count = 0;
+        if (!string.IsNullOrEmpty(user.Size.Chest)) count++;
+        if (!string.IsNullOrEmpty(user.Size.Waist)) count++;
+        if (!string.IsNullOrEmpty(user.Size.Shoulders)) count++;
+        if (!string.IsNullOrEmpty(user.Size.ArmLength)) count++;
+        if (!string.IsNullOrEmpty(user.Size.ShoeSize)) count++;
+        return count;
+    }
+
+    string FormatDate()
+    {
+        if (string.IsNullOrEmpty(user.FormattedDate)) return "";
+        if (DateTime.TryParse(user.FormattedDate, out DateTime d))
+            return d.ToString("MMMM d, yyyy");
+        return user.FormattedDate;
     }
 
     public void GoBack()
     {
         if (success_Panel.activeSelf)
-        {
-            success_Panel.SetActive(false);
-            ShowScreen(UIScreenType.gender);
-            EnablePanel(gender_Panel);
             return;
-        }
 
         for (int i = 0; i < screens.Count; i++)
         {
             if (screens[i].mainPanel != null && screens[i].mainPanel.activeSelf)
             {
-                if (i <= 1) return;
+                if (i == 0) return;
 
                 UIScreenType prev = screens[i - 1].type;
                 ShowScreen(prev);
@@ -227,8 +345,13 @@ public class OnBoardingUI : MonoBehaviour
 
     void PanelForScreen(int screenIndex)
     {
-        if (screenIndex <= 1)
+        if(screenIndex < onBoardingPanels.Length) 
+            EnablePanel(onBoardingPanels[screenIndex]);
+
+        if (screenIndex == 0)
             EnablePanel(getStarted_Panel);
+        else if (screenIndex == 1)
+            EnablePanel(age_Panel);
         else if (screenIndex == 2)
             EnablePanel(height_Panel);
         else if (screenIndex == 3)
@@ -243,12 +366,21 @@ public class OnBoardingUI : MonoBehaviour
     {
         PlayerPrefs.SetInt("OnBoarding", 1);
         discovery_Panel.SetActive(true);
-        discovery_PanelBlur.SetActive(true);
+        SetDiscoveryBlurPanels(true);
         HideAll();
         foreach (var screen in screens)
             if (screen.backPanel) screen.backPanel.SetActive(false);
 
         gameObject.SetActive(false);
+    }
+
+    private void SetDiscoveryBlurPanels(bool active)
+    {
+        if (discovery_PanelBlur != null) discovery_PanelBlur.SetActive(active);
+        var blurPage = discovery_PanelBlur != null && discovery_PanelBlur.transform.parent != null
+            ? discovery_PanelBlur.transform.parent.gameObject
+            : discovery_PanelBlur;
+        if (blurPage != null) blurPage.SetActive(active);
     }
 
     public UserProfile GetUserProfile()
@@ -259,6 +391,7 @@ public class OnBoardingUI : MonoBehaviour
     public void EnablePanel(GameObject activePanel)
     {
         getStarted_Panel.SetActive(false);
+        age_Panel.SetActive(false);
         height_Panel.SetActive(false);
         weight_Panel.SetActive(false);
         size_Panel.SetActive(false);
@@ -266,6 +399,9 @@ public class OnBoardingUI : MonoBehaviour
         success_Panel.SetActive(false);
 
         activePanel.SetActive(true);
+
+        if (activePanel == gender_Panel && string.IsNullOrEmpty(user.Gender))
+            SetGender("Male");
     }
 
     #endregion
@@ -274,7 +410,7 @@ public class OnBoardingUI : MonoBehaviour
 
     public bool ValidateData(string data)
     {
-        if (string.IsNullOrEmpty(data)/* || string.IsNullOrWhiteSpace(data)*/)
+        if (data.Length <= 0 || int.Parse(data) <= 0)
             return false;
 
         return true;
@@ -300,7 +436,10 @@ public class OnBoardingUI : MonoBehaviour
 
     private void OnEnable()
     {
+        if (gradientBackground) gradientBackground.SetActive(true);
+
         statusText.gameObject.SetActive(false);
+        WireGenderButtons();
 
         if(getStartBtn) getStartBtn.onClick.AddListener(() =>
         {
@@ -321,13 +460,19 @@ public class OnBoardingUI : MonoBehaviour
         });
     }
 
+    private void OnDisable()
+    {
+        if (gradientBackground) gradientBackground.SetActive(false);
+    }
+
     void Start()
     {
+        SetupPlaceholders();
+        SetupBackButtons();
         if (PlayerPrefs.GetInt("OnBoarding", 0) == 0)
             loadingPanel.SetActive(false);
-
         discovery_Panel.SetActive(PlayerPrefs.GetInt("OnBoarding", 0) == 0 ? false : true);
-        discovery_PanelBlur.SetActive(PlayerPrefs.GetInt("OnBoarding", 0) == 0 ? false : true);
+        SetDiscoveryBlurPanels(PlayerPrefs.GetInt("OnBoarding", 0) == 0 ? false : true);
         getStarted_Panel.SetActive(PlayerPrefs.GetInt("OnBoarding", 0) == 0 ? true : false);
 
         HideAll();
