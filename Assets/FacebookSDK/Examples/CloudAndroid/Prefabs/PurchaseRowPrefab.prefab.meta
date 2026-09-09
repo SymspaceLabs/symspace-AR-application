@@ -1,6 +1,12 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK/Examples/CloudAndroid/Prefabs/PurchaseRowPrefab.prefab.meta
 guid: 43804ee08a8b34e12b7fa666fd586774
 PrefabImporter:
+========
+guid: 113e2edf51e755a4bab124bfb71a8d96
+folderAsset: yes
+DefaultImporter:
+>>>>>>>> main:Assets/Imported Assets/Flexalon.meta
   externalObjects: {}
   userData: 
   assetBundleName: 

@@ -37,8 +37,9 @@ public class CartItemUI : MonoBehaviour
         {
             if (ci.salePrice > 0 && ci.salePrice < ci.price)
             {
-                salePriceText.text = "<s>$" + ci.price.ToString("F2") + "</s>";
-                if (priceText != null) priceText.text = "$" + ci.salePrice.ToString("F2");
+                priceText.text = "<s>$" + ci.price.ToString("F2") + "</s>";
+                priceText.color = new Color(0.7f, 0.7f, 0.7f);
+                if (salePriceText != null) salePriceText.text = "$" + ci.salePrice.ToString("F2");
             }
             else
             {
@@ -49,6 +50,7 @@ public class CartItemUI : MonoBehaviour
         else if (priceText != null)
         {
             priceText.text = "$" + ci.EffectivePrice.ToString("F2");
+            priceText.color = Color.blue;
         }
 
         if (colorSwatch != null && !string.IsNullOrEmpty(ci.colorCode))

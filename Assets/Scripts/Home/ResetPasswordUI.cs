@@ -13,9 +13,9 @@ public class ResetPasswordUI : MonoBehaviour
 
     [Space(5)]
     public Sprite normalSprite;
-    public Sprite errorInputFieldSprite;
-    public TextMeshProUGUI errorMessage;
-    public GameObject errorMessageParent;
+    //public Sprite errorInputFieldSprite;
+    //public TextMeshProUGUI errorMessage;
+    //public GameObject errorMessageParent;
 
     //[Space(5)]
     //public Sprite[] confirmBtnIcons;
@@ -23,7 +23,7 @@ public class ResetPasswordUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
     }
 
     private void Start()
@@ -65,7 +65,7 @@ public class ResetPasswordUI : MonoBehaviour
     // Validate input data before sending to the server
     public bool CheckInputData()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(newPasswordInput.text))
@@ -84,8 +84,8 @@ public class ResetPasswordUI : MonoBehaviour
         {
             MenuManager.Instance.ShowError("Password Don't Match");
 
-            newPasswordInput.GetComponent<Image>().sprite = errorInputFieldSprite;
-            confirmNewPassword.GetComponent<Image>().sprite = errorInputFieldSprite;
+            newPasswordInput.GetComponent<Image>().sprite = MenuManager.Instance.errorInputFieldSprite;
+            confirmNewPassword.GetComponent<Image>().sprite = MenuManager.Instance.errorInputFieldSprite;
             return false;
         }
 
@@ -112,13 +112,13 @@ public class ResetPasswordUI : MonoBehaviour
 
     private void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessageParent.SetActive(false);
-        errorMessageParent.SetActive(true);
-        errorMessage.text = message;
+        MenuManager.Instance.errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(true);
+        MenuManager.Instance.errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
         if(field != null)
-            field.GetComponent<Image>().sprite = errorInputFieldSprite;
+            field.GetComponent<Image>().sprite = MenuManager.Instance.errorInputFieldSprite;
         //resetButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 

@@ -18,9 +18,9 @@ public class ContactUsUI : MonoBehaviour
 
     [Space(5)]
     public Sprite normalSprite;
-    public Sprite errorInputFieldSprite;
-    public TextMeshProUGUI errorMessage;
-    public GameObject errorMessageParent;
+    //public Sprite errorInputFieldSprite;
+    //public TextMeshProUGUI errorMessage;
+    //public GameObject errorMessageParent;
     public GameObject successMessage;
 
     //[Space(5)]
@@ -29,7 +29,7 @@ public class ContactUsUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
         successMessage.SetActive(false);
     }
 
@@ -81,7 +81,7 @@ public class ContactUsUI : MonoBehaviour
     #region Data Validation
     public bool CheckInputData()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(emailInput.text))
@@ -121,14 +121,14 @@ public class ContactUsUI : MonoBehaviour
 
     private void ShowError(string message, TMP_InputField field = null, TMP_Dropdown dropDown = null)
     {
-        errorMessageParent.SetActive(false);
-        errorMessageParent.SetActive(true);
-        errorMessage.text = message;
+        MenuManager.Instance.errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(true);
+        MenuManager.Instance.errorMessage.text = message;
         if (field != null)
         {
             //field.Select();
             //field.ActivateInputField();
-            field.GetComponent<Image>().sprite = errorInputFieldSprite;
+            field.GetComponent<Image>().sprite = MenuManager.Instance.errorInputFieldSprite;
         }
         else if(dropDown != null)
         {

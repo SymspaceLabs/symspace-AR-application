@@ -3,6 +3,8 @@ using UnityEngine.UI;
 
 public class BottomBarController : MonoBehaviour
 {
+    public static BottomBarController Instance;
+
     public Image homeImage;
     public Button homebtn;
     public Image cartBtn;
@@ -19,14 +21,33 @@ public class BottomBarController : MonoBehaviour
     public Sprite arBlue;
 
     public GameObject cartPanel;
+    public GameObject favoritesPanel;
+    public GameObject profilePanel;
+
+    void Awake()
+    {
+        Instance = this;
+    }
 
     private string currentTab = "home";
-    private bool wasCartActive;
+    private bool wasCartContextActive;
+    private bool wasProfileActive;
+
+    bool IsCartContextActive()
+    {
+        return (cartPanel != null && cartPanel.activeSelf) ||
+               (favoritesPanel != null && favoritesPanel.activeSelf);
+    }
 
     void Start()
     {
-        wasCartActive = cartPanel != null && cartPanel.activeSelf;
-        SetActiveTab(wasCartActive ? "cart" : "home");
+        wasCartContextActive = IsCartContextActive();
+        wasProfileActive = profilePanel != null && profilePanel.activeSelf;
+
+        if (wasProfileActive)
+            SetActiveTab("profile");
+        else
+            SetActiveTab(wasCartContextActive ? "cart" : "home");
 
         if (homebtn != null) homebtn.onClick.AddListener(OnHomeClicked);
 
@@ -35,19 +56,75 @@ public class BottomBarController : MonoBehaviour
             Button btn = cartBtn.GetComponent<Button>();
             if (btn != null) btn.onClick.AddListener(OnCartClicked);
         }
+
+        if (profileBtn != null)
+        {
+            Button btn = profileBtn.GetComponent<Button>();
+            if (btn != null) btn.onClick.AddListener(OnProfileClicked);
+        }
+
+        CartManager.OnCartOpened += OnCartOpenedHandler;
+
+        WireFilterPageControls();
+    }
+
+    void WireFilterPageControls()
+    {
+        foreach (CategoryFilterUI filter in Resources.FindObjectsOfTypeAll<CategoryFilterUI>())
+        {
+            if (filter == null || filter.gameObject == null)
+                continue;
+            if (string.IsNullOrEmpty(filter.gameObject.scene.name))
+                continue;
+
+            filter.WireFilterControls();
+        }
+    }
+
+    void OnDestroy()
+    {
+        CartManager.OnCartOpened -= OnCartOpenedHandler;
+    }
+
+    void OnCartOpenedHandler()
+    {
+        if (profilePanel != null)
+            profilePanel.SetActive(false);
     }
 
     void Update()
     {
-        if (cartPanel == null) return;
-        bool isCartActive = cartPanel.activeSelf;
-        if (isCartActive != wasCartActive)
+        if (cartPanel != null || favoritesPanel != null)
         {
-            wasCartActive = isCartActive;
-            if (isCartActive)
-                SetActiveTab("cart");
-            else if (currentTab == "cart")
-                SetActiveTab("home");
+            bool isCartContextActive = IsCartContextActive();
+            if (isCartContextActive != wasCartContextActive)
+            {
+                wasCartContextActive = isCartContextActive;
+                if (isCartContextActive)
+                    SetActiveTab("cart");
+                else if (currentTab == "cart")
+                    SetActiveTab(profilePanel != null && profilePanel.activeSelf ? "profile" : "home");
+            }
+        }
+
+        if (profilePanel != null)
+        {
+            bool isProfileActive = profilePanel.activeSelf;
+            if (isProfileActive != wasProfileActive)
+            {
+                wasProfileActive = isProfileActive;
+                if (isProfileActive)
+                {
+                    BlurPanelManager.Cover();
+                    SetActiveTab("profile");
+                }
+                else
+                {
+                    BlurPanelManager.Uncover();
+                    if (currentTab == "profile")
+                        SetActiveTab("home");
+                }
+            }
         }
     }
 
@@ -55,12 +132,27 @@ public class BottomBarController : MonoBehaviour
     {
         if (CartManager.Instance != null)
             CartManager.Instance.CloseCart();
+        if (favoritesPanel != null)
+            favoritesPanel.SetActive(false);
+        if (profilePanel != null)
+            profilePanel.SetActive(false);
         SetActiveTab("home");
     }
 
     void OnCartClicked()
     {
+        if (favoritesPanel != null)
+            favoritesPanel.SetActive(false);
         SetActiveTab("cart");
+    }
+
+    void OnProfileClicked()
+    {
+        if (CartManager.Instance != null)
+            CartManager.Instance.CloseCart();
+        if (FavoritesManager.Instance != null)
+            FavoritesManager.Instance.ClosePanel();
+        SetActiveTab("profile");
     }
 
     public void SetActiveTab(string tab)

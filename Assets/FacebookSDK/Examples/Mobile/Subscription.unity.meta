@@ -1,5 +1,10 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK/Examples/Mobile/Subscription.unity.meta
 guid: 4ad37b3bb7e634d2eaa15a73b923b09e
+========
+guid: e6569547ecf19f142b2b9674c7a8f016
+folderAsset: yes
+>>>>>>>> main:Assets/Imported Assets/Flexalon/Documentation/_app.meta
 DefaultImporter:
   externalObjects: {}
   userData: 

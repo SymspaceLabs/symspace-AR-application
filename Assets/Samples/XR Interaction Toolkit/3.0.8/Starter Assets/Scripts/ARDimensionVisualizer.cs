@@ -32,6 +32,7 @@ public class ARDimensionVisualizer : MonoBehaviour
     public Vector3[] externalCorners = new Vector3[8];
 
     private Transform linesContainer;
+    private bool placementVisible = true;
 
     void OnDestroy()
     {
@@ -68,9 +69,14 @@ public class ARDimensionVisualizer : MonoBehaviour
 
     void ApplyGlobalMeasurementState()
     {
-        if (UIManagerAR.instance != null && UIManagerAR.instance.isMeasurementOn)
+        bool shouldShow = placementVisible &&
+            UIManagerAR.instance != null && UIManagerAR.instance.isMeasurementOn;
+
+        if (linesContainer != null)
+            linesContainer.gameObject.SetActive(shouldShow);
+
+        if (shouldShow)
         {
-            linesContainer.gameObject.SetActive(true);
             linesContainer.position = transform.position;
             linesContainer.rotation = transform.rotation;
             CalculateExternalCorners();
@@ -364,12 +370,36 @@ public class ARDimensionVisualizer : MonoBehaviour
         if (linesContainer == null) return;
         if (lineRenderers[0] == null) return;
 
-        bool isActive = !linesContainer.gameObject.activeSelf;
-        linesContainer.gameObject.SetActive(isActive);
+        bool isActive = UIManagerAR.instance == null || UIManagerAR.instance.isMeasurementOn;
+        bool shouldShow = isActive && placementVisible;
+        linesContainer.gameObject.SetActive(shouldShow);
 
-        if (isActive)
+        if (shouldShow)
         {
             StartCoroutine(SetMeasurement());
+        }
+    }
+
+    public void SetPlacementVisible(bool visible)
+    {
+        placementVisible = visible;
+
+        if (linesContainer == null)
+            return;
+
+        bool shouldShow = visible &&
+            UIManagerAR.instance != null && UIManagerAR.instance.isMeasurementOn;
+        linesContainer.gameObject.SetActive(shouldShow);
+
+        if (shouldShow && lineRenderers[0] != null)
+        {
+            linesContainer.position = transform.position;
+            linesContainer.rotation = transform.rotation;
+            CalculateExternalCorners();
+            UpdateAllBorderLines();
+            UpdateDashes();
+            SetupTextAlignmentAll();
+            DisableSomeLines();
         }
     }
 

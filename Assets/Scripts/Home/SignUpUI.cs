@@ -19,9 +19,9 @@ public class SignUpUI : MonoBehaviour
 
     [Space(5)]
     [SerializeField] private Sprite normalSprite;
-    [SerializeField] private Sprite errorInputFieldSprite;
-    [SerializeField] private TextMeshProUGUI errorMessage;
-    [SerializeField] private GameObject errorMessageParent;
+    //[SerializeField] private Sprite errorInputFieldSprite;
+    //[SerializeField] private TextMeshProUGUI errorMessage;
+    //[SerializeField] private GameObject errorMessageParent;
 
     public SignUpOTPVerifyUI signUpOTPVerifyUI;
 
@@ -31,7 +31,7 @@ public class SignUpUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
     }
 
     void Start()
@@ -65,7 +65,7 @@ public class SignUpUI : MonoBehaviour
             (error) =>
             {
                 FirebaseAuthManager.ErrorResponse errorResponse = JsonUtility.FromJson<FirebaseAuthManager.ErrorResponse>(error);
-                MenuManager.Instance.ShowError($"Post API req respone : {errorResponse.message}");
+                MenuManager.Instance.ShowError(errorResponse.message);
                 Debug.Log(errorResponse.message);
 
                 MenuManager.Instance.loadingPanel.SetActive(false);
@@ -80,7 +80,7 @@ public class SignUpUI : MonoBehaviour
     // Validate input data before sending to the server
     public bool CheckInputData()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
 
@@ -166,13 +166,13 @@ public class SignUpUI : MonoBehaviour
 
     private void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessageParent.SetActive(false);
-        errorMessageParent.SetActive(true);
-        errorMessage.text = message;
+        MenuManager.Instance.errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(true);
+        MenuManager.Instance.errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
         if(field != null)
-           field.GetComponent<Image>().sprite = errorInputFieldSprite;
+           field.GetComponent<Image>().sprite = MenuManager.Instance.errorInputFieldSprite;
         //signUpButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 

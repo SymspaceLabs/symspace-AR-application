@@ -1,5 +1,10 @@
 fileFormatVersion: 2
+<<<<<<<< HEAD:Assets/FacebookSDK/Examples/Mobile/IAP.unity.meta
 guid: d099cfc4ad6cc45b68ac422706c264f9
+========
+guid: feb6545ceb49c234b91a94034e2eb7a6
+folderAsset: yes
+>>>>>>>> main:Assets/Imported Assets/Flexalon/Documentation.meta
 DefaultImporter:
   externalObjects: {}
   userData: 

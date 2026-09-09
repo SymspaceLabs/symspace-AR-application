@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 public class SwipeBackHandler : MonoBehaviour
 {
@@ -8,6 +10,7 @@ public class SwipeBackHandler : MonoBehaviour
     private Vector2 touchStartPos;
     private float touchStartTime;
     private bool isTracking;
+    private bool isOnRuler;
 
 
     void Update()
@@ -34,6 +37,7 @@ public class SwipeBackHandler : MonoBehaviour
             case TouchPhase.Began:
                 touchStartPos = touch.position;
                 touchStartTime = Time.time;
+                isOnRuler = IsPointerOnRuler(touch.position);
                 isTracking = true;
                 break;
 
@@ -41,8 +45,10 @@ public class SwipeBackHandler : MonoBehaviour
                 if (!isTracking) break;
                 Vector2 delta = touch.position - touchStartPos;
                 float elapsed = Time.time - touchStartTime;
-                if (delta.x > swipeThreshold && touchStartPos.x < Screen.width * 0.15f &&
-                    Mathf.Abs(delta.y) < delta.x * 0.6f && elapsed < 0.5f)
+                bool edgeStart = touchStartPos.x < Screen.width * 0.15f;
+                bool onBoardingActive = IsOnboardingActive();
+                if (!isOnRuler && delta.x > swipeThreshold && (edgeStart || onBoardingActive) &&
+                    Mathf.Abs(delta.y) < delta.x * 0.6f && elapsed < 0.7f)
                     ExecuteBack(scene);
                 isTracking = false;
                 break;
@@ -59,21 +65,50 @@ public class SwipeBackHandler : MonoBehaviour
         {
             touchStartPos = Input.mousePosition;
             touchStartTime = Time.time;
+            isOnRuler = IsPointerOnRuler(Input.mousePosition);
             isTracking = true;
         }
         else if (Input.GetMouseButtonUp(0) && isTracking)
         {
             Vector2 delta = (Vector2)Input.mousePosition - touchStartPos;
             float elapsed = Time.time - touchStartTime;
-            if (delta.x > swipeThreshold && touchStartPos.x < Screen.width * 0.15f &&
-                Mathf.Abs(delta.y) < delta.x * 0.6f && elapsed < 0.5f)
+            bool edgeStart = touchStartPos.x < Screen.width * 0.15f;
+            bool onBoardingActive = IsOnboardingActive();
+            if (!isOnRuler && delta.x > swipeThreshold && (edgeStart || onBoardingActive) &&
+                Mathf.Abs(delta.y) < delta.x * 0.6f && elapsed < 0.7f)
                 ExecuteBack(scene);
             isTracking = false;
         }
     }
 
+    bool IsPointerOnRuler(Vector2 screenPos)
+    {
+        var eventSystem = EventSystem.current;
+        if (eventSystem == null) return false;
+        var pointerData = new PointerEventData(eventSystem) { position = screenPos };
+        var results = new List<RaycastResult>();
+        eventSystem.RaycastAll(pointerData, results);
+        for (int i = 0; i < results.Count; i++)
+        {
+            if (results[i].gameObject.GetComponentInParent<RulerSlider>() != null ||
+                results[i].gameObject.GetComponentInParent<PriceRangeHandle>() != null ||
+                results[i].gameObject.GetComponentInParent<PriceRangeSlider>() != null)
+                return true;
+        }
+        return false;
+    }
+
+    bool IsOnboardingActive()
+    {
+        var onboarding = UnityEngine.Object.FindFirstObjectByType<OnBoardingUI>();
+        return onboarding != null && onboarding.gameObject.activeSelf;
+    }
+
     void ExecuteBack(string scene)
     {
+        if (BackStack.GoBack())
+            return;
+
         switch (scene)
         {
             case "Home":
@@ -103,7 +138,7 @@ public class SwipeBackHandler : MonoBehaviour
                 var blogs = FindFirstObjectByType<BlogsUI>();
                 if (blogs != null && blogs.blogDetailPage != null && blogs.blogDetailPage.activeSelf)
                 {
-                    blogs.blurBlogsPanel.SetActive(true);
+                    blogs.ShowBlurBlogsList();
                     blogs.blogDetailPage.SetActive(false);
                     blogs.blurBlogDetailPage.SetActive(false);
                     break;

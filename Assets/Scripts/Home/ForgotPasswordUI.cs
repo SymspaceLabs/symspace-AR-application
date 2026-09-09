@@ -12,9 +12,9 @@ public class ForgotPasswordUI : MonoBehaviour
 
     [Space(5)]
     public Sprite normalSprite;
-    public Sprite errorInputFieldSprite;
-    public TextMeshProUGUI errorMessage;
-    public GameObject errorMessageParent;
+    //public Sprite errorInputFieldSprite;
+    //public TextMeshProUGUI errorMessage;
+    //public GameObject errorMessageParent;
 
     //[Space(5)]
     //public Sprite[] confirmBtnIcons;
@@ -22,7 +22,7 @@ public class ForgotPasswordUI : MonoBehaviour
 
     private void OnEnable()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
     }
 
     private void Start()
@@ -66,7 +66,7 @@ public class ForgotPasswordUI : MonoBehaviour
     // Validate input data before sending to the server
     public bool CheckInputData()
     {
-        errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(false);
         ResetInputFieldVisuals();
 
         if (string.IsNullOrWhiteSpace(emailInput.text))
@@ -88,13 +88,13 @@ public class ForgotPasswordUI : MonoBehaviour
 
     private void ShowError(string message, TMP_InputField field = null)
     {
-        errorMessageParent.SetActive(false);
-        errorMessageParent.SetActive(true);
-        errorMessage.text = message;
+        MenuManager.Instance.errorMessageParent.SetActive(false);
+        MenuManager.Instance.errorMessageParent.SetActive(true);
+        MenuManager.Instance.errorMessage.text = message;
         //field.Select();
         //field.ActivateInputField();
         if(field != null)
-            field.GetComponent<Image>().sprite = errorInputFieldSprite;
+            field.GetComponent<Image>().sprite = MenuManager.Instance.errorInputFieldSprite;
         //sendButton.GetComponent<Image>().sprite = confirmBtnIcons[1];
     }
 
